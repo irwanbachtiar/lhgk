@@ -1,23 +1,101 @@
-<p align="center"><a href="https://laravel.com" target="_blank"><img src="https://raw.githubusercontent.com/laravel/art/master/logo-lockup/5%20SVG/2%20CMYK/1%20Full%20Color/laravel-logolockup-cmyk-red.svg" width="400" alt="Laravel Logo"></a></p>
+# Dashboard LHGK (Laporan Harian Gerak Kapal)
 
-<p align="center">
-<a href="https://github.com/laravel/framework/actions"><img src="https://github.com/laravel/framework/workflows/tests/badge.svg" alt="Build Status"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/dt/laravel/framework" alt="Total Downloads"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/v/laravel/framework" alt="Latest Stable Version"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/l/laravel/framework" alt="License"></a>
-</p>
+Dashboard untuk monitoring dan analisis data pandu kapal dengan fitur upload CSV dan visualisasi statistik.
 
-## About Laravel
+## Fitur Utama
 
-Laravel is a web application framework with expressive, elegant syntax. We believe development must be an enjoyable and creative experience to be truly fulfilling. Laravel takes the pain out of development by easing common tasks used in many web projects, such as:
+✅ **Dashboard Statistik**
+- Tampilan statistik per pandu
+- Total pendapatan pandu dan tunda
+- Filter berdasarkan periode
+- Grafik visualisasi data
 
-- [Simple, fast routing engine](https://laravel.com/docs/routing).
-- [Powerful dependency injection container](https://laravel.com/docs/container).
-- Multiple back-ends for [session](https://laravel.com/docs/session) and [cache](https://laravel.com/docs/cache) storage.
-- Expressive, intuitive [database ORM](https://laravel.com/docs/eloquent).
-- Database agnostic [schema migrations](https://laravel.com/docs/migrations).
-- [Robust background job processing](https://laravel.com/docs/queues).
-- [Real-time event broadcasting](https://laravel.com/docs/broadcasting).
+✅ **Upload CSV**
+- Import data dari file CSV
+- Auto-detect encoding (UTF-8, ISO-8859-1, dll)
+- Validasi data otomatis
+- Error handling per baris
+- Transaction support (rollback on major errors)
+
+✅ **Analisis Data**
+- Breakdown per jenis kapal
+- Statistik GRT (Gross Registered Tonnage)
+- Tracking via realisasi (Mobile/Web/Partial)
+- Filter periode dinamis
+
+## Teknologi
+
+- **Laravel 11.x** - PHP Framework
+- **MySQL/MariaDB** - Database
+- **Bootstrap 5** - UI Framework
+- **Chart.js** - Data Visualization
+
+## Quick Start
+
+### 1. Install Dependencies
+```bash
+composer install
+```
+
+### 2. Setup Environment
+```bash
+cp .env.example .env
+php artisan key:generate
+```
+
+### 3. Configure Database
+Edit file `.env`:
+```env
+DB_CONNECTION=mysql
+DB_HOST=127.0.0.1
+DB_PORT=3306
+DB_DATABASE=lhgk
+DB_USERNAME=root
+DB_PASSWORD=
+```
+
+### 4. Run Migration
+```bash
+php artisan migrate
+```
+
+### 5. Start Server
+```bash
+php artisan serve
+```
+
+Akses: `http://localhost:8000`
+
+## Upload CSV
+
+### Format File CSV
+
+File CSV harus memiliki header dengan kolom berikut:
+
+```csv
+NM_PERS_PANDU,PENDAPATAN_PANDU,PENDAPATAN_TUNDA,NM_KAPAL,JN_KAPAL,KP_GRT,PILOT_DEPLOY,REALISAS_PILOT_VIA,PERIODE
+```
+
+**Contoh:**
+```csv
+NM_PERS_PANDU,PENDAPATAN_PANDU,PENDAPATAN_TUNDA,NM_KAPAL,JN_KAPAL,KP_GRT,PILOT_DEPLOY,REALISAS_PILOT_VIA,PERIODE
+Kapten Ahmad,2500000,500000,KM Sinar Jaya,Kapal Penumpang,5000,01-12-2024,MOBILE,12-2024
+Kapten Budi,3000000,750000,MV Ocean Star,Kapal Kargo,8000,05-12-2024,WEB,12-2024
+```
+
+File contoh tersedia di: `contoh_upload.csv`
+
+### Cara Upload
+
+1. Buka dashboard di browser
+2. Scroll ke bagian "Upload File CSV"
+3. Pilih file CSV (maksimal 10MB)
+4. Klik tombol "Upload"
+5. Lihat hasil import
+
+**Lihat panduan lengkap:** [PANDUAN_UPLOAD.md](PANDUAN_UPLOAD.md)
+
+## Struktur Project
 
 Laravel is accessible, powerful, and provides tools required for large, robust applications.
 
