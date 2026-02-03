@@ -12,20 +12,22 @@
             background-color: #f8f9fa;
         }
         .stat-card {
-            border-radius: 15px;
-            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
-            transition: transform 0.3s;
+            border-radius: 12px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+            transition: all 0.3s ease;
+            border: 1px solid rgba(0,0,0,0.05);
         }
         .stat-card:hover {
-            transform: translateY(-5px);
+            transform: translateY(-3px);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.12);
         }
         .pilot-card {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            color: white;
+            background: linear-gradient(135deg, #e8eaf6 0%, #c5cae9 100%);
+            color: #3f51b5;
         }
         .tunda-card {
-            background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
-            color: white;
+            background: linear-gradient(135deg, #fce4ec 0%, #f8bbd0 100%);
+            color: #c2185b;
         }
         .navbar {
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
@@ -190,7 +192,7 @@
                 </div>
             </div>
             <div class="col-md-2">
-                <div class="card stat-card" style="background: linear-gradient(135deg, #34d399 0%, #10b981 100%); color: white;">
+                <div class="card stat-card" style="background: linear-gradient(135deg, #e0f2f1 0%, #b2dfdb 100%); color: #00796b;">
                     <div class="card-body text-center">
                         <h3>Rp {{ number_format($totalOverall['total_pendapatan_pandu'] + $totalOverall['total_pendapatan_tunda'], 0, ',', '.') }}</h3>
                         <p class="mb-0">Total Pendapatan</p>
@@ -198,7 +200,7 @@
                 </div>
             </div>
             <div class="col-md-2">
-                <div class="card stat-card" style="background: linear-gradient(135deg, #fbbf24 0%, #f59e0b 100%); color: white;">
+                <div class="card stat-card" style="background: linear-gradient(135deg, #fff8e1 0%, #ffecb3 100%); color: #f57f17;">
                     <div class="card-body text-center">
                         <h3>{{ $totalOverall['transaksi_wt_di_atas_30'] }}</h3>
                         <p class="mb-0"><i class="bi bi-clock"></i> WT > 00:30</p>
@@ -210,7 +212,7 @@
         <!-- WT Statistics Row -->
         <div class="row mb-4">
             <div class="col-md-6">
-                <div class="card stat-card" style="background: linear-gradient(135deg, #60a5fa 0%, #3b82f6 100%); color: white;">
+                <div class="card stat-card" style="background: linear-gradient(135deg, #e3f2fd 0%, #bbdefb 100%); color: #1565c0;">
                     <div class="card-body text-center">
                         <h3>{{ number_format((float)($totalOverall['rata_rata_wt'] ?? 0), 2) }}</h3>
                         <p class="mb-0"><i class="bi bi-clock-history"></i> Rata-Rata WT</p>
@@ -218,7 +220,7 @@
                 </div>
             </div>
             <div class="col-md-6">
-                <div class="card stat-card" style="background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%); color: white;">
+                <div class="card stat-card" style="background: linear-gradient(135deg, #ffebee 0%, #ffcdd2 100%); color: #c62828;">
                     <div class="card-body text-center">
                         <h3>{{ number_format((float)($totalOverall['max_wt'] ?? 0), 2) }}</h3>
                         <p class="mb-0"><i class="bi bi-exclamation-triangle"></i> Maksimal WT</p>
@@ -231,7 +233,7 @@
         @if($topPilot)
         <div class="row mb-4">
             <div class="col-12">
-                <div class="card stat-card" style="background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%); color: white;">
+                <div class="card stat-card" style="background: linear-gradient(135deg, #fff3e0 0%, #ffe0b2 100%); color: #e65100; border-left: 4px solid #ff9800;">
                     <div class="card-body">
                         <div class="row align-items-center">
                             <div class="col-md-2">
