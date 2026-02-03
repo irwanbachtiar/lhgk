@@ -181,7 +181,7 @@
                     </div>
                 </div>
             </div>
-            <div class="col-md-2">
+            <div class="col-md-3">
                 <div class="card stat-card bg-white">
                     <div class="card-body text-center">
                         <div class="mb-2">
@@ -192,7 +192,7 @@
                     </div>
                 </div>
             </div>
-            <div class="col-md-2">
+            <div class="col-md-3">
                 <div class="card stat-card bg-white">
                     <div class="card-body text-center">
                         <div class="mb-2">
@@ -214,22 +214,22 @@
                     </div>
                 </div>
             </div>
-            <div class="col-md-2">
+        </div>
+        
+        <!-- WT Statistics Row -->
+        <div class="row mb-4">
+            <div class="col-md-4">
                 <div class="card stat-card bg-white">
                     <div class="card-body text-center">
                         <div class="mb-2">
                             <i class="bi bi-clock fs-1" style="color: #f59e0b;"></i>
                         </div>
                         <h3 class="text-dark mb-1">{{ $totalOverall['transaksi_wt_di_atas_30'] }}</h3>
-                        <p class="mb-0 text-muted small">WT > 00:30</p>
+                        <p class="mb-0 text-muted">WT > 00:30</p>
                     </div>
                 </div>
             </div>
-        </div>
-        
-        <!-- WT Statistics Row -->
-        <div class="row mb-4">
-            <div class="col-md-6">
+            <div class="col-md-4">
                 <div class="card stat-card bg-white">
                     <div class="card-body text-center">
                         <div class="mb-2">
@@ -240,7 +240,7 @@
                     </div>
                 </div>
             </div>
-            <div class="col-md-6">
+            <div class="col-md-4">
                 <div class="card stat-card bg-white">
                     <div class="card-body text-center">
                         <div class="mb-2">
