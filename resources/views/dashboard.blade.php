@@ -182,10 +182,10 @@
                 </div>
             </div>
             <div class="col-md-3">
-                <div class="card stat-card bg-white" style="border-left: 4px solid #667eea;">
+                <div class="card stat-card bg-white" style="border-left: 4px solid #8bea66;">
                     <div class="card-body text-center">
                         <div class="mb-2">
-                            <i class="bi bi-cash-coin fs-1" style="color: #667eea;"></i>
+                            <i class="bi bi-cash-coin fs-1" style="color: #8bea66a;"></i>
                         </div>
                         <h4 class="text-dark mb-1">Rp {{ number_format($totalOverall['total_pendapatan_pandu'], 0, ',', '.') }}</h4>
                         <p class="mb-0 text-muted small">Total Pendapatan Pandu</p>
@@ -193,10 +193,10 @@
                 </div>
             </div>
             <div class="col-md-3">
-                <div class="card stat-card bg-white" style="border-left: 4px solid #f093fb;">
+                <div class="card stat-card bg-white" style="border-left: 4px solid #66dfea;">
                     <div class="card-body text-center">
                         <div class="mb-2">
-                            <i class="bi bi-water fs-1" style="color: #f093fb;"></i>
+                            <i class="bi bi-water fs-1" style="color: #66dfea;"></i>
                         </div>
                         <h4 class="text-dark mb-1">Rp {{ number_format($totalOverall['total_pendapatan_tunda'], 0, ',', '.') }}</h4>
                         <p class="mb-0 text-muted small">Total Pendapatan Tunda</p>
@@ -455,6 +455,121 @@
                             </table>
                         </div>
                     </div>
+                </div>
+            </div>
+        </div>
+        @endif
+
+        <!-- Departure Invoice Delay Section -->
+        @if($selectedPeriode != 'all' && $selectedBranch != 'all' && $departureDelayCount > 0)
+        <div class="row mb-4">
+            <div class="col-12">
+                <div class="card stat-card">
+                    @if(!$showDeparture)
+                    <div class="card-body text-center py-4">
+                        <i class="bi bi-exclamation-triangle text-warning" style="font-size: 3rem;"></i>
+                        <h5 class="mt-3">Data Keterlambatan Invoice Departure</h5>
+                        <p class="text-muted">
+                            Ditemukan <strong class="text-danger">{{ number_format($departureDelayCount) }} transaksi</strong> 
+                            dengan keterlambatan invoice > 2 hari
+                        </p>
+                        <a href="{{ route('dashboard', ['periode' => $selectedPeriode, 'cabang' => $selectedBranch, 'show_departure' => 1]) }}#departure-section" 
+                           class="btn btn-warning">
+                            <i class="bi bi-eye"></i> Tampilkan Data Departure
+                        </a>
+                    </div>
+                    @else
+                    <div class="card-header" style="background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%); color: white;" id="departure-section">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <h5 class="mb-0">
+                                <i class="bi bi-exclamation-triangle-fill"></i> 
+                                Data Departure - Keterlambatan Invoice (> 2 Hari)
+                            </h5>
+                            <div>
+                                <a href="{{ route('export.departure.delay', ['periode' => $selectedPeriode, 'cabang' => $selectedBranch]) }}" 
+                                   class="btn btn-light btn-sm me-2">
+                                    <i class="bi bi-file-earmark-excel"></i> Download Excel
+                                </a>
+                                <a href="{{ route('dashboard', ['periode' => $selectedPeriode, 'cabang' => $selectedBranch]) }}" 
+                                   class="btn btn-light btn-sm">
+                                    <i class="bi bi-x-circle"></i> Sembunyikan
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="card-body">
+                        <div class="alert alert-info mb-3">
+                            <i class="bi bi-info-circle-fill"></i>
+                            <strong>{{ number_format($departureDelayCount) }} transaksi</strong> memiliki selisih antara tanggal selesai pelaksanaan dan invoice lebih dari 2 hari.
+                            <div class="mt-2">
+                                <small class="text-muted">Data diurutkan berdasarkan selisih hari terbesar</small>
+                            </div>
+                        </div>
+                        
+                        @if($departureDelayData && $departureDelayData->count() > 0)
+                        <div class="table-responsive">
+                            <table class="table table-hover table-striped">
+                                <thead class="table-dark">
+                                    <tr>
+                                        <th>No</th>
+                                        <th>No. UKK</th>
+                                        <th>Nama Kapal</th>
+                                        <th>Nama Pandu</th>
+                                        <th>Cabang</th>
+                                        <th>Gerakan</th>
+                                        <th>Selesai Pelaksanaan</th>
+                                        <th>Invoice Date</th>
+                                        <th class="text-center">Selisih (Hari)</th>
+                                        <th class="text-end">Pendapatan Pandu</th>
+                                        <th class="text-end">Pendapatan Tunda</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    @foreach($departureDelayData as $index => $data)
+                                    <tr>
+                                        <td>{{ $departureDelayData->firstItem() + $index }}</td>
+                                        <td><span class="badge bg-secondary">{{ $data->NO_UKK }}</span></td>
+                                        <td><strong>{{ $data->NM_KAPAL }}</strong></td>
+                                        <td>{{ $data->NM_PERS_PANDU }}</td>
+                                        <td>{{ $data->NM_BRANCH }}</td>
+                                        <td>
+                                            <span class="badge bg-danger">
+                                                <i class="bi bi-arrow-up-circle"></i> {{ strtoupper($data->GERAKAN) }}
+                                            </span>
+                                        </td>
+                                        <td>{{ $data->SELESAI_PELAKSANAAN }}</td>
+                                        <td>{{ $data->INVOICE_DATE }}</td>
+                                        <td class="text-center">
+                                            <span class="badge bg-danger fs-6">
+                                                {{ $data->selisih_hari }} hari
+                                            </span>
+                                        </td>
+                                        <td class="text-end">Rp {{ number_format($data->PENDAPATAN_PANDU, 0, ',', '.') }}</td>
+                                        <td class="text-end">Rp {{ number_format($data->PENDAPATAN_TUNDA, 0, ',', '.') }}</td>
+                                    </tr>
+                                    @endforeach
+                                </tbody>
+                            </table>
+                        </div>
+                        
+                        <!-- Pagination -->
+                        @if($departureDelayData->hasPages())
+                        <div class="d-flex justify-content-between align-items-center mt-3">
+                            <div class="text-muted">
+                                Menampilkan {{ $departureDelayData->firstItem() }} - {{ $departureDelayData->lastItem() }} dari {{ $departureDelayData->total() }} data
+                            </div>
+                            <div>
+                                {{ $departureDelayData->links('pagination::bootstrap-5') }}
+                            </div>
+                        </div>
+                        @endif
+                        @else
+                        <div class="alert alert-secondary">
+                            <i class="bi bi-info-circle"></i> Tidak ada data untuk ditampilkan
+                        </div>
+                        @endif
+                    </div>
+                    @endif
                 </div>
             </div>
         </div>

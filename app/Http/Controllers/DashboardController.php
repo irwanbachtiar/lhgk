@@ -135,7 +135,9 @@ class DashboardController extends Controller
             ];
             $topPilot = null;
             $shipStatsByGT = collect();
-            return view('dashboard', compact('statistics', 'totalOverall', 'periods', 'selectedPeriode', 'regionalGroups', 'allBranches', 'selectedBranch', 'topPilot', 'shipStatsByGT'));
+            $showDeparture = false;
+            $departureDelayCount = 0;
+            return view('dashboard', compact('statistics', 'totalOverall', 'periods', 'selectedPeriode', 'regionalGroups', 'allBranches', 'selectedBranch', 'topPilot', 'shipStatsByGT', 'showDeparture', 'departureDelayCount'));
         }
 
         // Build query with period filter
@@ -244,7 +246,176 @@ class DashboardController extends Controller
             ->orderBy('JENIS_KAPAL_DARI_BENDERA')
             ->get();
 
-        return view('dashboard', compact('statistics', 'totalOverall', 'periods', 'selectedPeriode', 'regionalGroups', 'allBranches', 'selectedBranch', 'topPilot', 'shipStatsByGT'));
+        // Check if user wants to see departure delay data
+        $showDeparture = $request->get('show_departure', 0);
+        
+        // Get count of departure delay data (lightweight query with limit for display)
+        if ($showDeparture) {
+            // When showing data, get exact count
+            $departureDelayCount = Lhgk::whereRaw("GERAKAN = 'DEPARTURE'")
+                ->whereNotNull('INVOICE_DATE')
+                ->whereNotNull('SELESAI_PELAKSANAAN')
+                ->where('INVOICE_DATE', '!=', '')
+                ->where('SELESAI_PELAKSANAAN', '!=', '')
+                ->whereRaw('DATEDIFF(STR_TO_DATE(INVOICE_DATE, "%d-%m-%Y"), STR_TO_DATE(SELESAI_PELAKSANAAN, "%d-%m-%Y")) > 2')
+                ->where('PERIODE', $selectedPeriode)
+                ->where('NM_BRANCH', $selectedBranch)
+                ->count();
+        } else {
+            // When not showing, just check if any exists (faster)
+            $departureDelayCount = Lhgk::whereRaw("GERAKAN = 'DEPARTURE'")
+                ->whereNotNull('INVOICE_DATE')
+                ->whereNotNull('SELESAI_PELAKSANAAN')
+                ->where('INVOICE_DATE', '!=', '')
+                ->where('SELESAI_PELAKSANAAN', '!=', '')
+                ->whereRaw('DATEDIFF(STR_TO_DATE(INVOICE_DATE, "%d-%m-%Y"), STR_TO_DATE(SELESAI_PELAKSANAAN, "%d-%m-%Y")) > 2')
+                ->where('PERIODE', $selectedPeriode)
+                ->where('NM_BRANCH', $selectedBranch)
+                ->limit(1)
+                ->count();
+        }
+
+        // Load actual departure delay data only if requested
+        $departureDelayData = null;
+        if ($showDeparture && $departureDelayCount > 0) {
+            $departureDelayData = Lhgk::select(
+                    'NO_UKK',
+                    'NM_KAPAL',
+                    'NM_PERS_PANDU',
+                    'NM_BRANCH',
+                    'GERAKAN',
+                    'SELESAI_PELAKSANAAN',
+                    'INVOICE_DATE',
+                    'PENDAPATAN_PANDU',
+                    'PENDAPATAN_TUNDA'
+                )
+                ->selectRaw('DATEDIFF(STR_TO_DATE(INVOICE_DATE, "%d-%m-%Y"), STR_TO_DATE(SELESAI_PELAKSANAAN, "%d-%m-%Y")) as selisih_hari')
+                ->whereRaw("GERAKAN = 'DEPARTURE'")
+                ->whereNotNull('INVOICE_DATE')
+                ->whereNotNull('SELESAI_PELAKSANAAN')
+                ->where('INVOICE_DATE', '!=', '')
+                ->where('SELESAI_PELAKSANAAN', '!=', '')
+                ->whereRaw('DATEDIFF(STR_TO_DATE(INVOICE_DATE, "%d-%m-%Y"), STR_TO_DATE(SELESAI_PELAKSANAAN, "%d-%m-%Y")) > 2')
+                ->where('PERIODE', $selectedPeriode)
+                ->where('NM_BRANCH', $selectedBranch)
+                ->orderByRaw('DATEDIFF(STR_TO_DATE(INVOICE_DATE, "%d-%m-%Y"), STR_TO_DATE(SELESAI_PELAKSANAAN, "%d-%m-%Y")) DESC')
+                ->paginate(10)
+                ->appends(['periode' => $selectedPeriode, 'cabang' => $selectedBranch, 'show_departure' => 1]);
+        }
+
+        return view('dashboard', compact('statistics', 'totalOverall', 'periods', 'selectedPeriode', 'regionalGroups', 'allBranches', 'selectedBranch', 'topPilot', 'shipStatsByGT', 'showDeparture', 'departureDelayCount', 'departureDelayData'));
+    }
+
+    public function exportDepartureDelay(Request $request)
+    {
+        $selectedPeriode = $request->get('periode');
+        $selectedBranch = $request->get('cabang');
+
+        if (!$selectedPeriode || !$selectedBranch) {
+            return redirect()->back()->with('error', 'Pilih periode dan cabang terlebih dahulu');
+        }
+
+        // Get all departure delay data for export
+        $departureDelayData = Lhgk::select(
+                'NO_UKK',
+                'NM_KAPAL',
+                'NM_PERS_PANDU',
+                'NM_BRANCH',
+                'GERAKAN',
+                'SELESAI_PELAKSANAAN',
+                'INVOICE_DATE',
+                'PENDAPATAN_PANDU',
+                'PENDAPATAN_TUNDA'
+            )
+            ->selectRaw('DATEDIFF(STR_TO_DATE(INVOICE_DATE, "%d-%m-%Y"), STR_TO_DATE(SELESAI_PELAKSANAAN, "%d-%m-%Y")) as selisih_hari')
+            ->whereRaw("GERAKAN = 'DEPARTURE'")
+            ->whereNotNull('INVOICE_DATE')
+            ->whereNotNull('SELESAI_PELAKSANAAN')
+            ->where('INVOICE_DATE', '!=', '')
+            ->where('SELESAI_PELAKSANAAN', '!=', '')
+            ->whereRaw('DATEDIFF(STR_TO_DATE(INVOICE_DATE, "%d-%m-%Y"), STR_TO_DATE(SELESAI_PELAKSANAAN, "%d-%m-%Y")) > 2')
+            ->where('PERIODE', $selectedPeriode)
+            ->where('NM_BRANCH', $selectedBranch)
+            ->orderByRaw('DATEDIFF(STR_TO_DATE(INVOICE_DATE, "%d-%m-%Y"), STR_TO_DATE(SELESAI_PELAKSANAAN, "%d-%m-%Y")) DESC')
+            ->get();
+
+        if ($departureDelayData->isEmpty()) {
+            return redirect()->back()->with('error', 'Tidak ada data keterlambatan invoice untuk periode dan cabang yang dipilih');
+        }
+
+        // Generate CSV file
+        $filename = 'Keterlambatan_Invoice_Departure_' . str_replace(' ', '_', $selectedBranch) . '_' . str_replace('-', '', $selectedPeriode) . '_' . date('YmdHis') . '.csv';
+        
+        $headers = [
+            'Content-Type' => 'text/csv; charset=UTF-8',
+            'Content-Disposition' => 'attachment; filename="' . $filename . '"',
+            'Pragma' => 'no-cache',
+            'Cache-Control' => 'must-revalidate, post-check=0, pre-check=0',
+            'Expires' => '0'
+        ];
+
+        $callback = function() use ($departureDelayData) {
+            $file = fopen('php://output', 'w');
+            
+            // Add BOM for UTF-8
+            fprintf($file, chr(0xEF).chr(0xBB).chr(0xBF));
+            
+            // Header
+            fputcsv($file, [
+                'No',
+                'No. UKK',
+                'Nama Kapal',
+                'Nama Pandu',
+                'Cabang',
+                'Gerakan',
+                'Selesai Pelaksanaan',
+                'Invoice Date',
+                'Selisih (Hari)',
+                'Pendapatan Pandu',
+                'Pendapatan Tunda',
+                'Total Pendapatan'
+            ]);
+
+            // Data
+            $no = 1;
+            foreach ($departureDelayData as $data) {
+                fputcsv($file, [
+                    $no++,
+                    $data->NO_UKK,
+                    $data->NM_KAPAL,
+                    $data->NM_PERS_PANDU,
+                    $data->NM_BRANCH,
+                    strtoupper($data->GERAKAN),
+                    $data->SELESAI_PELAKSANAAN,
+                    $data->INVOICE_DATE,
+                    $data->selisih_hari . ' hari',
+                    number_format($data->PENDAPATAN_PANDU, 0, ',', '.'),
+                    number_format($data->PENDAPATAN_TUNDA, 0, ',', '.'),
+                    number_format($data->PENDAPATAN_PANDU + $data->PENDAPATAN_TUNDA, 0, ',', '.')
+                ]);
+            }
+
+            // Summary
+            fputcsv($file, []);
+            fputcsv($file, [
+                '',
+                '',
+                '',
+                '',
+                '',
+                '',
+                '',
+                '',
+                'TOTAL:',
+                number_format($departureDelayData->sum('PENDAPATAN_PANDU'), 0, ',', '.'),
+                number_format($departureDelayData->sum('PENDAPATAN_TUNDA'), 0, ',', '.'),
+                number_format($departureDelayData->sum('PENDAPATAN_PANDU') + $departureDelayData->sum('PENDAPATAN_TUNDA'), 0, ',', '.')
+            ]);
+
+            fclose($file);
+        };
+
+        return response()->stream($callback, 200, $headers);
     }
 
     public function analisisKelelahan(Request $request)

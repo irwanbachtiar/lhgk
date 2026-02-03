@@ -10,10 +10,11 @@ use App\Http\Controllers\NotaController;
 use App\Http\Controllers\RegionalController;
 use App\Models\Lhgk;
 
-Route::get('/', [DashboardWilayahController::class, 'index'])->name('dashboard.wilayah');
-Route::get('/dashboard-lhgk', [DashboardController::class, 'index'])->name('dashboard');
+Route::get('/', [DashboardController::class, 'index'])->name('dashboard');
+Route::get('/dashboard-wilayah', [DashboardWilayahController::class, 'index'])->name('dashboard.wilayah');
 Route::get('/analisis-kelelahan', [DashboardController::class, 'analisisKelelahan'])->name('analisis.kelelahan');
 Route::post('/upload-csv', [DashboardController::class, 'uploadCsv'])->name('upload.csv');
+Route::get('/export-departure-delay', [DashboardController::class, 'exportDepartureDelay'])->name('export.departure.delay');
 
 // Monitoring Nota routes
 Route::get('/monitoring-nota', [NotaController::class, 'index'])->name('monitoring.nota');
