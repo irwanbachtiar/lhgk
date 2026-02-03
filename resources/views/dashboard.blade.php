@@ -160,7 +160,7 @@
         <!-- Overall Statistics -->
         <div class="row mb-4">
             <div class="col-md-2">
-                <div class="card stat-card bg-white">
+                <div class="card stat-card bg-white" style="border-left: 4px solid #667eea;">
                     <div class="card-body text-center">
                         <div class="mb-2">
                             <i class="bi bi-person-badge fs-1" style="color: #667eea;"></i>
@@ -171,7 +171,7 @@
                 </div>
             </div>
             <div class="col-md-2">
-                <div class="card stat-card bg-white">
+                <div class="card stat-card bg-white" style="border-left: 4px solid #f093fb;">
                     <div class="card-body text-center">
                         <div class="mb-2">
                             <i class="bi bi-receipt fs-1" style="color: #f093fb;"></i>
@@ -182,7 +182,7 @@
                 </div>
             </div>
             <div class="col-md-3">
-                <div class="card stat-card bg-white">
+                <div class="card stat-card bg-white" style="border-left: 4px solid #667eea;">
                     <div class="card-body text-center">
                         <div class="mb-2">
                             <i class="bi bi-cash-coin fs-1" style="color: #667eea;"></i>
@@ -193,7 +193,7 @@
                 </div>
             </div>
             <div class="col-md-3">
-                <div class="card stat-card bg-white">
+                <div class="card stat-card bg-white" style="border-left: 4px solid #f093fb;">
                     <div class="card-body text-center">
                         <div class="mb-2">
                             <i class="bi bi-water fs-1" style="color: #f093fb;"></i>
@@ -204,7 +204,7 @@
                 </div>
             </div>
             <div class="col-md-2">
-                <div class="card stat-card bg-white">
+                <div class="card stat-card bg-white" style="border-left: 4px solid #10b981;">
                     <div class="card-body text-center">
                         <div class="mb-2">
                             <i class="bi bi-graph-up-arrow fs-1" style="color: #10b981;"></i>
@@ -219,7 +219,7 @@
         <!-- WT Statistics Row -->
         <div class="row mb-4">
             <div class="col-md-4">
-                <div class="card stat-card bg-white">
+                <div class="card stat-card bg-white" style="border-left: 4px solid #f59e0b;">
                     <div class="card-body text-center">
                         <div class="mb-2">
                             <i class="bi bi-clock fs-1" style="color: #f59e0b;"></i>
@@ -230,7 +230,7 @@
                 </div>
             </div>
             <div class="col-md-4">
-                <div class="card stat-card bg-white">
+                <div class="card stat-card bg-white" style="border-left: 4px solid #3b82f6;">
                     <div class="card-body text-center">
                         <div class="mb-2">
                             <i class="bi bi-clock-history fs-1" style="color: #3b82f6;"></i>
@@ -241,7 +241,7 @@
                 </div>
             </div>
             <div class="col-md-4">
-                <div class="card stat-card bg-white">
+                <div class="card stat-card bg-white" style="border-left: 4px solid #ef4444;">
                     <div class="card-body text-center">
                         <div class="mb-2">
                             <i class="bi bi-exclamation-triangle fs-1" style="color: #ef4444;"></i>
