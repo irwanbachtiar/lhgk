@@ -5,13 +5,11 @@ use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Artisan;
 use App\Http\Controllers\DashboardController;
-use App\Http\Controllers\DashboardWilayahController;
 use App\Http\Controllers\NotaController;
 use App\Http\Controllers\RegionalController;
 use App\Models\Lhgk;
 
 Route::get('/', [DashboardController::class, 'index'])->name('dashboard');
-Route::get('/dashboard-wilayah', [DashboardWilayahController::class, 'index'])->name('dashboard.wilayah');
 Route::get('/analisis-kelelahan', [DashboardController::class, 'analisisKelelahan'])->name('analisis.kelelahan');
 Route::post('/upload-csv', [DashboardController::class, 'uploadCsv'])->name('upload.csv');
 Route::get('/export-departure-delay', [DashboardController::class, 'exportDepartureDelay'])->name('export.departure.delay');

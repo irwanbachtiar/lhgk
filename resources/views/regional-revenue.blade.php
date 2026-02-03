@@ -94,6 +94,9 @@
         @else
             <!-- Summary Cards -->
             <div class="row mb-4">
+                <div class="col-12 mb-2">
+                    <h5 class="text-muted"><i class="bi bi-bar-chart"></i> Summary Pelindo dan SPJM</h5>
+                </div>
                 @php
                     // Use controller-provided totals for WILAYAH only (excluding JAI)
                     $totalTunda = $totalTundaRevenue ?? 0;
@@ -136,7 +139,7 @@
             <!-- JAI Summary Cards -->
             <div class="row mb-4">
                 <div class="col-12 mb-2">
-                    <h5 class="text-muted"><i class="bi bi-building"></i> Summary Kelompok JAI</h5>
+                    <h5 class="text-muted"><i class="bi bi-building"></i> Summary JAI</h5>
                 </div>
                 @php
                     $jaiTotalAll = ($jaiTotalPandu ?? 0) + ($jaiTotalTunda ?? 0);
