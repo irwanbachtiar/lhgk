@@ -160,50 +160,68 @@
         <!-- Overall Statistics -->
         <div class="row mb-4">
             <div class="col-md-2">
-                <div class="card stat-card pilot-card">
+                <div class="card stat-card bg-white">
                     <div class="card-body text-center">
-                        <h3>{{ $totalOverall['total_pandu'] }}</h3>
-                        <p class="mb-0">Total Pandu</p>
+                        <div class="mb-2">
+                            <i class="bi bi-person-badge fs-1" style="color: #667eea;"></i>
+                        </div>
+                        <h3 class="text-dark mb-1">{{ $totalOverall['total_pandu'] }}</h3>
+                        <p class="mb-0 text-muted small">Total Pandu</p>
                     </div>
                 </div>
             </div>
             <div class="col-md-2">
-                <div class="card stat-card tunda-card">
+                <div class="card stat-card bg-white">
                     <div class="card-body text-center">
-                        <h3>{{ number_format($totalOverall['total_transaksi']) }}</h3>
-                        <p class="mb-0">Total Transaksi</p>
+                        <div class="mb-2">
+                            <i class="bi bi-receipt fs-1" style="color: #f093fb;"></i>
+                        </div>
+                        <h3 class="text-dark mb-1">{{ number_format($totalOverall['total_transaksi']) }}</h3>
+                        <p class="mb-0 text-muted small">Total Transaksi</p>
                     </div>
                 </div>
             </div>
             <div class="col-md-2">
-                <div class="card stat-card pilot-card">
+                <div class="card stat-card bg-white">
                     <div class="card-body text-center">
-                        <h3>Rp {{ number_format($totalOverall['total_pendapatan_pandu'], 0, ',', '.') }}</h3>
-                        <p class="mb-0">Total Pendapatan Pandu</p>
+                        <div class="mb-2">
+                            <i class="bi bi-cash-coin fs-1" style="color: #667eea;"></i>
+                        </div>
+                        <h4 class="text-dark mb-1">Rp {{ number_format($totalOverall['total_pendapatan_pandu'], 0, ',', '.') }}</h4>
+                        <p class="mb-0 text-muted small">Total Pendapatan Pandu</p>
                     </div>
                 </div>
             </div>
             <div class="col-md-2">
-                <div class="card stat-card tunda-card">
+                <div class="card stat-card bg-white">
                     <div class="card-body text-center">
-                        <h3>Rp {{ number_format($totalOverall['total_pendapatan_tunda'], 0, ',', '.') }}</h3>
-                        <p class="mb-0">Total Pendapatan Tunda</p>
+                        <div class="mb-2">
+                            <i class="bi bi-water fs-1" style="color: #f093fb;"></i>
+                        </div>
+                        <h4 class="text-dark mb-1">Rp {{ number_format($totalOverall['total_pendapatan_tunda'], 0, ',', '.') }}</h4>
+                        <p class="mb-0 text-muted small">Total Pendapatan Tunda</p>
                     </div>
                 </div>
             </div>
             <div class="col-md-2">
-                <div class="card stat-card" style="background: linear-gradient(135deg, #e0f2f1 0%, #b2dfdb 100%); color: #00796b;">
+                <div class="card stat-card bg-white">
                     <div class="card-body text-center">
-                        <h3>Rp {{ number_format($totalOverall['total_pendapatan_pandu'] + $totalOverall['total_pendapatan_tunda'], 0, ',', '.') }}</h3>
-                        <p class="mb-0">Total Pendapatan</p>
+                        <div class="mb-2">
+                            <i class="bi bi-graph-up-arrow fs-1" style="color: #10b981;"></i>
+                        </div>
+                        <h4 class="text-dark mb-1">Rp {{ number_format($totalOverall['total_pendapatan_pandu'] + $totalOverall['total_pendapatan_tunda'], 0, ',', '.') }}</h4>
+                        <p class="mb-0 text-muted small">Total Pendapatan</p>
                     </div>
                 </div>
             </div>
             <div class="col-md-2">
-                <div class="card stat-card" style="background: linear-gradient(135deg, #fff8e1 0%, #ffecb3 100%); color: #f57f17;">
+                <div class="card stat-card bg-white">
                     <div class="card-body text-center">
-                        <h3>{{ $totalOverall['transaksi_wt_di_atas_30'] }}</h3>
-                        <p class="mb-0"><i class="bi bi-clock"></i> WT > 00:30</p>
+                        <div class="mb-2">
+                            <i class="bi bi-clock fs-1" style="color: #f59e0b;"></i>
+                        </div>
+                        <h3 class="text-dark mb-1">{{ $totalOverall['transaksi_wt_di_atas_30'] }}</h3>
+                        <p class="mb-0 text-muted small">WT > 00:30</p>
                     </div>
                 </div>
             </div>
@@ -212,18 +230,24 @@
         <!-- WT Statistics Row -->
         <div class="row mb-4">
             <div class="col-md-6">
-                <div class="card stat-card" style="background: linear-gradient(135deg, #e3f2fd 0%, #bbdefb 100%); color: #1565c0;">
+                <div class="card stat-card bg-white">
                     <div class="card-body text-center">
-                        <h3>{{ number_format((float)($totalOverall['rata_rata_wt'] ?? 0), 2) }}</h3>
-                        <p class="mb-0"><i class="bi bi-clock-history"></i> Rata-Rata WT</p>
+                        <div class="mb-2">
+                            <i class="bi bi-clock-history fs-1" style="color: #3b82f6;"></i>
+                        </div>
+                        <h3 class="text-dark mb-1">{{ number_format((float)($totalOverall['rata_rata_wt'] ?? 0), 2) }}</h3>
+                        <p class="mb-0 text-muted">Rata-Rata WT</p>
                     </div>
                 </div>
             </div>
             <div class="col-md-6">
-                <div class="card stat-card" style="background: linear-gradient(135deg, #ffebee 0%, #ffcdd2 100%); color: #c62828;">
+                <div class="card stat-card bg-white">
                     <div class="card-body text-center">
-                        <h3>{{ number_format((float)($totalOverall['max_wt'] ?? 0), 2) }}</h3>
-                        <p class="mb-0"><i class="bi bi-exclamation-triangle"></i> Maksimal WT</p>
+                        <div class="mb-2">
+                            <i class="bi bi-exclamation-triangle fs-1" style="color: #ef4444;"></i>
+                        </div>
+                        <h3 class="text-dark mb-1">{{ number_format((float)($totalOverall['max_wt'] ?? 0), 2) }}</h3>
+                        <p class="mb-0 text-muted">Maksimal WT</p>
                     </div>
                 </div>
             </div>
@@ -233,31 +257,31 @@
         @if($topPilot)
         <div class="row mb-4">
             <div class="col-12">
-                <div class="card stat-card" style="background: linear-gradient(135deg, #fff3e0 0%, #ffe0b2 100%); color: #e65100; border-left: 4px solid #ff9800;">
+                <div class="card stat-card bg-white" style="border-left: 4px solid #f59e0b;">
                     <div class="card-body">
                         <div class="row align-items-center">
                             <div class="col-md-2">
-                                <h5 class="mb-0"><i class="bi bi-trophy-fill"></i> Pilot Produksi Tertinggi</h5>
+                                <h5 class="mb-0 text-dark"><i class="bi bi-trophy-fill text-warning"></i> Pilot Produksi Tertinggi</h5>
                             </div>
                             <div class="col-md-2">
-                                <h4 class="mb-0">{{ $topPilot->NM_PERS_PANDU }}</h4>
-                                <small>{{ $topPilot->NM_BRANCH }}</small>
+                                <h4 class="mb-0 text-dark">{{ $topPilot->NM_PERS_PANDU }}</h4>
+                                <small class="text-muted">{{ $topPilot->NM_BRANCH }}</small>
                             </div>
                             <div class="col-md-2 text-center">
-                                <h4 class="mb-0">{{ number_format($topPilot->total_produksi) }}</h4>
-                                <small>Total Produksi</small>
+                                <h4 class="mb-0 text-dark">{{ number_format($topPilot->total_produksi) }}</h4>
+                                <small class="text-muted">Total Produksi</small>
                             </div>
                             <div class="col-md-2 text-center">
-                                <h5 class="mb-0">{{ number_format($topPilot->rata_rata_wt, 2) }}</h5>
-                                <small>Rata-Rata WT</small>
+                                <h5 class="mb-0 text-dark">{{ number_format($topPilot->rata_rata_wt, 2) }}</h5>
+                                <small class="text-muted">Rata-Rata WT</small>
                             </div>
                             <div class="col-md-2 text-center">
-                                <h5 class="mb-0">Rp {{ number_format($topPilot->total_pendapatan_pandu, 0, ',', '.') }}</h5>
-                                <small>Pendapatan Pandu</small>
+                                <h5 class="mb-0 text-dark">Rp {{ number_format($topPilot->total_pendapatan_pandu, 0, ',', '.') }}</h5>
+                                <small class="text-muted">Pendapatan Pandu</small>
                             </div>
                             <div class="col-md-2 text-center">
-                                <h5 class="mb-0">Rp {{ number_format($topPilot->total_pendapatan, 0, ',', '.') }}</h5>
-                                <small>Total Pendapatan</small>
+                                <h5 class="mb-0 text-dark">Rp {{ number_format($topPilot->total_pendapatan, 0, ',', '.') }}</h5>
+                                <small class="text-muted">Total Pendapatan</small>
                             </div>
                         </div>
                     </div>
