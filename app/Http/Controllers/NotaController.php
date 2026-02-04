@@ -119,6 +119,9 @@ class NotaController extends Controller
         $totalNota = 0;
         $totalPendapatanPandu = 0;
         $totalPendapatanTunda = 0;
+        $totalNotaBatal = 0;
+        $totalPendapatanPanduBatal = 0;
+        $totalPendapatanTundaBatal = 0;
         $revenuePerPandu = collect();
         $revenuePerTunda = collect();
         
@@ -160,6 +163,41 @@ class NotaController extends Controller
             
             // Get total tunda revenue - sum directly from REVENUE column (including duplicates)
             $totalPendapatanTunda = DB::connection('dashboard_phinnisi')->table('tunda_prod')
+                ->when($selectedPeriode != 'all', function($q) use ($selectedPeriode) {
+                    return $q->whereRaw('DATE_FORMAT(STR_TO_DATE(INVOICE_DATE, \'%d-%m-%Y\'), \'%m-%Y\') = ?', [$selectedPeriode]);
+                })
+                ->when($selectedBranch != 'all', function($q) use ($selectedBranch) {
+                    return $q->where('NAME_BRANCH', $selectedBranch);
+                })
+                ->sum('REVENUE');
+            
+            // Get cancelled invoices (Nota Batal) - BILLING starting with "HIS"
+            // Count distinct BILLING from pandu_prod only
+            $totalNotaBatal = DB::connection('dashboard_phinnisi')->table('pandu_prod')
+                ->where('BILLING', 'LIKE', 'HIS%')
+                ->when($selectedPeriode != 'all', function($q) use ($selectedPeriode) {
+                    return $q->whereRaw('DATE_FORMAT(STR_TO_DATE(INVOICE_DATE, \'%d-%m-%Y\'), \'%m-%Y\') = ?', [$selectedPeriode]);
+                })
+                ->when($selectedBranch != 'all', function($q) use ($selectedBranch) {
+                    return $q->where('NAME_BRANCH', $selectedBranch);
+                })
+                ->distinct()
+                ->count('BILLING');
+            
+            // Get total revenue from cancelled invoices (Pandu)
+            $totalPendapatanPanduBatal = DB::connection('dashboard_phinnisi')->table('pandu_prod')
+                ->where('BILLING', 'LIKE', 'HIS%')
+                ->when($selectedPeriode != 'all', function($q) use ($selectedPeriode) {
+                    return $q->whereRaw('DATE_FORMAT(STR_TO_DATE(INVOICE_DATE, \'%d-%m-%Y\'), \'%m-%Y\') = ?', [$selectedPeriode]);
+                })
+                ->when($selectedBranch != 'all', function($q) use ($selectedBranch) {
+                    return $q->where('NAME_BRANCH', $selectedBranch);
+                })
+                ->sum('REVENUE');
+            
+            // Get total revenue from cancelled invoices (Tunda)
+            $totalPendapatanTundaBatal = DB::connection('dashboard_phinnisi')->table('tunda_prod')
+                ->where('BILLING', 'LIKE', 'HIS%')
                 ->when($selectedPeriode != 'all', function($q) use ($selectedPeriode) {
                     return $q->whereRaw('DATE_FORMAT(STR_TO_DATE(INVOICE_DATE, \'%d-%m-%Y\'), \'%m-%Y\') = ?', [$selectedPeriode]);
                 })
@@ -259,6 +297,9 @@ class NotaController extends Controller
             'totalNota',
             'totalPendapatanPandu',
             'totalPendapatanTunda',
+            'totalNotaBatal',
+            'totalPendapatanPanduBatal',
+            'totalPendapatanTundaBatal',
             'revenuePerPandu',
             'revenuePerTunda',
             'topShippingAgents'

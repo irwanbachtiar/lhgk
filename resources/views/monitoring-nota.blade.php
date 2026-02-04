@@ -157,6 +157,43 @@
         </div>
 
         @if($selectedPeriode != 'all' || $selectedBranch != 'all')
+        <!-- Nota Batal Section -->
+        <div class="row mb-4">
+            <div class="col-md-4">
+                <div class="card stat-card border-danger">
+                    <div class="card-body text-center">
+                        <h3 class="text-danger">{{ number_format($totalNotaBatal) }}</h3>
+                        <p class="mb-0"><i class="bi bi-x-circle"></i> Jumlah Nota Batal</p>
+                        <small class="text-muted">Billing dengan prefix "HIS"</small>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="card stat-card border-danger">
+                    <div class="card-body text-center">
+                        <h3 class="text-danger">Rp {{ number_format($totalPendapatanPanduBatal, 0, ',', '.') }}</h3>
+                        <p class="mb-0"><i class="bi bi-cash-coin"></i> Nilai Nota Batal Pandu</p>
+                        @if($totalNotaBatal > 0)
+                            <small class="text-muted">{{ number_format(($totalPendapatanPanduBatal / ($totalPendapatanPandu + $totalPendapatanPanduBatal)) * 100, 2) }}% dari total</small>
+                        @endif
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="card stat-card border-danger">
+                    <div class="card-body text-center">
+                        <h3 class="text-danger">Rp {{ number_format($totalPendapatanTundaBatal, 0, ',', '.') }}</h3>
+                        <p class="mb-0"><i class="bi bi-cash-stack"></i> Nilai Nota Batal Tunda</p>
+                        @if($totalNotaBatal > 0)
+                            <small class="text-muted">{{ number_format(($totalPendapatanTundaBatal / ($totalPendapatanTunda + $totalPendapatanTundaBatal)) * 100, 2) }}% dari total</small>
+                        @endif
+                    </div>
+                </div>
+            </div>
+        </div>
+        @endif
+
+        @if($selectedPeriode != 'all' || $selectedBranch != 'all')
         <!-- Charts Section -->
         <div class="row mb-4">
             <div class="col-md-6">

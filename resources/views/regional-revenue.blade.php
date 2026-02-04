@@ -182,7 +182,7 @@
             @if(!empty($delegationData))
             <div class="row mb-4">
                 <div class="col-12 mb-2">
-                    <h5 class="text-muted"><i class="bi bi-diagram-3"></i> Summary Per Delegation (Wilayah 1-4)</h5>
+                    <h5 class="text-muted"><i class="bi bi-diagram-3"></i> Summary Per Pelimpahan (Wilayah 1-4)</h5>
                 </div>
                 @foreach(['PELINDO', 'SPJM'] as $delegation)
                     @php
