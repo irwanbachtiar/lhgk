@@ -18,6 +18,8 @@ Route::get('/export-departure-delay', [DashboardController::class, 'exportDepart
 Route::get('/monitoring-nota', [NotaController::class, 'index'])->name('monitoring.nota');
 Route::post('/upload-nota-csv', [NotaController::class, 'uploadCsv'])->name('upload.nota.csv');
 Route::post('/upload-tunda-csv', [NotaController::class, 'uploadTundaCsv'])->name('upload.tunda.csv');
+Route::get('/get-nota-batal-data', [NotaController::class, 'getNotaBatalData'])->name('get.nota.batal.data');
+Route::get('/export-nota-batal', [NotaController::class, 'exportNotaBatal'])->name('export.nota.batal');
 
 // Regional Revenue routes
 Route::get('/regional-revenue', [RegionalController::class, 'index'])->name('regional.revenue');

@@ -22,7 +22,14 @@ class DashboardController extends Controller
                 'REGIONAL 1 MALAHAYATI',
                 'REGIONAL 1 SIBOLGA',
                 'REGIONAL 1 TANJUNG PINANG',
-                'REGIONAL 1 DUMAI'
+                'REGIONAL 1 DUMAI',
+                'REGIONAL 1 SELAT MALAKA',
+                'REGIONAL 1 KUALA TANJUNG',
+                'REGIONAL 1 BENGKALIS',
+                'REGIONAL 1 TANJUNG BALAI ASAHAN',
+                'REGIONAL 1 SELAT PANJANG',
+                'REGIONAL 1 KUALA CINAKU',
+                'REGIONAL 1 GUNUNGSITOLI'
             ],
             'WILAYAH 2' => [
                 'REGIONAL 2 BANTEN',
@@ -35,7 +42,8 @@ class DashboardController extends Controller
                 'REGIONAL 2 PANGKAL BALAM',
                 'REGIONAL 2 PONTIANAK',
                 'REGIONAL 2 PANJANG',
-                'REGIONAL 2 BENGKULU'
+                'REGIONAL 2 BENGKULU',
+                'REGIONAL 2 SUNDA KELAPA'
             ],
             'WILAYAH 3' => [
                 'REGIONAL 3 BATANG',
@@ -53,7 +61,18 @@ class DashboardController extends Controller
                 'REGIONAL 3 TENAU KUPANG',
                 'REGIONAL 3 TANJUNG WANGI',
                 'REGIONAL 3 TANJUNG PERAK',
-                'REGIONAL 3 TANJUNG EMAS'
+                'REGIONAL 3 TANJUNG EMAS',
+                'REGIONAL 3 BIMA',
+                'REGIONAL 3 BADAS',
+                'REGIONAL 3 PULANG PISAU',
+                'REGIONAL 3 PROBOLINGGO',
+                'REGIONAL 3 LABUAN BAJO',
+                'REGIONAL 3 KALABAHI',
+                'REGIONAL 3 TEGAL',
+                'REGIONAL 3 ENDE',
+                'REGIONAL 3 MAUMERE',
+                'REGIONAL 3 WAINGAPU',
+                'REGIONAL 3 KALIANGET'
             ],
             'WILAYAH 4' => [
                 'REGIONAL 4 AMAMAPARE',
@@ -84,13 +103,15 @@ class DashboardController extends Controller
                 'REGIONAL 4 TARAKAN',
                 'REGIONAL 4 SAMARINDA',
                 'REGIONAL 4 KENDARI',
-                'REGIONAL 4 MAKASSAR'
+                'REGIONAL 4 MAKASSAR',
+                'REGIONAL 4 BULA',
+                'REGIONAL 4 MANADO'
             ],
             'JAI' => [
                 'JAI AREA IV STS MUSI',
                 'JAI BAYAH',
                 'JAI LAIWUI',
-                'JAI NUSANTARA REGAS',
+                'REGIONAL 4 NUSANTARA REGAS',
                 'JAI PATIMBAN',
                 'KANCI I',
                 'KANCI II'

@@ -22,7 +22,14 @@ class NotaController extends Controller
                 'REGIONAL 1 MALAHAYATI',
                 'REGIONAL 1 SIBOLGA',
                 'REGIONAL 1 TANJUNG PINANG',
-                'REGIONAL 1 DUMAI'
+                'REGIONAL 1 DUMAI',
+                'REGIONAL 1 SELAT MALAKA',
+                'REGIONAL 1 KUALA TANJUNG',
+                'REGIONAL 1 BENGKALIS',
+                'REGIONAL 1 TANJUNG BALAI ASAHAN',
+                'REGIONAL 1 SELAT PANJANG',
+                'REGIONAL 1 KUALA CINAKU',
+                'REGIONAL 1 GUNUNGSITOLI'
             ],
             'WILAYAH 2' => [
                 'REGIONAL 2 BANTEN',
@@ -35,7 +42,8 @@ class NotaController extends Controller
                 'REGIONAL 2 PANGKAL BALAM',
                 'REGIONAL 2 PONTIANAK',
                 'REGIONAL 2 PANJANG',
-                'REGIONAL 2 BENGKULU'
+                'REGIONAL 2 BENGKULU',
+                'REGIONAL 2 SUNDA KELAPA'
             ],
             'WILAYAH 3' => [
                 'REGIONAL 3 BATANG',
@@ -53,7 +61,18 @@ class NotaController extends Controller
                 'REGIONAL 3 TENAU KUPANG',
                 'REGIONAL 3 TANJUNG WANGI',
                 'REGIONAL 3 TANJUNG PERAK',
-                'REGIONAL 3 TANJUNG EMAS'
+                'REGIONAL 3 TANJUNG EMAS',
+                'REGIONAL 3 BIMA',
+                'REGIONAL 3 BADAS',
+                'REGIONAL 3 PULANG PISAU',
+                'REGIONAL 3 PROBOLINGGO',
+                'REGIONAL 3 LABUAN BAJO',
+                'REGIONAL 3 KALABAHI',
+                'REGIONAL 3 TEGAL',
+                'REGIONAL 3 ENDE',
+                'REGIONAL 3 MAUMERE',
+                'REGIONAL 3 WAINGAPU',
+                'REGIONAL 3 KALIANGET'
             ],
             'WILAYAH 4' => [
                 'REGIONAL 4 AMAMAPARE',
@@ -84,13 +103,15 @@ class NotaController extends Controller
                 'REGIONAL 4 TARAKAN',
                 'REGIONAL 4 SAMARINDA',
                 'REGIONAL 4 KENDARI',
-                'REGIONAL 4 MAKASSAR'
+                'REGIONAL 4 MAKASSAR',
+                'REGIONAL 4 BULA',
+                'REGIONAL 4 MANADO'
             ],
             'JAI' => [
                 'JAI AREA IV STS MUSI',
                 'JAI BAYAH',
                 'JAI LAIWUI',
-                'JAI NUSANTARA REGAS',
+                'REGIONAL 4 NUSANTARA REGAS',
                 'JAI PATIMBAN',
                 'KANCI I',
                 'KANCI II'
@@ -647,5 +668,234 @@ class NotaController extends Controller
             DB::connection()->enableQueryLog();
             return redirect()->back()->withErrors(['tunda_csv_file' => 'Import gagal: ' . $e->getMessage()]);
         }
+    }
+
+    public function getNotaBatalData(Request $request)
+    {
+        $selectedPeriode = $request->get('periode', 'all');
+        $selectedBranch = $request->get('cabang', 'all');
+
+        // Query pandu_prod
+        $panduQuery = DB::connection('dashboard_phinnisi')
+            ->table('pandu_prod')
+            ->select(
+                'BILLING',
+                'INVOICE',
+                'INVOICE_DATE',
+                'NO_PKK',
+                'VESSEL_NAME',
+                'SHIPPING_AGENT',
+                'FLAG',
+                'DELEGATION',
+                DB::raw('SUM(REVENUE) as REVENUE_PANDU'),
+                DB::raw('0 as REVENUE_TUNDA')
+            )
+            ->where('BILLING', 'LIKE', 'HIS%')
+            ->when($selectedPeriode != 'all', function($q) use ($selectedPeriode) {
+                return $q->whereRaw('DATE_FORMAT(STR_TO_DATE(INVOICE_DATE, \'%d-%m-%Y\'), \'%m-%Y\') = ?', [$selectedPeriode]);
+            })
+            ->when($selectedBranch != 'all', function($q) use ($selectedBranch) {
+                return $q->where('NAME_BRANCH', $selectedBranch);
+            })
+            ->groupBy('BILLING', 'INVOICE', 'INVOICE_DATE', 'NO_PKK', 'VESSEL_NAME', 'SHIPPING_AGENT', 'FLAG', 'DELEGATION');
+
+        // Query tunda_prod
+        $tundaQuery = DB::connection('dashboard_phinnisi')
+            ->table('tunda_prod')
+            ->select(
+                'BILLING',
+                'INVOICE',
+                'INVOICE_DATE',
+                'NO_PKK',
+                'VESSEL_NAME',
+                'SHIPPING_AGENT',
+                'FLAG',
+                'DELEGATION',
+                DB::raw('0 as REVENUE_PANDU'),
+                DB::raw('SUM(REVENUE) as REVENUE_TUNDA')
+            )
+            ->where('BILLING', 'LIKE', 'HIS%')
+            ->when($selectedPeriode != 'all', function($q) use ($selectedPeriode) {
+                return $q->whereRaw('DATE_FORMAT(STR_TO_DATE(INVOICE_DATE, \'%d-%m-%Y\'), \'%m-%Y\') = ?', [$selectedPeriode]);
+            })
+            ->when($selectedBranch != 'all', function($q) use ($selectedBranch) {
+                return $q->where('NAME_BRANCH', $selectedBranch);
+            })
+            ->groupBy('BILLING', 'INVOICE', 'INVOICE_DATE', 'NO_PKK', 'VESSEL_NAME', 'SHIPPING_AGENT', 'FLAG', 'DELEGATION');
+
+        // Combine results
+        $panduData = $panduQuery->get();
+        $tundaData = $tundaQuery->get();
+
+        // Merge by BILLING
+        $merged = collect();
+        
+        // Add all pandu data
+        foreach ($panduData as $pandu) {
+            $merged->push($pandu);
+        }
+        
+        // Add or merge tunda data
+        foreach ($tundaData as $tunda) {
+            $existing = $merged->first(function($item) use ($tunda) {
+                return $item->BILLING == $tunda->BILLING && 
+                       $item->INVOICE == $tunda->INVOICE;
+            });
+            
+            if ($existing) {
+                $existing->REVENUE_TUNDA = $tunda->REVENUE_TUNDA;
+            } else {
+                $merged->push($tunda);
+            }
+        }
+
+        // Sort by date descending
+        $notaBatal = $merged->sortByDesc(function($item) {
+            return $item->INVOICE_DATE;
+        })->values();
+
+        return response()->json([
+            'data' => $notaBatal,
+            'total' => $notaBatal->count()
+        ]);
+    }
+
+    public function exportNotaBatal(Request $request)
+    {
+        $selectedPeriode = $request->get('periode', 'all');
+        $selectedBranch = $request->get('cabang', 'all');
+
+        // Query pandu_prod
+        $panduQuery = DB::connection('dashboard_phinnisi')
+            ->table('pandu_prod')
+            ->select(
+                'BILLING',
+                'INVOICE',
+                'INVOICE_DATE',
+                'NO_PKK',
+                'VESSEL_NAME',
+                'SHIPPING_AGENT',
+                'FLAG',
+                'DELEGATION',
+                DB::raw('SUM(REVENUE) as REVENUE_PANDU'),
+                DB::raw('0 as REVENUE_TUNDA')
+            )
+            ->where('BILLING', 'LIKE', 'HIS%')
+            ->when($selectedPeriode != 'all', function($q) use ($selectedPeriode) {
+                return $q->whereRaw('DATE_FORMAT(STR_TO_DATE(INVOICE_DATE, \'%d-%m-%Y\'), \'%m-%Y\') = ?', [$selectedPeriode]);
+            })
+            ->when($selectedBranch != 'all', function($q) use ($selectedBranch) {
+                return $q->where('NAME_BRANCH', $selectedBranch);
+            })
+            ->groupBy('BILLING', 'INVOICE', 'INVOICE_DATE', 'NO_PKK', 'VESSEL_NAME', 'SHIPPING_AGENT', 'FLAG', 'DELEGATION');
+
+        // Query tunda_prod
+        $tundaQuery = DB::connection('dashboard_phinnisi')
+            ->table('tunda_prod')
+            ->select(
+                'BILLING',
+                'INVOICE',
+                'INVOICE_DATE',
+                'NO_PKK',
+                'VESSEL_NAME',
+                'SHIPPING_AGENT',
+                'FLAG',
+                'DELEGATION',
+                DB::raw('0 as REVENUE_PANDU'),
+                DB::raw('SUM(REVENUE) as REVENUE_TUNDA')
+            )
+            ->where('BILLING', 'LIKE', 'HIS%')
+            ->when($selectedPeriode != 'all', function($q) use ($selectedPeriode) {
+                return $q->whereRaw('DATE_FORMAT(STR_TO_DATE(INVOICE_DATE, \'%d-%m-%Y\'), \'%m-%Y\') = ?', [$selectedPeriode]);
+            })
+            ->when($selectedBranch != 'all', function($q) use ($selectedBranch) {
+                return $q->where('NAME_BRANCH', $selectedBranch);
+            })
+            ->groupBy('BILLING', 'INVOICE', 'INVOICE_DATE', 'NO_PKK', 'VESSEL_NAME', 'SHIPPING_AGENT', 'FLAG', 'DELEGATION');
+
+        // Combine results
+        $panduData = $panduQuery->get();
+        $tundaData = $tundaQuery->get();
+
+        // Merge by BILLING
+        $merged = collect();
+        
+        // Add all pandu data
+        foreach ($panduData as $pandu) {
+            $merged->push($pandu);
+        }
+        
+        // Add or merge tunda data
+        foreach ($tundaData as $tunda) {
+            $existing = $merged->first(function($item) use ($tunda) {
+                return $item->BILLING == $tunda->BILLING && 
+                       $item->INVOICE == $tunda->INVOICE;
+            });
+            
+            if ($existing) {
+                $existing->REVENUE_TUNDA = $tunda->REVENUE_TUNDA;
+            } else {
+                $merged->push($tunda);
+            }
+        }
+
+        // Sort by date descending
+        $notaBatal = $merged->sortByDesc(function($item) {
+            return $item->INVOICE_DATE;
+        })->values();
+
+        // Create CSV
+        $filename = 'nota_batal_' . ($selectedBranch != 'all' ? $selectedBranch . '_' : '') . 
+                    ($selectedPeriode != 'all' ? $selectedPeriode . '_' : '') . 
+                    date('Ymd_His') . '.csv';
+
+        $headers = [
+            'Content-Type' => 'text/csv; charset=UTF-8',
+            'Content-Disposition' => 'attachment; filename="' . $filename . '"',
+        ];
+
+        $callback = function() use ($notaBatal) {
+            $file = fopen('php://output', 'w');
+            
+            // Add BOM for UTF-8
+            fprintf($file, chr(0xEF).chr(0xBB).chr(0xBF));
+            
+            // Header
+            fputcsv($file, [
+                'No',
+                'Billing',
+                'Invoice',
+                'Invoice Date',
+                'No PKK',
+                'Vessel Name',
+                'Shipping Agent',
+                'Flag',
+                'Revenue Pandu',
+                'Revenue Tunda',
+                'Delegation'
+            ]);
+            
+            // Data
+            $no = 1;
+            foreach ($notaBatal as $row) {
+                fputcsv($file, [
+                    $no++,
+                    $row->BILLING,
+                    $row->INVOICE,
+                    $row->INVOICE_DATE,
+                    $row->NO_PKK,
+                    $row->VESSEL_NAME,
+                    $row->SHIPPING_AGENT,
+                    $row->FLAG,
+                    $row->REVENUE_PANDU,
+                    $row->REVENUE_TUNDA,
+                    $row->DELEGATION
+                ]);
+            }
+            
+            fclose($file);
+        };
+
+        return response()->stream($callback, 200, $headers);
     }
 }

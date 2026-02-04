@@ -285,7 +285,68 @@
                 </div>
             </div>
         </div>
+        @endif
         
+        @if($selectedPeriode != 'all' || $selectedBranch != 'all')
+        <!-- Data Nota Batal Section -->
+        <div class="row mb-4">
+            <div class="col-12">
+                <div class="card stat-card">
+                    <div class="card-header" style="background: linear-gradient(135deg, #dc3545 0%, #b02a37 100%); color: white;">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <h5 class="mb-0"><i class="bi bi-x-circle"></i> Data Nota Batal</h5>
+                            <div>
+                                <button type="button" class="btn btn-light btn-sm me-2" id="toggleNotaBatalBtn" onclick="toggleNotaBatalTable()">
+                                    <i class="bi bi-eye"></i> Tampilkan Data
+                                </button>
+                                <a href="{{ route('export.nota.batal', ['periode' => $selectedPeriode, 'cabang' => $selectedBranch]) }}" 
+                                   class="btn btn-success btn-sm" id="downloadNotaBatalBtn" style="display: none;">
+                                    <i class="bi bi-download"></i> Download Excel
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="card-body" id="notaBatalTableContainer" style="display: none;">
+                        <div class="text-center py-4" id="notaBatalLoading">
+                            <div class="spinner-border text-danger" role="status">
+                                <span class="visually-hidden">Loading...</span>
+                            </div>
+                            <p class="mt-2">Memuat data nota batal...</p>
+                        </div>
+                        <div class="table-responsive" id="notaBatalTableWrapper" style="display: none;">
+                            <table class="table table-hover table-bordered" id="notaBatalTable">
+                                <thead class="table-light">
+                                    <tr class="text-center">
+                                        <th width="50">No</th>
+                                        <th>Billing</th>
+                                        <th>Invoice</th>
+                                        <th>Invoice Date</th>
+                                        <th>No PKK</th>
+                                        <th>Vessel Name</th>
+                                        <th>Shipping Agent</th>
+                                        <th>Flag</th>
+                                        <th>Revenue Pandu</th>
+                                        <th>Revenue Tunda</th>
+                                        <th>Pelimpahan</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="notaBatalTableBody">
+                                </tbody>
+                            </table>
+                        </div>
+                        <div id="notaBatalEmpty" style="display: none;">
+                            <div class="text-center text-muted py-4">
+                                <i class="bi bi-inbox fs-1"></i>
+                                <p class="mt-2">Tidak ada data nota batal</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        @endif
+
+        @if($selectedPeriode != 'all' || $selectedBranch != 'all')
         <!-- Top 10 Shipping Agents -->
         <div class="row mb-4">
             <div class="col-12">
@@ -587,6 +648,81 @@
                 }
             }
         });
+
+        // Toggle Nota Batal Table
+        let notaBatalLoaded = false;
+        
+        function toggleNotaBatalTable() {
+            const container = document.getElementById('notaBatalTableContainer');
+            const btn = document.getElementById('toggleNotaBatalBtn');
+            const downloadBtn = document.getElementById('downloadNotaBatalBtn');
+            
+            if (container.style.display === 'none') {
+                container.style.display = 'block';
+                btn.innerHTML = '<i class="bi bi-eye-slash"></i> Sembunyikan Data';
+                downloadBtn.style.display = 'inline-block';
+                
+                if (!notaBatalLoaded) {
+                    loadNotaBatalData();
+                }
+            } else {
+                container.style.display = 'none';
+                btn.innerHTML = '<i class="bi bi-eye"></i> Tampilkan Data';
+                downloadBtn.style.display = 'none';
+            }
+        }
+        
+        function loadNotaBatalData() {
+            const loading = document.getElementById('notaBatalLoading');
+            const tableWrapper = document.getElementById('notaBatalTableWrapper');
+            const emptyState = document.getElementById('notaBatalEmpty');
+            const tableBody = document.getElementById('notaBatalTableBody');
+            
+            loading.style.display = 'block';
+            tableWrapper.style.display = 'none';
+            emptyState.style.display = 'none';
+            
+            const periode = '{{ $selectedPeriode }}';
+            const cabang = '{{ $selectedBranch }}';
+            
+            fetch(`{{ route('get.nota.batal.data') }}?periode=${periode}&cabang=${cabang}`)
+                .then(response => response.json())
+                .then(data => {
+                    loading.style.display = 'none';
+                    
+                    if (data.data && data.data.length > 0) {
+                        tableWrapper.style.display = 'block';
+                        tableBody.innerHTML = '';
+                        
+                        data.data.forEach((row, index) => {
+                            const tr = document.createElement('tr');
+                            tr.innerHTML = `
+                                <td>${index + 1}</td>
+                                <td>${row.BILLING || '-'}</td>
+                                <td>${row.INVOICE || '-'}</td>
+                                <td>${row.INVOICE_DATE || '-'}</td>
+                                <td>${row.NO_PKK || '-'}</td>
+                                <td>${row.VESSEL_NAME || '-'}</td>
+                                <td>${row.SHIPPING_AGENT || '-'}</td>
+                                <td>${row.FLAG || '-'}</td>
+                                <td class="text-end">Rp ${Number(row.REVENUE_PANDU || 0).toLocaleString('id-ID')}</td>
+                                <td class="text-end">Rp ${Number(row.REVENUE_TUNDA || 0).toLocaleString('id-ID')}</td>
+                                <td>${row.DELEGATION || '-'}</td>
+                            `;
+                            tableBody.appendChild(tr);
+                        });
+                        
+                        notaBatalLoaded = true;
+                    } else {
+                        emptyState.style.display = 'block';
+                    }
+                })
+                .catch(error => {
+                    loading.style.display = 'none';
+                    emptyState.style.display = 'block';
+                    console.error('Error loading nota batal data:', error);
+                });
+        }
     </script>
 </body>
 </html>
