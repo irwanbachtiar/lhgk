@@ -1,13 +1,12 @@
 <?php
-
+//tes git
 namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 
 class RegionalController extends Controller
-{
-    private function getRegionalGroups()
+{private function getRegionalGroups()
     {
         return [
             'WILAYAH 1' => [

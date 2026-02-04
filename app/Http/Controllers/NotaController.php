@@ -139,9 +139,13 @@ class NotaController extends Controller
             }
 
             // Statistics - only get totals, no need to paginate data
-            // Use subquery to avoid duplicate BILLING
+            // Count distinct INVOICE with conditions:
+            // - BILLING tidak mengandung "HIS" (nota batal)
+            // - INVOICE tidak mengandung "INV"
             $totalNota = DB::connection('dashboard_phinnisi')->table('pandu_prod')
-                ->select('BILLING')
+                ->select('INVOICE')
+                ->where('BILLING', 'NOT LIKE', '%HIS%')
+                ->where('INVOICE', 'NOT LIKE', '%INV%')
                 ->when($selectedPeriode != 'all', function($q) use ($selectedPeriode) {
                     return $q->whereRaw('DATE_FORMAT(STR_TO_DATE(INVOICE_DATE, \'%d-%m-%Y\'), \'%m-%Y\') = ?', [$selectedPeriode]);
                 })
@@ -149,7 +153,7 @@ class NotaController extends Controller
                     return $q->where('NAME_BRANCH', $selectedBranch);
                 })
                 ->distinct()
-                ->count('BILLING');
+                ->count('INVOICE');
             
             // Sum revenue directly from REVENUE column (including duplicates)
             $totalPendapatanPandu = DB::connection('dashboard_phinnisi')->table('pandu_prod')
