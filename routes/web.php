@@ -23,6 +23,8 @@ Route::get('/export-nota-batal', [NotaController::class, 'exportNotaBatal'])->na
 
 // Regional Revenue routes
 Route::get('/regional-revenue', [RegionalController::class, 'index'])->name('regional.revenue');
+Route::get('/regional-detail', [RegionalController::class, 'detail'])->name('regional.detail');
+Route::get('/regional-detail/export-excel', [RegionalController::class, 'exportExcel'])->name('regional.detail.export');
 
 // Sync Phinnisi routes (manual trigger)
 Route::get('/sync-phinnisi-pandu', function() {

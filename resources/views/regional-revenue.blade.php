@@ -48,6 +48,9 @@
                 <a href="{{ route('dashboard') }}" class="btn btn-light btn-sm me-2">
                     <i class="bi bi-graph-up-arrow"></i> Dashboard LHGK
                 </a>
+                <a href="{{ route('regional.detail') }}" class="btn btn-outline-light btn-sm me-2">
+                    <i class="bi bi-table"></i> Detail Per Cabang
+                </a>
                 <a href="{{ route('monitoring.nota') }}" class="btn btn-light btn-sm me-2">
                     <i class="bi bi-file-earmark-text"></i> Monitoring Nota
                 </a>
@@ -313,6 +316,16 @@
                         </div>
                     </div>
                 @endforeach
+            </div>
+
+            <!-- Button to Detail Page -->
+            <div class="row mb-4">
+                <div class="col-12 text-center">
+                    <a href="{{ route('regional.detail', ['periode' => $selectedPeriode]) }}" class="btn btn-lg btn-primary">
+                        <i class="bi bi-table"></i> Lihat Detail Pendapatan Per Cabang
+                    </a>
+                    <p class="text-muted mt-2 mb-0">Klik tombol di atas untuk melihat breakdown detail pendapatan setiap cabang per wilayah</p>
+                </div>
             </div>
         @endif
     </div>

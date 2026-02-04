@@ -4,6 +4,11 @@ namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use PhpOffice\PhpSpreadsheet\Spreadsheet;
+use PhpOffice\PhpSpreadsheet\Writer\Xlsx;
+use PhpOffice\PhpSpreadsheet\Style\Fill;
+use PhpOffice\PhpSpreadsheet\Style\Border;
+use PhpOffice\PhpSpreadsheet\Style\Alignment;
 
 class RegionalController extends Controller
 {private function getRegionalGroups()
@@ -262,5 +267,268 @@ class RegionalController extends Controller
             'jaiTotalTransaksi',
             'delegationData'
         ));
+    }
+    
+    public function detail(Request $request)
+    {
+        $selectedPeriode = $request->get('periode', 'all');
+        
+        // Get available periods from INVOICE_DATE
+        $periods = DB::connection('dashboard_phinnisi')->table('pandu_prod')
+            ->selectRaw('DATE_FORMAT(STR_TO_DATE(INVOICE_DATE, \'%d-%m-%Y\'), \'%m-%Y\') as periode')
+            ->whereNotNull('INVOICE_DATE')
+            ->where('INVOICE_DATE', '!=', '')
+            ->groupBy('periode')
+            ->orderByRaw('STR_TO_DATE(CONCAT(\'01-\', periode), \'%d-%m-%Y\') DESC')
+            ->pluck('periode');
+
+        $regionalGroups = $this->getRegionalGroups();
+        $branchDetails = [];
+
+        // Only load data if period is selected
+        if ($selectedPeriode != 'all') {
+            foreach ($regionalGroups as $wilayah => $branches) {
+                // Get detailed data per branch - OPTIMIZED with groupBy
+                $branchPanduData = DB::connection('dashboard_phinnisi')->table('pandu_prod')
+                    ->select('NAME_BRANCH')
+                    ->selectRaw('SUM(REVENUE) as total_revenue')
+                    ->selectRaw('COUNT(DISTINCT BILLING) as total_transaksi')
+                    ->whereIn('NAME_BRANCH', $branches)
+                    ->whereRaw('DATE_FORMAT(STR_TO_DATE(INVOICE_DATE, \'%d-%m-%Y\'), \'%m-%Y\') = ?', [$selectedPeriode])
+                    ->groupBy('NAME_BRANCH')
+                    ->get()
+                    ->keyBy('NAME_BRANCH');
+                
+                $branchTundaData = DB::connection('dashboard_phinnisi')->table('tunda_prod')
+                    ->select('NAME_BRANCH')
+                    ->selectRaw('SUM(REVENUE) as total_revenue')
+                    ->whereIn('NAME_BRANCH', $branches)
+                    ->whereRaw('DATE_FORMAT(STR_TO_DATE(INVOICE_DATE, \'%d-%m-%Y\'), \'%m-%Y\') = ?', [$selectedPeriode])
+                    ->groupBy('NAME_BRANCH')
+                    ->get()
+                    ->keyBy('NAME_BRANCH');
+                
+                $branchDetails[$wilayah] = [];
+                foreach ($branches as $branch) {
+                    $panduData = $branchPanduData->get($branch);
+                    $tundaData = $branchTundaData->get($branch);
+                    
+                    $branchPandu = $panduData->total_revenue ?? 0;
+                    $branchTunda = $tundaData->total_revenue ?? 0;
+                    $branchTransaksi = $panduData->total_transaksi ?? 0;
+                    
+                    // Only add branches with data
+                    if ($branchPandu > 0 || $branchTunda > 0) {
+                        $branchDetails[$wilayah][$branch] = [
+                            'pandu' => $branchPandu,
+                            'tunda' => $branchTunda,
+                            'total' => $branchPandu + $branchTunda,
+                            'transaksi' => $branchTransaksi
+                        ];
+                    }
+                }
+            }
+        }
+
+        return view('regional-detail', compact(
+            'periods',
+            'selectedPeriode',
+            'branchDetails',
+            'regionalGroups'
+        ));
+    }
+    
+    public function exportExcel(Request $request)
+    {
+        $selectedPeriode = $request->get('periode', 'all');
+        
+        if ($selectedPeriode == 'all') {
+            return redirect()->route('regional.detail')->with('error', 'Silakan pilih periode terlebih dahulu');
+        }
+        
+        $regionalGroups = $this->getRegionalGroups();
+        $branchDetails = [];
+
+        foreach ($regionalGroups as $wilayah => $branches) {
+            $branchPanduData = DB::connection('dashboard_phinnisi')->table('pandu_prod')
+                ->select('NAME_BRANCH')
+                ->selectRaw('SUM(REVENUE) as total_revenue')
+                ->selectRaw('COUNT(DISTINCT BILLING) as total_transaksi')
+                ->whereIn('NAME_BRANCH', $branches)
+                ->whereRaw('DATE_FORMAT(STR_TO_DATE(INVOICE_DATE, \'%d-%m-%Y\'), \'%m-%Y\') = ?', [$selectedPeriode])
+                ->groupBy('NAME_BRANCH')
+                ->get()
+                ->keyBy('NAME_BRANCH');
+            
+            $branchTundaData = DB::connection('dashboard_phinnisi')->table('tunda_prod')
+                ->select('NAME_BRANCH')
+                ->selectRaw('SUM(REVENUE) as total_revenue')
+                ->whereIn('NAME_BRANCH', $branches)
+                ->whereRaw('DATE_FORMAT(STR_TO_DATE(INVOICE_DATE, \'%d-%m-%Y\'), \'%m-%Y\') = ?', [$selectedPeriode])
+                ->groupBy('NAME_BRANCH')
+                ->get()
+                ->keyBy('NAME_BRANCH');
+            
+            $branchDetails[$wilayah] = [];
+            foreach ($branches as $branch) {
+                $panduData = $branchPanduData->get($branch);
+                $tundaData = $branchTundaData->get($branch);
+                
+                $branchPandu = $panduData->total_revenue ?? 0;
+                $branchTunda = $tundaData->total_revenue ?? 0;
+                $branchTransaksi = $panduData->total_transaksi ?? 0;
+                
+                if ($branchPandu > 0 || $branchTunda > 0) {
+                    $branchDetails[$wilayah][$branch] = [
+                        'pandu' => $branchPandu,
+                        'tunda' => $branchTunda,
+                        'total' => $branchPandu + $branchTunda,
+                        'transaksi' => $branchTransaksi
+                    ];
+                }
+            }
+        }
+        
+        // Create Excel file
+        $spreadsheet = new \PhpOffice\PhpSpreadsheet\Spreadsheet();
+        $sheet = $spreadsheet->getActiveSheet();
+        
+        // Set document properties
+        $spreadsheet->getProperties()
+            ->setCreator('LHGK System')
+            ->setTitle('Pendapatan Detail Per Wilayah - ' . $selectedPeriode)
+            ->setSubject('Regional Revenue Report')
+            ->setDescription('Laporan pendapatan detail per cabang dan wilayah');
+        
+        // Header styling
+        $headerStyle = [
+            'font' => ['bold' => true, 'color' => ['rgb' => 'FFFFFF'], 'size' => 11],
+            'fill' => ['fillType' => \PhpOffice\PhpSpreadsheet\Style\Fill::FILL_SOLID, 'startColor' => ['rgb' => '667eea']],
+            'alignment' => ['horizontal' => \PhpOffice\PhpSpreadsheet\Style\Alignment::HORIZONTAL_CENTER, 'vertical' => \PhpOffice\PhpSpreadsheet\Style\Alignment::VERTICAL_CENTER],
+            'borders' => ['allBorders' => ['borderStyle' => \PhpOffice\PhpSpreadsheet\Style\Border::BORDER_THIN, 'color' => ['rgb' => '000000']]]
+        ];
+        
+        $titleStyle = [
+            'font' => ['bold' => true, 'size' => 14, 'color' => ['rgb' => '1a202c']],
+            'alignment' => ['horizontal' => \PhpOffice\PhpSpreadsheet\Style\Alignment::HORIZONTAL_LEFT]
+        ];
+        
+        $subtitleStyle = [
+            'font' => ['bold' => true, 'size' => 11, 'color' => ['rgb' => '667eea']],
+            'fill' => ['fillType' => \PhpOffice\PhpSpreadsheet\Style\Fill::FILL_SOLID, 'startColor' => ['rgb' => 'f8f9fa']],
+            'borders' => ['bottom' => ['borderStyle' => \PhpOffice\PhpSpreadsheet\Style\Border::BORDER_MEDIUM, 'color' => ['rgb' => '667eea']]]
+        ];
+        
+        $totalStyle = [
+            'font' => ['bold' => true, 'size' => 10],
+            'fill' => ['fillType' => \PhpOffice\PhpSpreadsheet\Style\Fill::FILL_SOLID, 'startColor' => ['rgb' => 'f8f9fa']],
+            'borders' => ['top' => ['borderStyle' => \PhpOffice\PhpSpreadsheet\Style\Border::BORDER_MEDIUM]]
+        ];
+        
+        // Title
+        $sheet->setCellValue('A1', 'LAPORAN PENDAPATAN DETAIL PER WILAYAH');
+        $sheet->mergeCells('A1:F1');
+        $sheet->getStyle('A1')->applyFromArray($titleStyle);
+        $sheet->getRowDimension(1)->setRowHeight(25);
+        
+        $sheet->setCellValue('A2', 'Periode: ' . $selectedPeriode);
+        $sheet->mergeCells('A2:F2');
+        $sheet->getStyle('A2')->getFont()->setBold(true)->setSize(11);
+        
+        $currentRow = 4;
+        
+        foreach ($branchDetails as $wilayah => $branches) {
+            if (empty($branches)) continue;
+            
+            // Wilayah header
+            $sheet->setCellValue('A' . $currentRow, $wilayah);
+            $sheet->mergeCells('A' . $currentRow . ':F' . $currentRow);
+            $sheet->getStyle('A' . $currentRow)->applyFromArray($subtitleStyle);
+            $sheet->getRowDimension($currentRow)->setRowHeight(25);
+            $currentRow++;
+            
+            // Column headers
+            $sheet->setCellValue('A' . $currentRow, 'No');
+            $sheet->setCellValue('B' . $currentRow, 'Nama Cabang');
+            $sheet->setCellValue('C' . $currentRow, 'Pendapatan Pandu');
+            $sheet->setCellValue('D' . $currentRow, 'Pendapatan Tunda');
+            $sheet->setCellValue('E' . $currentRow, 'Total Pendapatan');
+            $sheet->setCellValue('F' . $currentRow, 'Transaksi');
+            $sheet->getStyle('A' . $currentRow . ':F' . $currentRow)->applyFromArray($headerStyle);
+            $sheet->getRowDimension($currentRow)->setRowHeight(20);
+            $currentRow++;
+            
+            // Data rows
+            $no = 1;
+            $totalPandu = 0;
+            $totalTunda = 0;
+            $totalRevenue = 0;
+            $totalTransaksi = 0;
+            
+            foreach ($branches as $branchName => $data) {
+                $sheet->setCellValue('A' . $currentRow, $no++);
+                $sheet->setCellValue('B' . $currentRow, $branchName);
+                $sheet->setCellValue('C' . $currentRow, $data['pandu']);
+                $sheet->setCellValue('D' . $currentRow, $data['tunda']);
+                $sheet->setCellValue('E' . $currentRow, $data['total']);
+                $sheet->setCellValue('F' . $currentRow, $data['transaksi']);
+                
+                // Format currency
+                $sheet->getStyle('C' . $currentRow)->getNumberFormat()->setFormatCode('#,##0');
+                $sheet->getStyle('D' . $currentRow)->getNumberFormat()->setFormatCode('#,##0');
+                $sheet->getStyle('E' . $currentRow)->getNumberFormat()->setFormatCode('#,##0');
+                
+                // Borders
+                $sheet->getStyle('A' . $currentRow . ':F' . $currentRow)->getBorders()->getAllBorders()
+                    ->setBorderStyle(\PhpOffice\PhpSpreadsheet\Style\Border::BORDER_THIN);
+                
+                $totalPandu += $data['pandu'];
+                $totalTunda += $data['tunda'];
+                $totalRevenue += $data['total'];
+                $totalTransaksi += $data['transaksi'];
+                
+                $currentRow++;
+            }
+            
+            // Total row
+            $sheet->setCellValue('A' . $currentRow, '');
+            $sheet->setCellValue('B' . $currentRow, 'TOTAL ' . $wilayah);
+            $sheet->setCellValue('C' . $currentRow, $totalPandu);
+            $sheet->setCellValue('D' . $currentRow, $totalTunda);
+            $sheet->setCellValue('E' . $currentRow, $totalRevenue);
+            $sheet->setCellValue('F' . $currentRow, $totalTransaksi);
+            
+            $sheet->getStyle('C' . $currentRow)->getNumberFormat()->setFormatCode('#,##0');
+            $sheet->getStyle('D' . $currentRow)->getNumberFormat()->setFormatCode('#,##0');
+            $sheet->getStyle('E' . $currentRow)->getNumberFormat()->setFormatCode('#,##0');
+            
+            $sheet->getStyle('A' . $currentRow . ':F' . $currentRow)->applyFromArray($totalStyle);
+            $currentRow += 2;
+        }
+        
+        // Set column widths
+        $sheet->getColumnDimension('A')->setWidth(6);
+        $sheet->getColumnDimension('B')->setWidth(35);
+        $sheet->getColumnDimension('C')->setWidth(20);
+        $sheet->getColumnDimension('D')->setWidth(20);
+        $sheet->getColumnDimension('E')->setWidth(22);
+        $sheet->getColumnDimension('F')->setWidth(12);
+        
+        // Set alignment
+        $sheet->getStyle('A4:A' . ($currentRow - 1))->getAlignment()->setHorizontal(\PhpOffice\PhpSpreadsheet\Style\Alignment::HORIZONTAL_CENTER);
+        $sheet->getStyle('C4:F' . ($currentRow - 1))->getAlignment()->setHorizontal(\PhpOffice\PhpSpreadsheet\Style\Alignment::HORIZONTAL_RIGHT);
+        
+        // Generate filename
+        $filename = 'Pendapatan_Detail_PerWilayah_' . str_replace('-', '_', $selectedPeriode) . '_' . date('Ymd_His') . '.xlsx';
+        
+        // Create writer and download
+        $writer = new \PhpOffice\PhpSpreadsheet\Writer\Xlsx($spreadsheet);
+        
+        header('Content-Type: application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+        header('Content-Disposition: attachment;filename="' . $filename . '"');
+        header('Cache-Control: max-age=0');
+        
+        $writer->save('php://output');
+        exit;
     }
 }
