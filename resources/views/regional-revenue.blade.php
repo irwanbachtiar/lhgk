@@ -254,6 +254,16 @@
                 </div>
             </div>
 
+            <!-- Button to Detail Page -->
+            <div class="row mb-4">
+                <div class="col-12 text-center">
+                    <a href="{{ route('regional.detail', ['periode' => $selectedPeriode]) }}" class="btn btn-lg btn-primary">
+                        <i class="bi bi-table"></i> Lihat Detail Pendapatan Per Cabang
+                    </a>
+                    <p class="text-muted mt-2 mb-0">Klik tombol di atas untuk melihat breakdown detail pendapatan setiap cabang per wilayah</p>
+                </div>
+            </div>
+
             <!-- Regional Details -->
             <div class="row">
                 @foreach($regionalData as $wilayah => $data)
@@ -269,8 +279,16 @@
                     <div class="col-md-6 mb-4">
                         <div class="card stat-card {{ $cardClass }}">
                             <div class="card-header">
-                                <h5 class="mb-0"><i class="bi bi-geo-alt-fill"></i> {{ $wilayah }}</h5>
-                            </div>
+                                    <div class="d-flex justify-content-between align-items-center">
+                                        <h5 class="mb-0"><i class="bi bi-geo-alt-fill"></i> {{ $wilayah }}</h5>
+                                        <div class="text-end">
+                                            <small class="text-muted d-block">Total Pendapatan</small>
+                                            <strong>
+                                                Rp {{ number_format($data['total_revenue'] ?? ($data['pandu_revenue'] + $data['tunda_revenue']), 0, ',', '.') }}
+                                            </strong>
+                                        </div>
+                                    </div>
+                                </div>
                             <div class="card-body">
                                 <div class="row">
                                     <div class="col-4">
@@ -316,16 +334,6 @@
                         </div>
                     </div>
                 @endforeach
-            </div>
-
-            <!-- Button to Detail Page -->
-            <div class="row mb-4">
-                <div class="col-12 text-center">
-                    <a href="{{ route('regional.detail', ['periode' => $selectedPeriode]) }}" class="btn btn-lg btn-primary">
-                        <i class="bi bi-table"></i> Lihat Detail Pendapatan Per Cabang
-                    </a>
-                    <p class="text-muted mt-2 mb-0">Klik tombol di atas untuk melihat breakdown detail pendapatan setiap cabang per wilayah</p>
-                </div>
             </div>
         @endif
     </div>

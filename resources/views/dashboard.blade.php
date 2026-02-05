@@ -253,6 +253,43 @@
             </div>
         </div>
 
+        <!-- Nota Statistics Row -->
+        <div class="row mb-4">
+            <div class="col-md-4">
+                <div class="card stat-card bg-white" style="border-left: 4px solid #dc2626;">
+                    <div class="card-body text-center">
+                        <div class="mb-2">
+                            <i class="bi bi-x-circle fs-1" style="color: #dc2626;"></i>
+                        </div>
+                        <h3 class="text-dark mb-1">{{ number_format($totalOverall['nota_batal'] ?? 0) }}</h3>
+                        <p class="mb-0 text-muted">Nota Batal</p>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="card stat-card bg-white" style="border-left: 4px solid #f59e0b;">
+                    <div class="card-body text-center">
+                        <div class="mb-2">
+                            <i class="bi bi-hourglass-split fs-1" style="color: #f59e0b;"></i>
+                        </div>
+                        <h3 class="text-dark mb-1">{{ number_format($totalOverall['menunggu_nota'] ?? 0) }}</h3>
+                        <p class="mb-0 text-muted">Menunggu Nota</p>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="card stat-card bg-white" style="border-left: 4px solid #06b6d4;">
+                    <div class="card-body text-center">
+                        <div class="mb-2">
+                            <i class="bi bi-clipboard-check fs-1" style="color: #06b6d4;"></i>
+                        </div>
+                        <h3 class="text-dark mb-1">{{ number_format($totalOverall['belum_verifikasi'] ?? 0) }}</h3>
+                        <p class="mb-0 text-muted">Belum Verifikasi</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
         <!-- Top Pilot Card -->
         @if($topPilot)
         <div class="row mb-4">
@@ -291,63 +328,27 @@
         @endif
         @endif
 
-        <!-- CSV Upload Section -->
+        <!-- Chart Section -->
+        @if($selectedPeriode != 'all' && $selectedBranch != 'all')
         <div class="row mb-4">
-            <div class="col-12">
+            <div class="col-md-6">
                 <div class="card stat-card">
                     <div class="card-body">
-                        <h5 class="card-title"><i class="bi bi-upload"></i> Upload File CSV</h5>
-                        <form action="{{ route('upload.csv') }}" method="POST" enctype="multipart/form-data">
-                            @csrf
-                            <div class="row align-items-end">
-                                <div class="col-md-8">
-                                    <input type="file" name="csv_file" class="form-control" accept=".csv,.txt" required>
-                                    <small class="text-muted">Format: CSV (maksimal 10MB) | <a href="/debug-periods" target="_blank">Debug Periode</a></small>
-                                </div>
-                                <div class="col-md-2">
-                                    <button type="submit" class="btn btn-primary w-100"><i class="bi bi-upload"></i> Upload</button>
-                                </div>
-                                <div class="col-md-2">
-                                    <a href="{{ route('clear.data') }}" class="btn btn-danger w-100" onclick="return confirm('Yakin ingin menghapus semua data?')">
-                                        <i class="bi bi-trash"></i> Clear Data
-                                    </a>
-                                </div>
-                            </div>
-                        </form>
-                        
-                        @if(session('success'))
-                            <div class="alert alert-success mt-3">
-                                <i class="bi bi-check-circle-fill"></i> {{ session('success') }}
-                            </div>
-                        @endif
-                        
-                        @if($errors->any())
-                            <div class="alert alert-danger mt-3">
-                                <i class="bi bi-exclamation-triangle-fill"></i>
-                                <strong>Error:</strong>
-                                <ul class="mb-0 mt-2">
-                                    @foreach($errors->all() as $error)
-                                        <li>{{ $error }}</li>
-                                    @endforeach
-                                </ul>
-                            </div>
-                        @endif
-                        
-                        @if(session('import_errors') && count(session('import_errors')) > 0)
-                            <div class="alert alert-warning mt-3">
-                                <i class="bi bi-info-circle-fill"></i>
-                                <strong>Warning pada beberapa baris:</strong>
-                                <ul class="mb-0 mt-2">
-                                    @foreach(session('import_errors') as $error)
-                                        <li>{{ $error }}</li>
-                                    @endforeach
-                                </ul>
-                            </div>
-                        @endif
+                        <h5 class="card-title">Pendapatan Pemanduan</h5>
+                        <canvas id="panduChart"></canvas>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-6">
+                <div class="card stat-card">
+                    <div class="card-body">
+                        <h5 class="card-title">Pendapatan Penundaan</h5>
+                        <canvas id="tundaChart"></canvas>
                     </div>
                 </div>
             </div>
         </div>
+        @endif
 
         <!-- Ship Statistics by GT Range and Flag -->
         @if(($selectedPeriode != 'all' || $selectedBranch != 'all') && $shipStatsByGT->count() > 0)
@@ -453,6 +454,94 @@
                                     </tr>
                                 </tfoot>
                             </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        @endif
+
+        <!-- Ship Statistics Charts by GT Range -->
+        @if(false && ($selectedPeriode != 'all' || $selectedBranch != 'all') && $shipStatsByGT->count() > 0)
+        <div class="row mb-4">
+            <div class="col-12 mb-3">
+                <div class="card stat-card">
+                    <div class="card-header" style="background: linear-gradient(135deg, #8b5cf6 0%, #7c3aed 100%); color: white;">
+                        <h5 class="mb-0"><i class="bi bi-pie-chart-fill"></i> Visualisasi Statistik Kapal Per Range GT</h5>
+                    </div>
+                    <div class="card-body">
+                        <p class="text-muted mb-3">
+                            <i class="bi bi-info-circle"></i> Setiap chart menampilkan distribusi transaksi kapal nasional dan asing untuk masing-masing range GT
+                        </p>
+                        <div class="row">
+                            @php
+                                $gtRanges = $shipStatsByGT->pluck('RANGE_GT')->unique();
+                            @endphp
+                            @foreach($gtRanges as $gtRange)
+                                @php
+                                    $gtData = $shipStatsByGT->where('RANGE_GT', $gtRange);
+                                    $nasional = $gtData->where('JENIS_KAPAL_DARI_BENDERA', 'KAPAL NASIONAL')->first();
+                                    $asing = $gtData->where('JENIS_KAPAL_DARI_BENDERA', 'KAPAL ASING')->first();
+                                    $chartId = 'gtChart' . str_replace([' ', '-', '>', '<'], '', $gtRange);
+                                @endphp
+                                <div class="col-md-4 mb-4">
+                                    <div class="card" style="border: 2px solid #8b5cf6;">
+                                        <div class="card-header bg-light">
+                                            <h6 class="mb-0 text-center">
+                                                <i class="bi bi-ship"></i> {{ str_replace(' GT', '', $gtRange) }}
+                                            </h6>
+                                        </div>
+                                        <div class="card-body">
+                                            <canvas id="{{ $chartId }}" style="max-height: 250px;"></canvas>
+                                            <div class="mt-3">
+                                                <!-- Kapal Nasional -->
+                                                <div class="mb-3 p-3" style="background: #dcfce7; border-radius: 8px; border-left: 4px solid #22c55e;">
+                                                    <div class="d-flex justify-content-between align-items-center mb-2">
+                                                        <span class="badge bg-success"><i class="bi bi-flag-fill"></i> Kapal Nasional</span>
+                                                        <strong>{{ $nasional ? number_format($nasional->total_transaksi) : 0 }} transaksi</strong>
+                                                    </div>
+                                                    <div class="row text-center mt-2">
+                                                        <div class="col-6">
+                                                            <small class="text-muted d-block">Pendapatan Pandu</small>
+                                                            <strong class="text-success">Rp {{ $nasional ? number_format($nasional->total_pendapatan_pandu, 0, ',', '.') : 0 }}</strong>
+                                                        </div>
+                                                        <div class="col-6">
+                                                            <small class="text-muted d-block">Pendapatan Tunda</small>
+                                                            <strong class="text-success">Rp {{ $nasional ? number_format($nasional->total_pendapatan_tunda, 0, ',', '.') : 0 }}</strong>
+                                                        </div>
+                                                    </div>
+                                                    <div class="text-center mt-2 pt-2" style="border-top: 1px solid #86efac;">
+                                                        <small class="text-muted">Total Pendapatan:</small>
+                                                        <div><strong class="text-success">Rp {{ $nasional ? number_format($nasional->total_pendapatan, 0, ',', '.') : 0 }}</strong></div>
+                                                    </div>
+                                                </div>
+                                                
+                                                <!-- Kapal Asing -->
+                                                <div class="p-3" style="background: #dbeafe; border-radius: 8px; border-left: 4px solid #3b82f6;">
+                                                    <div class="d-flex justify-content-between align-items-center mb-2">
+                                                        <span class="badge bg-info"><i class="bi bi-globe"></i> Kapal Asing</span>
+                                                        <strong>{{ $asing ? number_format($asing->total_transaksi) : 0 }} transaksi</strong>
+                                                    </div>
+                                                    <div class="row text-center mt-2">
+                                                        <div class="col-6">
+                                                            <small class="text-muted d-block">Pendapatan Pandu</small>
+                                                            <strong class="text-info">Rp {{ $asing ? number_format($asing->total_pendapatan_pandu, 0, ',', '.') : 0 }}</strong>
+                                                        </div>
+                                                        <div class="col-6">
+                                                            <small class="text-muted d-block">Pendapatan Tunda</small>
+                                                            <strong class="text-info">Rp {{ $asing ? number_format($asing->total_pendapatan_tunda, 0, ',', '.') : 0 }}</strong>
+                                                        </div>
+                                                    </div>
+                                                    <div class="text-center mt-2 pt-2" style="border-top: 1px solid #93c5fd;">
+                                                        <small class="text-muted">Total Pendapatan:</small>
+                                                        <div><strong class="text-info">Rp {{ $asing ? number_format($asing->total_pendapatan, 0, ',', '.') : 0 }}</strong></div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            @endforeach
                         </div>
                     </div>
                 </div>
@@ -575,28 +664,141 @@
         </div>
         @endif
 
-        <!-- Chart Section -->
-        @if($selectedPeriode != 'all' && $selectedBranch != 'all')
+        <!-- Status Nota Section -->
+        @if($selectedPeriode != 'all' && $selectedBranch != 'all' && $statusNotaCount > 0)
         <div class="row mb-4">
-            <div class="col-md-6">
+            <div class="col-12">
                 <div class="card stat-card">
-                    <div class="card-body">
-                        <h5 class="card-title">Pendapatan Pemanduan</h5>
-                        <canvas id="panduChart"></canvas>
+                    @if(!$showStatusNota)
+                    <div class="card-body text-center py-4">
+                        <i class="bi bi-clipboard-check text-info" style="font-size: 3rem;"></i>
+                        <h5 class="mt-3">Data Status Nota</h5>
+                        <p class="text-muted">
+                            Ditemukan <strong class="text-info">{{ number_format($statusNotaCount) }} transaksi</strong> 
+                            dengan status "menunggu nota" atau "belum verifikasi"
+                        </p>
+                        <a href="{{ route('dashboard', ['periode' => $selectedPeriode, 'cabang' => $selectedBranch, 'show_status_nota' => 1]) }}#status-nota-section" 
+                           class="btn btn-info">
+                            <i class="bi bi-eye"></i> Tampilkan Data Status Nota
+                        </a>
                     </div>
-                </div>
-            </div>
-            <div class="col-md-6">
-                <div class="card stat-card">
-                    <div class="card-body">
-                        <h5 class="card-title">Pendapatan Penundaan</h5>
-                        <canvas id="tundaChart"></canvas>
+                    @else
+                    <div class="card-header" style="background: linear-gradient(135deg, #06b6d4 0%, #0891b2 100%); color: white;" id="status-nota-section">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <h5 class="mb-0">
+                                <i class="bi bi-clipboard-check"></i> 
+                                Data Status Nota (Menunggu Nota / Belum Verifikasi)
+                            </h5>
+                            <div>
+                                <a href="{{ route('export.status.nota', ['periode' => $selectedPeriode, 'cabang' => $selectedBranch, 'filter_status_nota' => $filterStatusNota]) }}" 
+                                   class="btn btn-light btn-sm me-2">
+                                    <i class="bi bi-file-earmark-excel"></i> Download Excel
+                                </a>
+                                <a href="{{ route('dashboard', ['periode' => $selectedPeriode, 'cabang' => $selectedBranch]) }}" 
+                                   class="btn btn-light btn-sm">
+                                    <i class="bi bi-x-circle"></i> Sembunyikan
+                                </a>
+                            </div>
+                        </div>
                     </div>
+                    <div class="card-body">
+                        <!-- Filter Status Nota -->
+                        <div class="row mb-3">
+                            <div class="col-md-4">
+                                <form method="GET" action="{{ route('dashboard') }}" id="filterStatusNotaForm">
+                                    <input type="hidden" name="periode" value="{{ $selectedPeriode }}">
+                                    <input type="hidden" name="cabang" value="{{ $selectedBranch }}">
+                                    <input type="hidden" name="show_status_nota" value="1">
+                                    <div class="input-group">
+                                        <label class="input-group-text bg-info text-white"><i class="bi bi-funnel-fill"></i></label>
+                                        <select name="filter_status_nota" class="form-select" onchange="this.form.submit()">
+                                            <option value="all" {{ $filterStatusNota == 'all' ? 'selected' : '' }}>Semua Status</option>
+                                            <option value="menunggu nota" {{ $filterStatusNota == 'menunggu nota' ? 'selected' : '' }}>Menunggu Nota</option>
+                                            <option value="belum verifikasi" {{ $filterStatusNota == 'belum verifikasi' ? 'selected' : '' }}>Belum Verifikasi</option>
+                                        </select>
+                                    </div>
+                                </form>
+                            </div>
+                        </div>
+                        
+                        <div class="alert alert-info mb-3">
+                            <i class="bi bi-info-circle-fill"></i>
+                            <strong>{{ number_format($statusNotaCount) }} transaksi</strong> 
+                            @if($filterStatusNota == 'all')
+                                memiliki status nota "menunggu nota" atau "belum verifikasi".
+                            @else
+                                dengan status "{{ $filterStatusNota }}".
+                            @endif
+                            <div class="mt-2">
+                                <small class="text-muted">Data diurutkan berdasarkan mulai pelaksanaan terbaru</small>
+                            </div>
+                        </div>
+                        
+                        @if($statusNotaData && $statusNotaData->count() > 0)
+                        <div class="table-responsive">
+                            <table class="table table-hover table-striped">
+                                <thead class="table-dark">
+                                    <tr>
+                                        <th>No</th>
+                                        <th>No. UKK</th>
+                                        <th>Nama Kapal</th>
+                                        <th>Pelayaran</th>
+                                        <th>Nama Pandu</th>
+                                        <th>Mulai Pelaksanaan</th>
+                                        <th>Selesai Pelaksanaan</th>
+                                        <th class="text-end">Pendapatan Pandu</th>
+                                        <th class="text-end">Pendapatan Tunda</th>
+                                        <th class="text-center">Status Nota</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    @foreach($statusNotaData as $index => $data)
+                                    <tr>
+                                        <td>{{ $statusNotaData->firstItem() + $index }}</td>
+                                        <td><span class="badge bg-secondary">{{ $data->NO_UKK }}</span></td>
+                                        <td><strong>{{ $data->NM_KAPAL }}</strong></td>
+                                        <td>{{ $data->PELAYARAN ?? '-' }}</td>
+                                        <td>{{ $data->NM_PERS_PANDU }}</td>
+                                        <td>{{ $data->MULAI_PELAKSANAAN }}</td>
+                                        <td>{{ $data->SELESAI_PELAKSANAAN }}</td>
+                                        <td class="text-end">Rp {{ number_format($data->PENDAPATAN_PANDU, 0, ',', '.') }}</td>
+                                        <td class="text-end">Rp {{ number_format($data->PENDAPATAN_TUNDA, 0, ',', '.') }}</td>
+                                        <td class="text-center">
+                                            <span class="badge {{ $data->STATUS_NOTA == 'menunggu nota' ? 'bg-warning' : 'bg-info' }} text-dark">
+                                                {{ strtoupper($data->STATUS_NOTA) }}
+                                            </span>
+                                        </td>
+                                    </tr>
+                                    @endforeach
+                                </tbody>
+                            </table>
+                        </div>
+                        
+                        <!-- Pagination -->
+                        @if($statusNotaData->hasPages())
+                        <div class="d-flex justify-content-between align-items-center mt-3">
+                            <div class="text-muted">
+                                Menampilkan {{ $statusNotaData->firstItem() }} - {{ $statusNotaData->lastItem() }} dari {{ $statusNotaData->total() }} data
+                            </div>
+                            <div>
+                                {{ $statusNotaData->links('pagination::bootstrap-5') }}
+                            </div>
+                        </div>
+                        @endif
+                        @else
+                        <div class="alert alert-secondary">
+                            <i class="bi bi-info-circle"></i> Tidak ada data untuk ditampilkan
+                        </div>
+                        @endif
+                    </div>
+                    @endif
                 </div>
             </div>
         </div>
+        @endif
 
         <!-- Pilot Cards -->
+        @if($selectedPeriode != 'all' && $selectedBranch != 'all')
         <div class="row">
             @foreach($statistics as $stat)
                 <div class="col-md-4 mb-4">
@@ -678,6 +880,64 @@
             @endforeach
         </div>
         @endif
+
+        <!-- CSV Upload Section -->
+        <div class="row mb-4">
+            <div class="col-12">
+                <div class="card stat-card">
+                    <div class="card-body">
+                        <h5 class="card-title"><i class="bi bi-upload"></i> Upload File CSV</h5>
+                        <form action="{{ route('upload.csv') }}" method="POST" enctype="multipart/form-data">
+                            @csrf
+                            <div class="row align-items-end">
+                                <div class="col-md-8">
+                                    <input type="file" name="csv_file" class="form-control" accept=".csv,.txt" required>
+                                    <small class="text-muted">Format: CSV (maksimal 10MB) | <a href="/debug-periods" target="_blank">Debug Periode</a></small>
+                                </div>
+                                <div class="col-md-2">
+                                    <button type="submit" class="btn btn-primary w-100"><i class="bi bi-upload"></i> Upload</button>
+                                </div>
+                                <div class="col-md-2">
+                                    <a href="{{ route('clear.data') }}" class="btn btn-danger w-100" onclick="return confirm('Yakin ingin menghapus semua data?')">
+                                        <i class="bi bi-trash"></i> Clear Data
+                                    </a>
+                                </div>
+                            </div>
+                        </form>
+                        
+                        @if(session('success'))
+                            <div class="alert alert-success mt-3">
+                                <i class="bi bi-check-circle-fill"></i> {{ session('success') }}
+                            </div>
+                        @endif
+                        
+                        @if($errors->any())
+                            <div class="alert alert-danger mt-3">
+                                <i class="bi bi-exclamation-triangle-fill"></i>
+                                <strong>Error:</strong>
+                                <ul class="mb-0 mt-2">
+                                    @foreach($errors->all() as $error)
+                                        <li>{{ $error }}</li>
+                                    @endforeach
+                                </ul>
+                            </div>
+                        @endif
+                        
+                        @if(session('import_errors') && count(session('import_errors')) > 0)
+                            <div class="alert alert-warning mt-3">
+                                <i class="bi bi-info-circle-fill"></i>
+                                <strong>Warning pada beberapa baris:</strong>
+                                <ul class="mb-0 mt-2">
+                                    @foreach(session('import_errors') as $error)
+                                        <li>{{ $error }}</li>
+                                    @endforeach
+                                </ul>
+                            </div>
+                        @endif
+                    </div>
+                </div>
+            </div>
+        </div>
     </div>
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
@@ -690,17 +950,15 @@
             // Pandu Chart - tampilkan semua data
             const panduCtx = document.getElementById('panduChart').getContext('2d');
         new Chart(panduCtx, {
-            type: 'line',
+            type: 'bar',
             data: {
                 labels: statistics.map(s => s.NM_PERS_PANDU),
                 datasets: [{
                     label: 'Pendapatan Pemanduan',
                     data: statistics.map(s => s.total_pendapatan_pandu),
-                    backgroundColor: 'rgba(102, 126, 234, 0.2)',
+                    backgroundColor: 'rgba(102, 126, 234, 0.7)',
                     borderColor: 'rgba(102, 126, 234, 1)',
-                    borderWidth: 2,
-                    fill: true,
-                    tension: 0.4
+                    borderWidth: 2
                 }]
             },
             options: {
@@ -714,17 +972,15 @@
         // Tunda Chart - tampilkan semua data
         const tundaCtx = document.getElementById('tundaChart').getContext('2d');
         new Chart(tundaCtx, {
-            type: 'line',
+            type: 'bar',
             data: {
                 labels: statistics.map(s => s.NM_PERS_PANDU),
                 datasets: [{
                     label: 'Pendapatan Penundaan',
                     data: statistics.map(s => s.total_pendapatan_tunda),
-                    backgroundColor: 'rgba(16, 185, 129, 0.15)',
+                    backgroundColor: 'rgba(16, 185, 129, 0.7)',
                     borderColor: 'rgba(16, 185, 129, 1)',
-                    borderWidth: 2,
-                    fill: true,
-                    tension: 0.4
+                    borderWidth: 2
                 }]
             },
             options: {
@@ -734,6 +990,110 @@
                 }
             }
         });
+        }
+
+        // Ship Statistics by GT Range Charts
+        const shipStatsByGT = @json($shipStatsByGT ?? []);
+        
+        if (shipStatsByGT && shipStatsByGT.length > 0) {
+            // Group data by GT Range
+            const gtRanges = [...new Set(shipStatsByGT.map(s => s.RANGE_GT))];
+            
+            gtRanges.forEach(gtRange => {
+                const gtData = shipStatsByGT.filter(s => s.RANGE_GT === gtRange);
+                const chartId = 'gtChart' + gtRange.replace(/[\s\-><]/g, '');
+                const chartElement = document.getElementById(chartId);
+                
+                if (chartElement) {
+                    const nasionalData = gtData.find(d => d.JENIS_KAPAL_DARI_BENDERA === 'KAPAL NASIONAL');
+                    const asingData = gtData.find(d => d.JENIS_KAPAL_DARI_BENDERA === 'KAPAL ASING');
+                    
+                    const transaksiNasional = nasionalData ? nasionalData.total_transaksi : 0;
+                    const transaksiAsing = asingData ? asingData.total_transaksi : 0;
+                    const panduNasional = nasionalData ? nasionalData.total_pendapatan_pandu : 0;
+                    const panduAsing = asingData ? asingData.total_pendapatan_pandu : 0;
+                    const tundaNasional = nasionalData ? nasionalData.total_pendapatan_tunda : 0;
+                    const tundaAsing = asingData ? asingData.total_pendapatan_tunda : 0;
+                    
+                    const total = transaksiNasional + transaksiAsing;
+                    
+                    new Chart(chartElement.getContext('2d'), {
+                        type: 'doughnut',
+                        data: {
+                            labels: ['Kapal Nasional', 'Kapal Asing'],
+                            datasets: [
+                                {
+                                    label: 'Total Transaksi',
+                                    data: [transaksiNasional, transaksiAsing],
+                                    backgroundColor: [
+                                        'rgba(34, 197, 94, 0.8)',
+                                        'rgba(59, 130, 246, 0.8)'
+                                    ],
+                                    borderColor: [
+                                        'rgb(34, 197, 94)',
+                                        'rgb(59, 130, 246)'
+                                    ],
+                                    borderWidth: 2
+                                }
+                            ]
+                        },
+                        options: {
+                            responsive: true,
+                            maintainAspectRatio: true,
+                            plugins: {
+                                legend: {
+                                    display: true,
+                                    position: 'bottom',
+                                    labels: {
+                                        padding: 15,
+                                        font: {
+                                            size: 11,
+                                            weight: 'bold'
+                                        },
+                                        generateLabels: function(chart) {
+                                            const data = chart.data;
+                                            if (data.labels.length && data.datasets.length) {
+                                                return data.labels.map((label, i) => {
+                                                    const value = data.datasets[0].data[i];
+                                                    const percentage = total > 0 ? ((value / total) * 100).toFixed(1) : 0;
+                                                    return {
+                                                        text: label + ': ' + value + ' (' + percentage + '%)',
+                                                        fillStyle: data.datasets[0].backgroundColor[i],
+                                                        hidden: false,
+                                                        index: i
+                                                    };
+                                                });
+                                            }
+                                            return [];
+                                        }
+                                    }
+                                },
+                                tooltip: {
+                                    callbacks: {
+                                        label: function(context) {
+                                            const label = context.label || '';
+                                            const value = context.parsed || 0;
+                                            const percentage = total > 0 ? ((value / total) * 100).toFixed(1) : 0;
+                                            
+                                            const panduValue = context.dataIndex === 0 ? panduNasional : panduAsing;
+                                            const tundaValue = context.dataIndex === 0 ? tundaNasional : tundaAsing;
+                                            const totalPendapatan = panduValue + tundaValue;
+                                            
+                                            return [
+                                                label + ': ' + value + ' transaksi (' + percentage + '%)',
+                                                'Pandu: Rp ' + panduValue.toLocaleString('id-ID'),
+                                                'Tunda: Rp ' + tundaValue.toLocaleString('id-ID'),
+                                                'Total: Rp ' + totalPendapatan.toLocaleString('id-ID')
+                                            ];
+                                        }
+                                    }
+                                }
+                            },
+                            cutout: '60%'
+                        }
+                    });
+                }
+            });
         }
     </script>
 </body>

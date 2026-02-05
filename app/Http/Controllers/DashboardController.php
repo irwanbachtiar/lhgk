@@ -158,7 +158,9 @@ class DashboardController extends Controller
             $shipStatsByGT = collect();
             $showDeparture = false;
             $departureDelayCount = 0;
-            return view('dashboard', compact('statistics', 'totalOverall', 'periods', 'selectedPeriode', 'regionalGroups', 'allBranches', 'selectedBranch', 'topPilot', 'shipStatsByGT', 'showDeparture', 'departureDelayCount'));
+            $showStatusNota = false;
+            $statusNotaCount = 0;
+            return view('dashboard', compact('statistics', 'totalOverall', 'periods', 'selectedPeriode', 'regionalGroups', 'allBranches', 'selectedBranch', 'topPilot', 'shipStatsByGT', 'showDeparture', 'departureDelayCount', 'showStatusNota', 'statusNotaCount'));
         }
 
         // Build query with period filter
@@ -227,7 +229,10 @@ class DashboardController extends Controller
                 ->value('avg_wt'),
             'max_wt' => (clone $baseQuery)
                 ->selectRaw("MAX(CAST(SUBSTRING_INDEX(WT, ' : ', 1) AS UNSIGNED) + CAST(SUBSTRING_INDEX(WT, ' : ', -1) AS UNSIGNED) / 60.0) as max_wt")
-                ->value('max_wt')
+                ->value('max_wt'),
+            'nota_batal' => (clone $baseQuery)->where('STATUS_NOTA', 'batal')->count(),
+            'menunggu_nota' => (clone $baseQuery)->where('STATUS_NOTA', 'menunggu nota')->count(),
+            'belum_verifikasi' => (clone $baseQuery)->where('STATUS_NOTA', 'belum verifikasi')->count()
         ];
 
         // Get top pilot dengan produksi tertinggi
@@ -296,6 +301,32 @@ class DashboardController extends Controller
                 ->count();
         }
 
+        // Check if user wants to see status nota data
+        $showStatusNota = $request->get('show_status_nota', 0);
+        $filterStatusNota = $request->get('filter_status_nota', 'all'); // all, menunggu nota, belum verifikasi
+        
+        // Build status nota filter array
+        $statusNotaFilter = [];
+        if ($filterStatusNota == 'all') {
+            $statusNotaFilter = ['menunggu nota', 'belum verifikasi'];
+        } else {
+            $statusNotaFilter = [$filterStatusNota];
+        }
+        
+        // Get count of status nota data
+        if ($showStatusNota) {
+            $statusNotaCount = Lhgk::whereIn('STATUS_NOTA', $statusNotaFilter)
+                ->where('PERIODE', $selectedPeriode)
+                ->where('NM_BRANCH', $selectedBranch)
+                ->count();
+        } else {
+            $statusNotaCount = Lhgk::whereIn('STATUS_NOTA', $statusNotaFilter)
+                ->where('PERIODE', $selectedPeriode)
+                ->where('NM_BRANCH', $selectedBranch)
+                ->limit(1)
+                ->count();
+        }
+
         // Load actual departure delay data only if requested
         $departureDelayData = null;
         if ($showDeparture && $departureDelayCount > 0) {
@@ -324,7 +355,29 @@ class DashboardController extends Controller
                 ->appends(['periode' => $selectedPeriode, 'cabang' => $selectedBranch, 'show_departure' => 1]);
         }
 
-        return view('dashboard', compact('statistics', 'totalOverall', 'periods', 'selectedPeriode', 'regionalGroups', 'allBranches', 'selectedBranch', 'topPilot', 'shipStatsByGT', 'showDeparture', 'departureDelayCount', 'departureDelayData'));
+        // Load actual status nota data only if requested
+        $statusNotaData = null;
+        if ($showStatusNota && $statusNotaCount > 0) {
+            $statusNotaData = Lhgk::select(
+                    'NO_UKK',
+                    'NM_KAPAL',
+                    'PELAYARAN',
+                    'NM_PERS_PANDU',
+                    'MULAI_PELAKSANAAN',
+                    'SELESAI_PELAKSANAAN',
+                    'PENDAPATAN_PANDU',
+                    'PENDAPATAN_TUNDA',
+                    'STATUS_NOTA'
+                )
+                ->whereIn('STATUS_NOTA', $statusNotaFilter)
+                ->where('PERIODE', $selectedPeriode)
+                ->where('NM_BRANCH', $selectedBranch)
+                ->orderBy('MULAI_PELAKSANAAN', 'desc')
+                ->paginate(10)
+                ->appends(['periode' => $selectedPeriode, 'cabang' => $selectedBranch, 'show_status_nota' => 1, 'filter_status_nota' => $filterStatusNota]);
+        }
+
+        return view('dashboard', compact('statistics', 'totalOverall', 'periods', 'selectedPeriode', 'regionalGroups', 'allBranches', 'selectedBranch', 'topPilot', 'shipStatsByGT', 'showDeparture', 'departureDelayCount', 'departureDelayData', 'showStatusNota', 'statusNotaCount', 'statusNotaData', 'filterStatusNota'));
     }
 
     public function exportDepartureDelay(Request $request)
@@ -431,6 +484,117 @@ class DashboardController extends Controller
                 number_format($departureDelayData->sum('PENDAPATAN_PANDU'), 0, ',', '.'),
                 number_format($departureDelayData->sum('PENDAPATAN_TUNDA'), 0, ',', '.'),
                 number_format($departureDelayData->sum('PENDAPATAN_PANDU') + $departureDelayData->sum('PENDAPATAN_TUNDA'), 0, ',', '.')
+            ]);
+
+            fclose($file);
+        };
+
+        return response()->stream($callback, 200, $headers);
+    }
+
+    public function exportStatusNota(Request $request)
+    {
+        $selectedPeriode = $request->get('periode');
+        $selectedBranch = $request->get('cabang');
+        $filterStatusNota = $request->get('filter_status_nota', 'all');
+
+        if (!$selectedPeriode || !$selectedBranch) {
+            return redirect()->back()->with('error', 'Pilih periode dan cabang terlebih dahulu');
+        }
+
+        // Build status nota filter array
+        $statusNotaFilter = [];
+        if ($filterStatusNota == 'all') {
+            $statusNotaFilter = ['menunggu nota', 'belum verifikasi'];
+        } else {
+            $statusNotaFilter = [$filterStatusNota];
+        }
+
+        // Get all status nota data for export
+        $statusNotaData = Lhgk::select(
+                'NO_UKK',
+                'NM_KAPAL',
+                'PELAYARAN',
+                'NM_PERS_PANDU',
+                'MULAI_PELAKSANAAN',
+                'SELESAI_PELAKSANAAN',
+                'PENDAPATAN_PANDU',
+                'PENDAPATAN_TUNDA',
+                'STATUS_NOTA'
+            )
+            ->whereIn('STATUS_NOTA', $statusNotaFilter)
+            ->where('PERIODE', $selectedPeriode)
+            ->where('NM_BRANCH', $selectedBranch)
+            ->orderBy('MULAI_PELAKSANAAN', 'desc')
+            ->get();
+
+        if ($statusNotaData->isEmpty()) {
+            return redirect()->back()->with('error', 'Tidak ada data status nota untuk periode dan cabang yang dipilih');
+        }
+
+        // Generate CSV file
+        $filename = 'Status_Nota_' . str_replace(' ', '_', $selectedBranch) . '_' . str_replace('-', '', $selectedPeriode) . '_' . date('YmdHis') . '.csv';
+        
+        $headers = [
+            'Content-Type' => 'text/csv; charset=UTF-8',
+            'Content-Disposition' => 'attachment; filename="' . $filename . '"',
+            'Pragma' => 'no-cache',
+            'Cache-Control' => 'must-revalidate, post-check=0, pre-check=0',
+            'Expires' => '0'
+        ];
+
+        $callback = function() use ($statusNotaData) {
+            $file = fopen('php://output', 'w');
+            
+            // Add BOM for UTF-8
+            fprintf($file, chr(0xEF).chr(0xBB).chr(0xBF));
+            
+            // Header
+            fputcsv($file, [
+                'No',
+                'No. UKK',
+                'Nama Kapal',
+                'Pelayaran',
+                'Nama Pandu',
+                'Mulai Pelaksanaan',
+                'Selesai Pelaksanaan',
+                'Pendapatan Pandu',
+                'Pendapatan Tunda',
+                'Total Pendapatan',
+                'Status Nota'
+            ]);
+
+            // Data
+            $no = 1;
+            foreach ($statusNotaData as $data) {
+                fputcsv($file, [
+                    $no++,
+                    $data->NO_UKK,
+                    $data->NM_KAPAL,
+                    $data->PELAYARAN ?? '-',
+                    $data->NM_PERS_PANDU,
+                    $data->MULAI_PELAKSANAAN,
+                    $data->SELESAI_PELAKSANAAN,
+                    number_format($data->PENDAPATAN_PANDU, 0, ',', '.'),
+                    number_format($data->PENDAPATAN_TUNDA, 0, ',', '.'),
+                    number_format($data->PENDAPATAN_PANDU + $data->PENDAPATAN_TUNDA, 0, ',', '.'),
+                    strtoupper($data->STATUS_NOTA)
+                ]);
+            }
+
+            // Summary
+            fputcsv($file, []);
+            fputcsv($file, [
+                '',
+                '',
+                '',
+                '',
+                '',
+                '',
+                'TOTAL:',
+                number_format($statusNotaData->sum('PENDAPATAN_PANDU'), 0, ',', '.'),
+                number_format($statusNotaData->sum('PENDAPATAN_TUNDA'), 0, ',', '.'),
+                number_format($statusNotaData->sum('PENDAPATAN_PANDU') + $statusNotaData->sum('PENDAPATAN_TUNDA'), 0, ',', '.')
             ]);
 
             fclose($file);
