@@ -119,6 +119,230 @@ class DashboardController extends Controller
         ];
     }
 
+    public function operasional(Request $request)
+    {
+        $selectedPeriode = $request->get('periode', 'all');
+        $selectedBranch = $request->get('cabang', 'all');
+
+        $regionalGroups = $this->getRegionalGroups();
+
+        $allBranches = Lhgk::select('NM_BRANCH')
+            ->whereNotNull('NM_BRANCH')
+            ->where('NM_BRANCH', '!=', '')
+            ->groupBy('NM_BRANCH')
+            ->orderBy('NM_BRANCH')
+            ->pluck('NM_BRANCH')
+            ->toArray();
+
+        $periods = Lhgk::select('PERIODE')
+            ->whereNotNull('PERIODE')
+            ->where('PERIODE', '!=', '')
+            ->groupBy('PERIODE')
+            ->orderByRaw("STR_TO_DATE(CONCAT('01-', PERIODE), '%d-%m-%Y') DESC")
+            ->pluck('PERIODE');
+
+        // If filters not selected, show empty state
+        if ($selectedPeriode == 'all' || $selectedBranch == 'all') {
+            $stats = [];
+            $tundaDistinct = 0;
+            $transaksiByShip = collect();
+            return view('dashboard-operasional', compact('stats', 'tundaDistinct', 'transaksiByShip', 'periods', 'selectedPeriode', 'regionalGroups', 'allBranches', 'selectedBranch'));
+        }
+
+        // Base query with filters
+        $baseQuery = Lhgk::where('PERIODE', $selectedPeriode)
+            ->where('NM_BRANCH', $selectedBranch);
+
+        // jumlah pandu (distinct NM_PERS_PANDU)
+        $totalPandu = (clone $baseQuery)->distinct('NM_PERS_PANDU')->count('NM_PERS_PANDU');
+
+        // jumlah kapal tunda: count distinct names across NM_KAPAL_1/2/3
+        $tundaResult = DB::connection('dashboard_phinnisi')->selectOne(
+            "SELECT COUNT(DISTINCT nm) as total FROM (
+                SELECT NM_KAPAL_1 as nm FROM lhgk WHERE PERIODE = ? AND NM_BRANCH = ? AND NM_KAPAL_1 IS NOT NULL AND NM_KAPAL_1 != ''
+                UNION ALL
+                SELECT NM_KAPAL_2 as nm FROM lhgk WHERE PERIODE = ? AND NM_BRANCH = ? AND NM_KAPAL_2 IS NOT NULL AND NM_KAPAL_2 != ''
+                UNION ALL
+                SELECT NM_KAPAL_3 as nm FROM lhgk WHERE PERIODE = ? AND NM_BRANCH = ? AND NM_KAPAL_3 IS NOT NULL AND NM_KAPAL_3 != ''
+            ) t",
+            [$selectedPeriode, $selectedBranch, $selectedPeriode, $selectedBranch, $selectedPeriode, $selectedBranch]
+        );
+
+        $tundaDistinct = $tundaResult->total ?? 0;
+
+        // jumlah transaksi berdasarkan kelompok pelayaran (Dalam Negeri / Luar Negeri) lalu jenis kapal, serta rata-rata GT
+        $pelayaranCase = "CASE WHEN LOWER(PELAYARAN) LIKE '%luar%' THEN 'Luar Negeri' ELSE 'Dalam Negeri' END";
+
+        // compute averages ignoring zero values using NULLIF; convert lama_tunda from HH:MM to decimal hours and capture counts of non-zero values for weighting
+        $transaksiByShip = (clone $baseQuery)
+            ->selectRaw("{$pelayaranCase} as pelayaran_group, JN_KAPAL, COUNT(*) as jumlah,
+                AVG(NULLIF(
+                    CASE
+                        WHEN lama_tunda LIKE '%:%' THEN (CAST(SUBSTRING_INDEX(REPLACE(lama_tunda,' ',''), ':', 1) AS DECIMAL(12,2)) + (CAST(SUBSTRING_INDEX(REPLACE(lama_tunda,' ',''), ':', -1) AS DECIMAL(12,2)) / 60.0))
+                        WHEN lama_tunda REGEXP '^[0-9]+(\\.[0-9]+)?$' THEN CAST(lama_tunda AS DECIMAL(12,2))
+                        ELSE NULL
+                    END
+                , 0)) as avg_lama_tunda,
+                SUM(CASE WHEN NULLIF(
+                    CASE
+                        WHEN lama_tunda LIKE '%:%' THEN (CAST(SUBSTRING_INDEX(REPLACE(lama_tunda,' ',''), ':', 1) AS DECIMAL(12,2)) + (CAST(SUBSTRING_INDEX(REPLACE(lama_tunda,' ',''), ':', -1) AS DECIMAL(12,2)) / 60.0))
+                        WHEN lama_tunda REGEXP '^[0-9]+(\\.[0-9]+)?$' THEN CAST(lama_tunda AS DECIMAL(12,2))
+                        ELSE NULL
+                    END
+                , 0) IS NOT NULL THEN 1 ELSE 0 END) as cnt_lama,
+                AVG(NULLIF(CAST(KP_GRT AS DECIMAL(12,2)), 0)) as avg_grt,
+                SUM(CASE WHEN NULLIF(CAST(KP_GRT AS DECIMAL(12,2)), 0) IS NOT NULL THEN 1 ELSE 0 END) as cnt_grt,
+                AVG(NULLIF(CAST(TRT AS DECIMAL(12,2)), 0)) as avg_trt,
+                SUM(CASE WHEN NULLIF(CAST(TRT AS DECIMAL(12,2)), 0) IS NOT NULL THEN 1 ELSE 0 END) as cnt_trt,
+                AVG(NULLIF(CAST(AT_Jam AS DECIMAL(12,2)), 0)) as avg_at,
+                SUM(CASE WHEN NULLIF(CAST(AT_Jam AS DECIMAL(12,2)), 0) IS NOT NULL THEN 1 ELSE 0 END) as cnt_at")
+            ->whereNotNull('JN_KAPAL')
+            ->where('JN_KAPAL', '!=', '')
+            ->groupBy(DB::raw($pelayaranCase), 'JN_KAPAL')
+            ->orderByRaw("{$pelayaranCase} ASC")
+            ->orderBy('jumlah', 'desc')
+            ->get();
+
+        $stats = [
+            'total_pandu' => $totalPandu,
+            'total_tunda_kapal' => $tundaDistinct,
+            'total_transaksi' => (clone $baseQuery)->count()
+        ];
+
+        // counts of REALISAS_PILOT_VIA (web, mobile, partial) from lhgk
+        $viaCounts = (clone $baseQuery)
+            ->selectRaw("SUM(CASE WHEN UPPER(REALISAS_PILOT_VIA) = 'WEB' THEN 1 ELSE 0 END) as web")
+            ->selectRaw("SUM(CASE WHEN UPPER(REALISAS_PILOT_VIA) = 'MOBILE' THEN 1 ELSE 0 END) as mobile")
+            ->selectRaw("SUM(CASE WHEN UPPER(REALISAS_PILOT_VIA) = 'PARTIAL' THEN 1 ELSE 0 END) as partial")
+            ->first();
+
+        // daftar nama pandu (distinct)
+        $pilotList = (clone $baseQuery)
+            ->whereNotNull('NM_PERS_PANDU')
+            ->where('NM_PERS_PANDU', '!=', '')
+            ->groupBy('NM_PERS_PANDU')
+            ->orderBy('NM_PERS_PANDU')
+            ->pluck('NM_PERS_PANDU')
+            ->toArray();
+
+        // daftar nama tunda (distinct across NM_KAPAL_1/2/3)
+        $tundaRows = DB::connection('dashboard_phinnisi')->select(
+            "SELECT DISTINCT nm FROM (
+                SELECT NM_KAPAL_1 as nm FROM lhgk WHERE PERIODE = ? AND NM_BRANCH = ? AND NM_KAPAL_1 IS NOT NULL AND NM_KAPAL_1 != ''
+                UNION ALL
+                SELECT NM_KAPAL_2 as nm FROM lhgk WHERE PERIODE = ? AND NM_BRANCH = ? AND NM_KAPAL_2 IS NOT NULL AND NM_KAPAL_2 != ''
+                UNION ALL
+                SELECT NM_KAPAL_3 as nm FROM lhgk WHERE PERIODE = ? AND NM_BRANCH = ? AND NM_KAPAL_3 IS NOT NULL AND NM_KAPAL_3 != ''
+            ) t ORDER BY nm",
+            [$selectedPeriode, $selectedBranch, $selectedPeriode, $selectedBranch, $selectedPeriode, $selectedBranch]
+        );
+
+        $tundaList = array_map(function($r) { return $r->nm ?? null; }, $tundaRows);
+
+        return view('dashboard-operasional', compact('stats', 'tundaDistinct', 'transaksiByShip', 'periods', 'selectedPeriode', 'regionalGroups', 'allBranches', 'selectedBranch', 'pilotList', 'tundaList', 'viaCounts'));
+    }
+
+    public function exportOperasional(Request $request)
+    {
+        $selectedPeriode = $request->get('periode');
+        $selectedBranch = $request->get('cabang');
+
+        if (!$selectedPeriode || !$selectedBranch) {
+            return redirect()->back()->with('error', 'Pilih periode dan cabang terlebih dahulu');
+        }
+
+        $baseQuery = Lhgk::where('PERIODE', $selectedPeriode)
+            ->where('NM_BRANCH', $selectedBranch);
+
+        $pelayaranCase = "CASE WHEN LOWER(PELAYARAN) LIKE '%luar%' THEN 'Luar Negeri' ELSE 'Dalam Negeri' END";
+
+        $rows = (clone $baseQuery)
+            ->selectRaw("{$pelayaranCase} as pelayaran_group, JN_KAPAL, COUNT(*) as jumlah,
+                AVG(NULLIF(
+                    CASE
+                        WHEN lama_tunda LIKE '%:%' THEN (CAST(SUBSTRING_INDEX(REPLACE(lama_tunda,' ',''), ':', 1) AS DECIMAL(12,2)) + (CAST(SUBSTRING_INDEX(REPLACE(lama_tunda,' ',''), ':', -1) AS DECIMAL(12,2)) / 60.0))
+                        WHEN lama_tunda REGEXP '^[0-9]+(\\.[0-9]+)?$' THEN CAST(lama_tunda AS DECIMAL(12,2))
+                        ELSE NULL
+                    END
+                , 0)) as avg_lama_tunda,
+                SUM(CASE WHEN NULLIF(
+                    CASE
+                        WHEN lama_tunda LIKE '%:%' THEN (CAST(SUBSTRING_INDEX(REPLACE(lama_tunda,' ',''), ':', 1) AS DECIMAL(12,2)) + (CAST(SUBSTRING_INDEX(REPLACE(lama_tunda,' ',''), ':', -1) AS DECIMAL(12,2)) / 60.0))
+                        WHEN lama_tunda REGEXP '^[0-9]+(\\.[0-9]+)?$' THEN CAST(lama_tunda AS DECIMAL(12,2))
+                        ELSE NULL
+                    END
+                , 0) IS NOT NULL THEN 1 ELSE 0 END) as cnt_lama,
+                AVG(NULLIF(CAST(KP_GRT AS DECIMAL(12,2)), 0)) as avg_grt,
+                SUM(CASE WHEN NULLIF(CAST(KP_GRT AS DECIMAL(12,2)), 0) IS NOT NULL THEN 1 ELSE 0 END) as cnt_grt,
+                AVG(NULLIF(CAST(TRT AS DECIMAL(12,2)), 0)) as avg_trt,
+                SUM(CASE WHEN NULLIF(CAST(TRT AS DECIMAL(12,2)), 0) IS NOT NULL THEN 1 ELSE 0 END) as cnt_trt,
+                AVG(NULLIF(CAST(AT_Jam AS DECIMAL(12,2)), 0)) as avg_at,
+                SUM(CASE WHEN NULLIF(CAST(AT_Jam AS DECIMAL(12,2)), 0) IS NOT NULL THEN 1 ELSE 0 END) as cnt_at")
+            ->whereNotNull('JN_KAPAL')
+            ->where('JN_KAPAL', '!=', '')
+            ->groupBy(DB::raw($pelayaranCase), 'JN_KAPAL')
+            ->orderByRaw("{$pelayaranCase} ASC")
+            ->orderBy('JN_KAPAL')
+            ->get();
+
+        // Prepare grouped data for CSV by pelayaran_group then JN_KAPAL
+        $grouped = $rows->groupBy('pelayaran_group');
+
+        $filename = 'Operasional_' . str_replace(' ', '_', $selectedBranch) . '_' . str_replace('-', '', $selectedPeriode) . '_' . date('YmdHis') . '.csv';
+
+        $headers = [
+            'Content-Type' => 'text/csv; charset=UTF-8',
+            'Content-Disposition' => 'attachment; filename="' . $filename . '"',
+        ];
+
+        $callback = function() use ($grouped) {
+            $out = fopen('php://output', 'w');
+            // BOM
+            fprintf($out, chr(0xEF).chr(0xBB).chr(0xBF));
+
+            // Header
+            fputcsv($out, ['Jenis Kapal', 'Pelayaran', 'Jumlah', 'Rata-rata Jam Tunda', 'Rata-rata GT', 'Rata-rata TRT', 'Rata-rata AT']);
+
+            foreach ($grouped as $jn => $items) {
+                // parent totals: sum jumlah, weighted avg
+                $totalJumlah = $items->sum('jumlah');
+                // compute weighted parent averages using counts of non-zero values (cnt_*)
+                $weightedSumLama = $items->reduce(function($carry, $i) {
+                    return $carry + ((float)($i->avg_lama_tunda ?? 0) * (int)($i->cnt_lama ?? 0));
+                }, 0);
+                $weightedSumGrt = $items->reduce(function($carry, $i) {
+                    return $carry + ((float)($i->avg_grt ?? 0) * (int)($i->cnt_grt ?? 0));
+                }, 0);
+                $weightedSumTrt = $items->reduce(function($carry, $i) {
+                    return $carry + ((float)($i->avg_trt ?? 0) * (int)($i->cnt_trt ?? 0));
+                }, 0);
+                $weightedSumAt = $items->reduce(function($carry, $i) {
+                    return $carry + ((float)($i->avg_at ?? 0) * (int)($i->cnt_at ?? 0));
+                }, 0);
+
+                $totalCntLama = $items->sum(function($i) { return (int)($i->cnt_lama ?? 0); });
+                $totalCntGrt = $items->sum(function($i) { return (int)($i->cnt_grt ?? 0); });
+                $totalCntTrt = $items->sum(function($i) { return (int)($i->cnt_trt ?? 0); });
+                $totalCntAt = $items->sum(function($i) { return (int)($i->cnt_at ?? 0); });
+
+                $parentAvgLama = $totalCntLama ? ($weightedSumLama / $totalCntLama) : 0;
+                $parentAvgGrt = $totalCntGrt ? ($weightedSumGrt / $totalCntGrt) : 0;
+                $parentAvgTrt = $totalCntTrt ? ($weightedSumTrt / $totalCntTrt) : 0;
+                $parentAvgAt = $totalCntAt ? ($weightedSumAt / $totalCntAt) : 0;
+
+                fputcsv($out, [$jn, '', $totalJumlah, number_format((float)$parentAvgLama, 2, '.', ''), number_format((float)$parentAvgGrt, 2, '.', ''), number_format((float)$parentAvgTrt, 2, '.', ''), number_format((float)$parentAvgAt, 2, '.', '')]);
+
+                foreach ($items as $it) {
+                    fputcsv($out, [$it->JN_KAPAL ?? '', $it->pelayaran_group ?? '-', $it->jumlah, number_format((float)($it->avg_lama_tunda ?? 0), 2, '.', ''), number_format((float)($it->avg_grt ?? 0), 2, '.', ''), number_format((float)($it->avg_trt ?? 0), 2, '.', ''), number_format((float)($it->avg_at ?? 0), 2, '.', '')]);
+                }
+            }
+
+            fclose($out);
+        };
+
+        return response()->stream($callback, 200, $headers);
+    }
+
     public function index(Request $request)
     {
         // Get selected period and branch

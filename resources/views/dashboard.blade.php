@@ -84,6 +84,9 @@
         <div class="container-fluid">
             <span class="navbar-brand mb-0 h1"><i class="bi bi-graph-up-arrow"></i> Dashboard LHGK</span>
             <div>
+                <a href="{{ route('dashboard.operasional') }}" class="btn btn-light btn-sm me-2">
+                    <i class="bi bi-kanban-fill"></i> Dashboard Operasional
+                </a>
                 <a href="{{ route('monitoring.nota') }}" class="btn btn-light btn-sm me-2">
                     <i class="bi bi-file-earmark-text"></i> Monitoring Nota
                 </a>

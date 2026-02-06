@@ -10,6 +10,8 @@ use App\Http\Controllers\RegionalController;
 use App\Models\Lhgk;
 
 Route::get('/', [DashboardController::class, 'index'])->name('dashboard');
+Route::get('/dashboard-operasional', [DashboardController::class, 'operasional'])->name('dashboard.operasional');
+Route::get('/dashboard-operasional/export', [DashboardController::class, 'exportOperasional'])->name('dashboard.operasional.export');
 Route::get('/analisis-kelelahan', [DashboardController::class, 'analisisKelelahan'])->name('analisis.kelelahan');
 Route::post('/upload-csv', [DashboardController::class, 'uploadCsv'])->name('upload.csv');
 Route::get('/export-departure-delay', [DashboardController::class, 'exportDepartureDelay'])->name('export.departure.delay');
