@@ -38,6 +38,12 @@
         .wilayah-3 { border-left-color: #4facfe; }
         .wilayah-4 { border-left-color: #43e97b; }
         .jai { border-left-color: #f59e0b; }
+        .regional-revenue-card {
+            min-height: 520px;
+        }
+        .chart-card {
+            min-height: 480px;
+        }
     </style>
 </head>
 <body>
@@ -236,7 +242,7 @@
             <!-- Charts Section -->
             <div class="row mb-4">
                 <div class="col-md-6">
-                    <div class="card stat-card">
+                    <div class="card stat-card chart-card">
                         <div class="card-header bg-primary text-white">
                             <h5 class="mb-0"><i class="bi bi-bar-chart"></i> Pendapatan Per Wilayah</h5>
                         </div>
@@ -246,7 +252,7 @@
                     </div>
                 </div>
                 <div class="col-md-6">
-                    <div class="card stat-card">
+                    <div class="card stat-card chart-card">
                         <div class="card-header bg-success text-white">
                             <h5 class="mb-0"><i class="bi bi-pie-chart"></i> Distribusi Total Pendapatan</h5>
                         </div>
@@ -363,14 +369,22 @@
                         data: panduData,
                         backgroundColor: 'rgba(75, 192, 192, 0.7)',
                         borderColor: 'rgb(75, 192, 192)',
-                        borderWidth: 2
+                        borderWidth: 2,
+                        barThickness: 18,
+                        maxBarThickness: 24,
+                        categoryPercentage: 0.6,
+                        barPercentage: 0.7
                     },
                     {
                         label: 'Pendapatan Tunda (Rp)',
                         data: tundaData,
                         backgroundColor: 'rgba(255, 99, 132, 0.7)',
                         borderColor: 'rgb(255, 99, 132)',
-                        borderWidth: 2
+                        borderWidth: 2,
+                        barThickness: 18,
+                        maxBarThickness: 24,
+                        categoryPercentage: 0.6,
+                        barPercentage: 0.7
                     }
                 ]
             },
@@ -398,6 +412,12 @@
                             callback: function(value) {
                                 return 'Rp ' + (value / 1000000).toFixed(1) + 'M';
                             }
+                        }
+                    },
+                    y: {
+                        offset: true,
+                        ticks: {
+                            padding: 28
                         }
                     }
                 }

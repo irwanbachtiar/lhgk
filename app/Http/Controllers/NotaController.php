@@ -184,6 +184,7 @@ class NotaController extends Controller
                 ->when($selectedBranch != 'all', function($q) use ($selectedBranch) {
                     return $q->where('NAME_BRANCH', $selectedBranch);
                 })
+                ->where('BILLING', 'NOT LIKE', 'HIS%')
                 ->sum('REVENUE');
             
             // Get total tunda revenue - sum directly from REVENUE column (including duplicates)
@@ -194,6 +195,7 @@ class NotaController extends Controller
                 ->when($selectedBranch != 'all', function($q) use ($selectedBranch) {
                     return $q->where('NAME_BRANCH', $selectedBranch);
                 })
+                ->where('BILLING', 'NOT LIKE', 'HIS%')
                 ->sum('REVENUE');
             
             // Get cancelled invoices (Nota Batal) - BILLING starting with "HIS"
@@ -263,20 +265,27 @@ class NotaController extends Controller
                     }
                 }
                 
-                if ($tundaNameColumn) {
-                    $revenuePerTunda = DB::connection('dashboard_phinnisi')->table(DB::raw("(SELECT tunda_prod.BILLING, MAX(tunda_prod.REVENUE) as REVENUE, MAX(tunda_prod.{$tundaNameColumn}) as tunda_name, MAX(tunda_prod.INVOICE_DATE) as INVOICE_DATE FROM dashboard_phinnisi.tunda_prod WHERE tunda_prod.{$tundaNameColumn} IS NOT NULL AND tunda_prod.{$tundaNameColumn} != '' GROUP BY tunda_prod.BILLING) as tunda"))
-                        ->join(DB::raw('(SELECT BILLING, MAX(NAME_BRANCH) as NAME_BRANCH FROM dashboard_phinnisi.pandu_prod GROUP BY BILLING) as pandu'), 'tunda.BILLING', '=', 'pandu.BILLING')
-                        ->when($selectedPeriode != 'all', function($q) use ($selectedPeriode) {
-                            return $q->whereRaw('DATE_FORMAT(STR_TO_DATE(tunda.INVOICE_DATE, \'%d-%m-%Y\'), \'%m-%Y\') = ?', [$selectedPeriode]);
-                        })
-                        ->when($selectedBranch != 'all', function($q) use ($selectedBranch) {
-                            return $q->where('pandu.NAME_BRANCH', $selectedBranch);
-                        })
-                        ->select('tunda.tunda_name', DB::raw('SUM(tunda.REVENUE) as total_revenue'), DB::raw('COUNT(DISTINCT tunda.BILLING) as total_transaksi'))
-                        ->groupBy('tunda.tunda_name')
-                        ->orderByDesc('total_revenue')
-                        ->get();
-                }
+                    if ($tundaNameColumn) {
+                        // Query tunda_prod directly, left join pandu to get branch mapping,
+                        // use COALESCE to fallback to tunda's own branch when pandu mapping is absent.
+                        // Exclude cancelled billings (HIS%). Group by tunda name to sum all revenues
+                        // and count distinct billings.
+                        $revenuePerTunda = DB::connection('dashboard_phinnisi')->table('tunda_prod as tunda')
+                            ->leftJoin(DB::raw('(SELECT BILLING, MAX(NAME_BRANCH) as NAME_BRANCH FROM dashboard_phinnisi.pandu_prod GROUP BY BILLING) as pandu'), 'tunda.BILLING', '=', 'pandu.BILLING')
+                            ->where("tunda.{$tundaNameColumn}", '!=', '')
+                            ->whereNotNull("tunda.{$tundaNameColumn}")
+                            ->where('tunda.BILLING', 'NOT LIKE', 'HIS%')
+                            ->when($selectedPeriode != 'all', function($q) use ($selectedPeriode) {
+                                return $q->whereRaw('DATE_FORMAT(STR_TO_DATE(tunda.INVOICE_DATE, \'%d-%m-%Y\'), \'%m-%Y\') = ?', [$selectedPeriode]);
+                            })
+                            ->when($selectedBranch != 'all', function($q) use ($selectedBranch) {
+                                return $q->whereRaw('COALESCE(pandu.NAME_BRANCH, tunda.NAME_BRANCH) = ?', [$selectedBranch]);
+                            })
+                            ->select("tunda.{$tundaNameColumn} as tunda_name", DB::raw('SUM(tunda.REVENUE) as total_revenue'), DB::raw('COUNT(DISTINCT tunda.BILLING) as total_transaksi'))
+                            ->groupBy("tunda.{$tundaNameColumn}")
+                            ->orderByDesc('total_revenue')
+                            ->get();
+                    }
             } catch (\Exception $e) {
                 // If error, return empty collection
                 \Log::error('Error getting tunda revenue: ' . $e->getMessage());
@@ -329,6 +338,197 @@ class NotaController extends Controller
             'revenuePerTunda',
             'topShippingAgents'
         ));
+    }
+
+    /**
+     * Pendapatan SAP page
+     */
+    public function pendapatanSap(Request $request)
+    {
+        $selectedPeriode = $request->get('periode', 'all');
+        $selectedCabang = $request->get('cabang', 'all');
+
+        // Use `name_branch` column from `profit_center` for branch filter
+        $profitCenterCol = 'name_branch';
+        $allBranches = collect();
+        try {
+            $allBranches = DB::connection('dashboard_phinnisi')->table('profit_center')
+                ->whereNotNull($profitCenterCol)
+                ->where($profitCenterCol, '!=', '')
+                ->groupBy($profitCenterCol)
+                ->orderBy($profitCenterCol)
+                ->pluck($profitCenterCol);
+        } catch (\Exception $e) {
+            $allBranches = collect();
+        }
+
+        // Periods derived from tanggal nota column in pendapatan_sap
+        $periods = collect();
+        $tanggalNotaCol = null;
+        try {
+            $cols = DB::connection('dashboard_phinnisi')->select("SHOW COLUMNS FROM pendapatan_sap");
+            $fields = array_map(function($c){ return $c->Field; }, $cols);
+            // detect column name for tanggal nota
+            foreach ($fields as $f) {
+                $normalized = strtolower(str_replace([' ', '_'], '', $f));
+                if (in_array($normalized, ['tanggalnota', 'tglnota', 'tanggalket', 'tanggaldok', 'tanggal', 'tanggal_nota', 'tgl_nota', 'invoicedate', 'invoice_date'])) {
+                    $tanggalNotaCol = $f;
+                    break;
+                }
+            }
+
+            if ($tanggalNotaCol) {
+                $periods = DB::connection('dashboard_phinnisi')->table('pendapatan_sap')
+                    ->selectRaw("DATE_FORMAT(STR_TO_DATE({$tanggalNotaCol}, '%d-%m-%Y'), '%m-%Y') as periode")
+                    ->whereNotNull($tanggalNotaCol)
+                    ->where($tanggalNotaCol, '!=', '')
+                    ->groupBy('periode')
+                    ->orderByRaw("STR_TO_DATE(CONCAT('01-', periode), '%d-%m-%Y') DESC")
+                    ->pluck('periode');
+            }
+        } catch (\Exception $e) {
+            $periods = collect();
+            $tanggalNotaCol = null;
+        }
+
+        // If no filters, render empty state similar to monitoring-nota
+        if ($selectedPeriode == 'all' && $selectedCabang == 'all') {
+            $totalRows = 0;
+            $totalRevenue = 0;
+            return view('pendapatan-sap', compact('periods', 'selectedPeriode', 'allBranches', 'selectedCabang', 'totalRows', 'totalRevenue'));
+        }
+
+        // Build base query on pendapatan_sap
+        $conn = DB::connection('dashboard_phinnisi');
+        $table = 'pendapatan_sap';
+
+        // If table doesn't exist, return view with error flag
+        try {
+            $schema = $conn->getSchemaBuilder();
+            if (!$schema->hasTable($table)) {
+                return view('pendapatan-sap', compact('periods', 'selectedPeriode', 'allBranches', 'selectedCabang'))
+                    ->with('missingTable', true);
+            }
+        } catch (\Exception $e) {
+            return view('pendapatan-sap', compact('periods', 'selectedPeriode', 'allBranches', 'selectedCabang'))
+                ->with('missingTable', true)->with('missingTableError', $e->getMessage());
+        }
+
+        // Detect revenue column
+        $revenueCol = null;
+        $sapProfitCenterCol = null;
+        try {
+            $cols = $conn->select("SHOW COLUMNS FROM {$table}");
+            $fields = array_map(function($c){ return $c->Field; }, $cols);
+            $candidates = ['REVENUE', 'revenue', 'PENDAPATAN', 'pendapatan', 'TOTAL', 'amount'];
+            foreach ($candidates as $cand) {
+                if (in_array($cand, $fields)) {
+                    $revenueCol = $cand;
+                    break;
+                }
+            }
+            // detect profit_center column name in pendapatan_sap
+            foreach ($fields as $f) {
+                if (strtolower(str_replace([' ', '_'], '', $f)) === 'profitcenter' || strtolower($f) === 'profit_center') {
+                    $sapProfitCenterCol = $f;
+                    break;
+                }
+            }
+        } catch (\Exception $e) {
+            $revenueCol = null;
+        }
+
+        $query = $conn->table($table);
+        if ($selectedPeriode != 'all') {
+            if ($tanggalNotaCol) {
+                $query->whereRaw("DATE_FORMAT(STR_TO_DATE({$tanggalNotaCol}, '%d-%m-%Y'), '%m-%Y') = ?", [$selectedPeriode]);
+            } else {
+                $query->where('PERIODE', $selectedPeriode);
+            }
+        }
+        if ($selectedCabang != 'all') {
+            $query->where(function($q) use ($selectedCabang) {
+                $q->where('NAME_BRANCH', $selectedCabang)
+                  ->orWhere('name_branch', $selectedCabang)
+                  ->orWhere('CABANG', $selectedCabang)
+                  ->orWhere('PROFIT_CENTER', $selectedCabang);
+            });
+        }
+
+        $totalRows = 0;
+        $totalRevenue = 0;
+        try {
+            $totalRows = $query->count();
+            if ($revenueCol) {
+                $totalRevenue = $query->sum($revenueCol);
+            }
+        } catch (\Exception $e) {
+            $totalRows = 0;
+            $totalRevenue = 0;
+        }
+
+        // Compute requested metrics:
+        // totalNota: distinct count of no_faktur
+        // pendapatanPandu: sum pendapatan_idr where gl_account in [4010200000, 4110200000] and cust_no not null/empty
+        $totalNota = 0;
+        $pendapatanPandu = 0;
+        try {
+            $notaQuery = $conn->table($table);
+            if ($selectedPeriode != 'all') {
+                if ($tanggalNotaCol) {
+                    $notaQuery->whereRaw("DATE_FORMAT(STR_TO_DATE({$tanggalNotaCol}, '%d-%m-%Y'), '%m-%Y') = ?", [$selectedPeriode]);
+                } else {
+                    $notaQuery->where('PERIODE', $selectedPeriode);
+                }
+            }
+            if ($selectedCabang != 'all') {
+                if ($sapProfitCenterCol) {
+                    // join profit_center table on profit_center code and filter by name_branch
+                    $notaQuery->join('profit_center as pc', "pendapatan_sap.{$sapProfitCenterCol}", '=', 'pc.profit_center')
+                        ->where('pc.name_branch', $selectedCabang);
+                } else {
+                    $notaQuery->where(function($q) use ($selectedCabang) {
+                        $q->where('NAME_BRANCH', $selectedCabang)
+                          ->orWhere('name_branch', $selectedCabang)
+                          ->orWhere('CABANG', $selectedCabang)
+                          ->orWhere('PROFIT_CENTER', $selectedCabang);
+                    });
+                }
+            }
+
+            $totalNota = $notaQuery->distinct()->count('no_faktur');
+
+            $panduQuery = $conn->table($table);
+            if ($selectedPeriode != 'all') {
+                if ($tanggalNotaCol) {
+                    $panduQuery->whereRaw("DATE_FORMAT(STR_TO_DATE({$tanggalNotaCol}, '%d-%m-%Y'), '%m-%Y') = ?", [$selectedPeriode]);
+                } else {
+                    $panduQuery->where('PERIODE', $selectedPeriode);
+                }
+            }
+            if ($selectedCabang != 'all') {
+                if ($sapProfitCenterCol) {
+                    $panduQuery->join('profit_center as pc', "pendapatan_sap.{$sapProfitCenterCol}", '=', 'pc.profit_center')
+                        ->where('pc.name_branch', $selectedCabang);
+                } else {
+                    $panduQuery->where(function($q) use ($selectedCabang) {
+                        $q->where('NAME_BRANCH', $selectedCabang)
+                          ->orWhere('name_branch', $selectedCabang)
+                          ->orWhere('CABANG', $selectedCabang)
+                          ->orWhere('PROFIT_CENTER', $selectedCabang);
+                    });
+                }
+            }
+
+            $panduQuery->whereNotNull('cust_no')->where('cust_no', '!=', '');
+            $panduQuery->whereIn('gl_account', ['4010200000', '4110200000']);
+            $pendapatanPandu = $panduQuery->sum('pendapatan_idr');
+        } catch (\Exception $e) {
+            $totalNota = 0;
+            $pendapatanPandu = 0;
+        }
+
+        return view('pendapatan-sap', compact('periods', 'selectedPeriode', 'allBranches', 'selectedCabang', 'totalNota', 'pendapatanPandu'));
     }
 
     public function uploadCsv(Request $request)

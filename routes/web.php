@@ -23,6 +23,8 @@ Route::post('/upload-nota-csv', [NotaController::class, 'uploadCsv'])->name('upl
 Route::post('/upload-tunda-csv', [NotaController::class, 'uploadTundaCsv'])->name('upload.tunda.csv');
 Route::get('/get-nota-batal-data', [NotaController::class, 'getNotaBatalData'])->name('get.nota.batal.data');
 Route::get('/export-nota-batal', [NotaController::class, 'exportNotaBatal'])->name('export.nota.batal');
+// Pendapatan SAP
+Route::get('/pendapatan-sap', [NotaController::class, 'pendapatanSap'])->name('pendapatan.sap');
 
 // Regional Revenue routes
 Route::get('/regional-revenue', [RegionalController::class, 'index'])->name('regional.revenue');
@@ -381,6 +383,92 @@ Route::get('/fix-table', function() {
             'success' => false,
             'error' => $e->getMessage()
         ], 500);
+    }
+});
+
+// Debug route untuk pendapatan_sap detection
+Route::get('/debug-pendapatan-sap', function() {
+    $cabang = request()->get('cabang', 'all');
+    try {
+        $conn = DB::connection('dashboard_phinnisi');
+        $cols = $conn->select("SHOW COLUMNS FROM pendapatan_sap");
+        $fields = array_map(function($c){ return $c->Field; }, $cols);
+
+        $tanggalNotaCol = null;
+        foreach ($fields as $f) {
+            $normalized = strtolower(str_replace([' ', '_'], '', $f));
+            if (in_array($normalized, ['tanggalnota', 'tglnota', 'tanggalket', 'tanggaldok', 'tanggal', 'tanggaldokumen', 'invoicedate', 'invoice_date'])) {
+                $tanggalNotaCol = $f;
+                break;
+            }
+        }
+
+        $sapProfitCenterCol = null;
+        foreach ($fields as $f) {
+            if (strtolower(str_replace([' ', '_'], '', $f)) === 'profitcenter' || strtolower($f) === 'profit_center') {
+                $sapProfitCenterCol = $f;
+                break;
+            }
+        }
+
+        // periods overall
+        $periods = [];
+        if ($tanggalNotaCol) {
+            $periods = $conn->table('pendapatan_sap')
+                ->selectRaw("DATE_FORMAT(STR_TO_DATE({$tanggalNotaCol}, '%d-%m-%Y'), '%m-%Y') as periode")
+                ->whereNotNull($tanggalNotaCol)
+                ->where($tanggalNotaCol, '!=', '')
+                ->groupBy('periode')
+                ->orderByRaw("STR_TO_DATE(CONCAT('01-', periode), '%d-%m-%Y') DESC")
+                ->pluck('periode')
+                ->toArray();
+        }
+
+        $periodsForCabang = [];
+        if ($cabang !== 'all') {
+            if ($tanggalNotaCol) {
+                $q = $conn->table('pendapatan_sap');
+                if ($sapProfitCenterCol) {
+                    $q->join('profit_center as pc', "pendapatan_sap.{$sapProfitCenterCol}", '=', 'pc.profit_center')
+                      ->where('pc.name_branch', $cabang);
+                } else {
+                    $q->where(function($qq) use ($cabang) {
+                        $qq->where('NAME_BRANCH', $cabang)
+                           ->orWhere('name_branch', $cabang)
+                           ->orWhere('CABANG', $cabang)
+                           ->orWhere('PROFIT_CENTER', $cabang);
+                    });
+                }
+                $periodsForCabang = $q->selectRaw("DATE_FORMAT(STR_TO_DATE({$tanggalNotaCol}, '%d-%m-%Y'), '%m-%Y') as periode")
+                    ->whereNotNull($tanggalNotaCol)
+                    ->where($tanggalNotaCol, '!=', '')
+                    ->groupBy('periode')
+                    ->orderByRaw("STR_TO_DATE(CONCAT('01-', periode), '%d-%m-%Y') DESC")
+                    ->pluck('periode')
+                    ->toArray();
+            }
+        }
+
+        // sample profit_center mapping
+        $pcSample = [];
+        try {
+            $pcSample = $conn->table('profit_center')->select('profit_center', 'name_branch')->limit(10)->get();
+        } catch (\Exception $e) {
+            $pcSample = [];
+        }
+
+        return response()->json([
+            'success' => true,
+            'tanggalNotaCol' => $tanggalNotaCol,
+            'sapProfitCenterCol' => $sapProfitCenterCol,
+            'periods_overall_count' => count($periods),
+            'periods_overall' => $periods,
+            'periods_for_cabang_count' => count($periodsForCabang),
+            'periods_for_cabang' => $periodsForCabang,
+            'profit_center_sample' => $pcSample
+        ]);
+    } catch (\Exception $e) {
+        return response()->json(['success' => false, 'error' => $e->getMessage()]);
     }
 });
 
