@@ -373,10 +373,12 @@ class DashboardController extends Controller
         if ($selectedPeriode == 'all' || $selectedBranch == 'all') {
             $statistics = collect();
             $totalOverall = [
+                'total_nota' => 0,
                 'total_pandu' => 0,
                 'total_pendapatan_pandu' => 0,
                 'total_pendapatan_tunda' => 0,
-                'total_transaksi' => 0
+                'total_transaksi' => 0,
+                'kecepatan_terbit_nota' => 0
             ];
             $topPilot = null;
             $shipStatsByGT = collect();
@@ -384,7 +386,9 @@ class DashboardController extends Controller
             $departureDelayCount = 0;
             $showStatusNota = false;
             $statusNotaCount = 0;
-            return view('dashboard', compact('statistics', 'totalOverall', 'periods', 'selectedPeriode', 'regionalGroups', 'allBranches', 'selectedBranch', 'topPilot', 'shipStatsByGT', 'showDeparture', 'departureDelayCount', 'showStatusNota', 'statusNotaCount'));
+            $showWaitingTime = false;
+            $waitingTimeCount = 0;
+            return view('dashboard', compact('statistics', 'totalOverall', 'periods', 'selectedPeriode', 'regionalGroups', 'allBranches', 'selectedBranch', 'topPilot', 'shipStatsByGT', 'showDeparture', 'departureDelayCount', 'showStatusNota', 'statusNotaCount', 'showWaitingTime', 'waitingTimeCount'));
         }
 
         // Build query with period filter
@@ -438,9 +442,34 @@ class DashboardController extends Controller
         $baseQuery = Lhgk::where('PERIODE', $selectedPeriode)
             ->where('NM_BRANCH', $selectedBranch);
 
+        // Hitung kecepatan terbit nota (rata-rata selisih hari antara BILL_DATE dan SELESAI_PELAKSANAAN untuk GERAKAN='DEPARTURE')
+        $kecepatanTerbitNota = (clone $baseQuery)
+            ->whereRaw("GERAKAN = 'DEPARTURE'")
+            ->whereNotNull('BILL_DATE')
+            ->whereNotNull('SELESAI_PELAKSANAAN')
+            ->where('BILL_DATE', '!=', '')
+            ->where('SELESAI_PELAKSANAAN', '!=', '')
+            ->selectRaw('AVG(DATEDIFF(STR_TO_DATE(BILL_DATE, "%d-%m-%Y"), STR_TO_DATE(SELESAI_PELAKSANAAN, "%d-%m-%Y"))) as avg_days')
+            ->value('avg_days') ?? 0;
+
+        // Hitung total nota dari pandu_prod (sama seperti di monitoring nota)
+        $totalNota = DB::connection('dashboard_phinnisi')->table('pandu_prod')
+            ->select('INVOICE')
+            ->where('BILLING', 'NOT LIKE', '%HIS%')
+            ->where('INVOICE', 'NOT LIKE', '%INV%')
+            ->when($selectedPeriode != 'all', function($q) use ($selectedPeriode) {
+                return $q->whereRaw('DATE_FORMAT(STR_TO_DATE(INVOICE_DATE, \'%d-%m-%Y\'), \'%m-%Y\') = ?', [$selectedPeriode]);
+            })
+            ->when($selectedBranch != 'all', function($q) use ($selectedBranch) {
+                return $q->where('NAME_BRANCH', $selectedBranch);
+            })
+            ->distinct()
+            ->count('INVOICE');
+
         // Hitung total dengan memastikan filter periode diterapkan
         // WT format: "HH : MM" (string), need to convert to decimal hours
         $totalOverall = [
+            'total_nota' => $totalNota,
             'total_pandu' => (clone $baseQuery)->distinct('NM_PERS_PANDU')->count('NM_PERS_PANDU'),
             'total_pendapatan_pandu' => (clone $baseQuery)->sum('PENDAPATAN_PANDU'),
             'total_pendapatan_tunda' => (clone $baseQuery)->sum('PENDAPATAN_TUNDA'),
@@ -456,7 +485,8 @@ class DashboardController extends Controller
                 ->value('max_wt'),
             'nota_batal' => (clone $baseQuery)->where('STATUS_NOTA', 'batal')->count(),
             'menunggu_nota' => (clone $baseQuery)->where('STATUS_NOTA', 'menunggu nota')->count(),
-            'belum_verifikasi' => (clone $baseQuery)->where('STATUS_NOTA', 'belum verifikasi')->count()
+            'belum_verifikasi' => (clone $baseQuery)->where('STATUS_NOTA', 'belum verifikasi')->count(),
+            'kecepatan_terbit_nota' => round($kecepatanTerbitNota, 1)
         ];
 
         // Get top pilot dengan produksi tertinggi
@@ -601,7 +631,54 @@ class DashboardController extends Controller
                 ->appends(['periode' => $selectedPeriode, 'cabang' => $selectedBranch, 'show_status_nota' => 1, 'filter_status_nota' => $filterStatusNota]);
         }
 
-        return view('dashboard', compact('statistics', 'totalOverall', 'periods', 'selectedPeriode', 'regionalGroups', 'allBranches', 'selectedBranch', 'topPilot', 'shipStatsByGT', 'showDeparture', 'departureDelayCount', 'departureDelayData', 'showStatusNota', 'statusNotaCount', 'statusNotaData', 'filterStatusNota'));
+        // Check if user wants to see waiting time data
+        $showWaitingTime = $request->get('show_waiting_time', 0);
+        
+        // Get count of waiting time data (WT > 00:30)
+        if ($showWaitingTime) {
+            $waitingTimeCount = Lhgk::whereRaw("(CAST(SUBSTRING_INDEX(WT, ' : ', 1) AS UNSIGNED) + CAST(SUBSTRING_INDEX(WT, ' : ', -1) AS UNSIGNED) / 60.0) > 0.5")
+                ->where('PERIODE', $selectedPeriode)
+                ->where('NM_BRANCH', $selectedBranch)
+                ->count();
+        } else {
+            $waitingTimeCount = Lhgk::whereRaw("(CAST(SUBSTRING_INDEX(WT, ' : ', 1) AS UNSIGNED) + CAST(SUBSTRING_INDEX(WT, ' : ', -1) AS UNSIGNED) / 60.0) > 0.5")
+                ->where('PERIODE', $selectedPeriode)
+                ->where('NM_BRANCH', $selectedBranch)
+                ->limit(1)
+                ->count();
+        }
+
+        // Load actual waiting time data only if requested
+        $waitingTimeData = null;
+        if ($showWaitingTime && $waitingTimeCount > 0) {
+            $waitingTimeData = Lhgk::select(
+                    'PPKB_CODE',
+                    'NO_UKK',
+                    'NO_BKT_PANDU',
+                    'NM_KAPAL',
+                    'NM_PERS_PANDU',
+                    'TGL_TIBA',
+                    'JAM_TIBA',
+                    'TGL_PMT',
+                    'JAM_PMT',
+                    'PNK',
+                    'KB',
+                    'MULAI_PELAKSANAAN',
+                    'SELESAI_PELAKSANAAN',
+                    'WT',
+                    'PANDU_DARI',
+                    'PANDU_KE'
+                )
+                ->selectRaw('(CAST(SUBSTRING_INDEX(WT, " : ", 1) AS UNSIGNED) + CAST(SUBSTRING_INDEX(WT, " : ", -1) AS UNSIGNED) / 60.0) as wt_decimal')
+                ->whereRaw("(CAST(SUBSTRING_INDEX(WT, ' : ', 1) AS UNSIGNED) + CAST(SUBSTRING_INDEX(WT, ' : ', -1) AS UNSIGNED) / 60.0) > 0.5")
+                ->where('PERIODE', $selectedPeriode)
+                ->where('NM_BRANCH', $selectedBranch)
+                ->orderByRaw('(CAST(SUBSTRING_INDEX(WT, " : ", 1) AS UNSIGNED) + CAST(SUBSTRING_INDEX(WT, " : ", -1) AS UNSIGNED) / 60.0) DESC')
+                ->paginate(10)
+                ->appends(['periode' => $selectedPeriode, 'cabang' => $selectedBranch, 'show_waiting_time' => 1]);
+        }
+
+        return view('dashboard', compact('statistics', 'totalOverall', 'periods', 'selectedPeriode', 'regionalGroups', 'allBranches', 'selectedBranch', 'topPilot', 'shipStatsByGT', 'showDeparture', 'departureDelayCount', 'departureDelayData', 'showStatusNota', 'statusNotaCount', 'statusNotaData', 'filterStatusNota', 'showWaitingTime', 'waitingTimeCount', 'waitingTimeData'));
     }
 
     public function exportDepartureDelay(Request $request)
@@ -819,6 +896,129 @@ class DashboardController extends Controller
                 number_format($statusNotaData->sum('PENDAPATAN_PANDU'), 0, ',', '.'),
                 number_format($statusNotaData->sum('PENDAPATAN_TUNDA'), 0, ',', '.'),
                 number_format($statusNotaData->sum('PENDAPATAN_PANDU') + $statusNotaData->sum('PENDAPATAN_TUNDA'), 0, ',', '.')
+            ]);
+
+            fclose($file);
+        };
+
+        return response()->stream($callback, 200, $headers);
+    }
+
+    public function exportWaitingTime(Request $request)
+    {
+        $selectedPeriode = $request->get('periode');
+        $selectedBranch = $request->get('cabang');
+
+        if (!$selectedPeriode || !$selectedBranch) {
+            return redirect()->back()->with('error', 'Pilih periode dan cabang terlebih dahulu');
+        }
+
+        // Get all waiting time data for export (WT > 00:30)
+        $waitingTimeData = Lhgk::select(
+                'PPKB_CODE',
+                'NO_UKK',
+                'NO_BKT_PANDU',
+                'NM_KAPAL',
+                'NM_PERS_PANDU',
+                'TGL_TIBA',
+                'JAM_TIBA',
+                'TGL_PMT',
+                'JAM_PMT',
+                'PNK',
+                'KB',
+                'MULAI_PELAKSANAAN',
+                'SELESAI_PELAKSANAAN',
+                'WT',
+                'PANDU_DARI',
+                'PANDU_KE'
+            )
+            ->selectRaw('(CAST(SUBSTRING_INDEX(WT, " : ", 1) AS UNSIGNED) + CAST(SUBSTRING_INDEX(WT, " : ", -1) AS UNSIGNED) / 60.0) as wt_decimal')
+            ->whereRaw("(CAST(SUBSTRING_INDEX(WT, ' : ', 1) AS UNSIGNED) + CAST(SUBSTRING_INDEX(WT, ' : ', -1) AS UNSIGNED) / 60.0) > 0.5")
+            ->where('PERIODE', $selectedPeriode)
+            ->where('NM_BRANCH', $selectedBranch)
+            ->orderByRaw('(CAST(SUBSTRING_INDEX(WT, " : ", 1) AS UNSIGNED) + CAST(SUBSTRING_INDEX(WT, " : ", -1) AS UNSIGNED) / 60.0) DESC')
+            ->get();
+
+        if ($waitingTimeData->isEmpty()) {
+            return redirect()->back()->with('error', 'Tidak ada data waiting time untuk periode dan cabang yang dipilih');
+        }
+
+        // Generate CSV file
+        $filename = 'Waiting_Time_' . str_replace(' ', '_', $selectedBranch) . '_' . str_replace('-', '', $selectedPeriode) . '_' . date('YmdHis') . '.csv';
+        
+        $headers = [
+            'Content-Type' => 'text/csv; charset=UTF-8',
+            'Content-Disposition' => 'attachment; filename="' . $filename . '"',
+            'Pragma' => 'no-cache',
+            'Cache-Control' => 'must-revalidate, post-check=0, pre-check=0',
+            'Expires' => '0'
+        ];
+
+        $callback = function() use ($waitingTimeData) {
+            $file = fopen('php://output', 'w');
+            
+            // Add BOM for UTF-8
+            fprintf($file, chr(0xEF).chr(0xBB).chr(0xBF));
+            
+            // Header
+            fputcsv($file, [
+                'No',
+                'PPKB Code',
+                'No. UKK',
+                'No. Bukti Pandu',
+                'Nama Kapal',
+                'Nama Pandu',
+                'Tanggal Tiba',
+                'Jam Tiba',
+                'Tanggal PMT',
+                'Jam PMT',
+                'PNK',
+                'KB',
+                'Mulai Pelaksanaan',
+                'Selesai Pelaksanaan',
+                'WT',
+                'Pandu Dari',
+                'Pandu Ke'
+            ]);
+
+            // Data
+            $no = 1;
+            foreach ($waitingTimeData as $data) {
+                fputcsv($file, [
+                    $no++,
+                    $data->PPKB_CODE ?? '-',
+                    $data->NO_UKK ?? '-',
+                    $data->NO_BKT_PANDU ?? '-',
+                    $data->NM_KAPAL ?? '-',
+                    $data->NM_PERS_PANDU ?? '-',
+                    $data->TGL_TIBA ?? '-',
+                    $data->JAM_TIBA ?? '-',
+                    $data->TGL_PMT ?? '-',
+                    $data->JAM_PMT ?? '-',
+                    $data->PNK ?? '-',
+                    $data->KB ?? '-',
+                    $data->MULAI_PELAKSANAAN ?? '-',
+                    $data->SELESAI_PELAKSANAAN ?? '-',
+                    $data->WT ?? '-',
+                    $data->PANDU_DARI ?? '-',
+                    $data->PANDU_KE ?? '-'
+                ]);
+            }
+
+            // Summary
+            fputcsv($file, []);
+            fputcsv($file, [
+                '',
+                '',
+                '',
+                'TOTAL TRANSAKSI:',
+                count($waitingTimeData),
+                '',
+                '',
+                '',
+                '',
+                'RATA-RATA WT:',
+                number_format($waitingTimeData->avg('wt_decimal'), 2) . ' jam'
             ]);
 
             fclose($file);

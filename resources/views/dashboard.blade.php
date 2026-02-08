@@ -258,7 +258,18 @@
 
         <!-- Nota Statistics Row -->
         <div class="row mb-4">
-            <div class="col-md-4">
+            <div class="col-md-6">
+                <div class="card stat-card bg-white" style="border-left: 4px solid #3b82f6;">
+                    <div class="card-body text-center">
+                        <div class="mb-2">
+                            <i class="bi bi-file-earmark-text fs-1" style="color: #3b82f6;"></i>
+                        </div>
+                        <h3 class="text-dark mb-1">{{ number_format($totalOverall['total_nota'] ?? 0) }}</h3>
+                        <p class="mb-0 text-muted">Nota Terbit</p>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-6">
                 <div class="card stat-card bg-white" style="border-left: 4px solid #dc2626;">
                     <div class="card-body text-center">
                         <div class="mb-2">
@@ -269,6 +280,9 @@
                     </div>
                 </div>
             </div>
+        </div>
+
+        <div class="row mb-4">
             <div class="col-md-4">
                 <div class="card stat-card bg-white" style="border-left: 4px solid #f59e0b;">
                     <div class="card-body text-center">
@@ -288,6 +302,18 @@
                         </div>
                         <h3 class="text-dark mb-1">{{ number_format($totalOverall['belum_verifikasi'] ?? 0) }}</h3>
                         <p class="mb-0 text-muted">Belum Verifikasi</p>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="card stat-card bg-white" style="border-left: 4px solid #10b981;">
+                    <div class="card-body text-center">
+                        <div class="mb-2">
+                            <i class="bi bi-speedometer2 fs-1" style="color: #10b981;"></i>
+                        </div>
+                        <h3 class="text-dark mb-1">{{ number_format($totalOverall['kecepatan_terbit_nota'] ?? 0, 1) }}</h3>
+                        <p class="mb-0 text-muted">Kecepatan Terbit Bentuk 3</p>
+                        <small class="text-muted">Rata-rata waktu terbit (Hari)</small>
                     </div>
                 </div>
             </div>
@@ -785,6 +811,127 @@
                             </div>
                             <div>
                                 {{ $statusNotaData->links('pagination::bootstrap-5') }}
+                            </div>
+                        </div>
+                        @endif
+                        @else
+                        <div class="alert alert-secondary">
+                            <i class="bi bi-info-circle"></i> Tidak ada data untuk ditampilkan
+                        </div>
+                        @endif
+                    </div>
+                    @endif
+                </div>
+            </div>
+        </div>
+        @endif
+
+        <!-- Waiting Time Section -->
+        @if($selectedPeriode != 'all' && $selectedBranch != 'all' && $waitingTimeCount > 0)
+        <div class="row mb-4">
+            <div class="col-12">
+                <div class="card stat-card">
+                    @if(!$showWaitingTime)
+                    <div class="card-body text-center py-4">
+                        <i class="bi bi-clock-history" style="font-size: 3rem; color: #764ba2;"></i>
+                        <h5 class="mt-3">Data Waiting Time</h5>
+                        <p class="text-muted">
+                            Ditemukan <strong style="color: #764ba2;">{{ number_format($waitingTimeCount) }} transaksi</strong> 
+                            dengan Waiting Time (WT) di atas 00:30
+                        </p>
+                        <a href="{{ route('dashboard', ['periode' => $selectedPeriode, 'cabang' => $selectedBranch, 'show_waiting_time' => 1]) }}#waiting-time-section" 
+                           class="btn" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white;">
+                            <i class="bi bi-eye"></i> Tampilkan Data Waiting Time
+                        </a>
+                    </div>
+                    @else
+                    <div class="card-header" style="background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%); color: white;" id="waiting-time-section">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <h5 class="mb-0">
+                                <i class="bi bi-clock-history"></i> 
+                                Data Waiting Time (WT > 00:30)
+                            </h5>
+                            <div>
+                                <a href="{{ route('export.waiting.time', ['periode' => $selectedPeriode, 'cabang' => $selectedBranch]) }}" 
+                                   class="btn btn-light btn-sm me-2">
+                                    <i class="bi bi-file-earmark-excel"></i> Download Excel
+                                </a>
+                                <a href="{{ route('dashboard', ['periode' => $selectedPeriode, 'cabang' => $selectedBranch]) }}" 
+                                   class="btn btn-light btn-sm">
+                                    <i class="bi bi-x-circle"></i> Sembunyikan
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="card-body">
+                        <div class="alert alert-warning mb-3">
+                            <i class="bi bi-info-circle-fill"></i>
+                            <strong>{{ number_format($waitingTimeCount) }} transaksi</strong> memiliki Waiting Time (WT) lebih dari 00:30 (30 menit).
+                            <div class="mt-2">
+                                <small class="text-muted">Data diurutkan berdasarkan WT terbesar</small>
+                            </div>
+                        </div>
+                        
+                        @if($waitingTimeData && $waitingTimeData->count() > 0)
+                        <div class="table-responsive">
+                            <table class="table table-hover table-striped table-sm">
+                                <thead class="table-dark">
+                                    <tr>
+                                        <th>No</th>
+                                        <th>PPKB Code</th>
+                                        <th>No. UKK</th>
+                                        <th>No. Bukti Pandu</th>
+                                        <th>Nama Kapal</th>
+                                        <th>Nama Pandu</th>
+                                        <th>Tgl Tiba</th>
+                                        <th>Jam Tiba</th>
+                                        <th>Tgl PMT</th>
+                                        <th>Jam PMT</th>
+                                        <th>PNK</th>
+                                        <th>KB</th>
+                                        <th>Mulai Pelaksanaan</th>
+                                        <th>Selesai Pelaksanaan</th>
+                                        <th class="text-center">WT</th>
+                                        <th>Pandu Dari</th>
+                                        <th>Pandu Ke</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    @foreach($waitingTimeData as $index => $data)
+                                    <tr>
+                                        <td>{{ $waitingTimeData->firstItem() + $index }}</td>
+                                        <td><span class="badge bg-secondary">{{ $data->PPKB_CODE ?? '-' }}</span></td>
+                                        <td><span class="badge bg-info">{{ $data->NO_UKK ?? '-' }}</span></td>
+                                        <td>{{ $data->NO_BKT_PANDU ?? '-' }}</td>
+                                        <td><strong>{{ $data->NM_KAPAL ?? '-' }}</strong></td>
+                                        <td>{{ $data->NM_PERS_PANDU ?? '-' }}</td>
+                                        <td>{{ $data->TGL_TIBA ?? '-' }}</td>
+                                        <td>{{ $data->JAM_TIBA ?? '-' }}</td>
+                                        <td>{{ $data->TGL_PMT ?? '-' }}</td>
+                                        <td>{{ $data->JAM_PMT ?? '-' }}</td>
+                                        <td>{{ $data->PNK ?? '-' }}</td>
+                                        <td>{{ $data->KB ?? '-' }}</td>
+                                        <td>{{ $data->MULAI_PELAKSANAAN ?? '-' }}</td>
+                                        <td>{{ $data->SELESAI_PELAKSANAAN ?? '-' }}</td>
+                                        <td class="text-center">
+                                            <span class="badge bg-warning text-dark">{{ $data->WT ?? '-' }}</span>
+                                        </td>
+                                        <td>{{ $data->PANDU_DARI ?? '-' }}</td>
+                                        <td>{{ $data->PANDU_KE ?? '-' }}</td>
+                                    </tr>
+                                    @endforeach
+                                </tbody>
+                            </table>
+                        </div>
+                        
+                        <!-- Pagination -->
+                        @if($waitingTimeData->hasPages())
+                        <div class="d-flex justify-content-between align-items-center mt-3">
+                            <div class="text-muted">
+                                Menampilkan {{ $waitingTimeData->firstItem() }} - {{ $waitingTimeData->lastItem() }} dari {{ $waitingTimeData->total() }} data
+                            </div>
+                            <div>
+                                {{ $waitingTimeData->links('pagination::bootstrap-5') }}
                             </div>
                         </div>
                         @endif

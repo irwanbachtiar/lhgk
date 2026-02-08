@@ -16,6 +16,7 @@ Route::get('/analisis-kelelahan', [DashboardController::class, 'analisisKelelaha
 Route::post('/upload-csv', [DashboardController::class, 'uploadCsv'])->name('upload.csv');
 Route::get('/export-departure-delay', [DashboardController::class, 'exportDepartureDelay'])->name('export.departure.delay');
 Route::get('/export-status-nota', [DashboardController::class, 'exportStatusNota'])->name('export.status.nota');
+Route::get('/export-waiting-time', [DashboardController::class, 'exportWaitingTime'])->name('export.waiting.time');
 
 // Monitoring Nota routes
 Route::get('/monitoring-nota', [NotaController::class, 'index'])->name('monitoring.nota');
