@@ -31,6 +31,9 @@ Route::get('/pendapatan-sap', [NotaController::class, 'pendapatanSap'])->name('p
 Route::get('/regional-revenue', [RegionalController::class, 'index'])->name('regional.revenue');
 Route::get('/regional-detail', [RegionalController::class, 'detail'])->name('regional.detail');
 Route::get('/regional-detail/export-excel', [RegionalController::class, 'exportExcel'])->name('regional.detail.export');
+Route::get('/regional-sharing', [RegionalController::class, 'sharing'])->name('regional.sharing');
+Route::get('/regional-sharing/detail', [RegionalController::class, 'sharingDetail'])->name('regional.sharing.detail');
+Route::get('/regional-sharing/export', [RegionalController::class, 'exportSharingExcel'])->name('regional.sharing.export');
 
 // Sync Phinnisi routes (manual trigger)
 Route::get('/sync-phinnisi-pandu', function() {

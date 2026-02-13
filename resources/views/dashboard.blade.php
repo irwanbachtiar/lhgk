@@ -77,6 +77,19 @@
             border-radius: 15px;
             box-shadow: 0 2px 4px rgba(0,0,0,0.1);
         }
+        /* Tidy combined cards and speedometer */
+        .combined-card .h4, .combined-card h4, .combined-card h5 { margin: 0; }
+        .combined-card .text-muted { font-size: 0.85rem; }
+        .nota-summary h4 { font-weight: 700; }
+        .nota-summary h5 { font-weight: 600; }
+        .nota-summary .col-6 { padding-bottom: 8px; }
+        .speedometer-wrap { display:flex; align-items:center; justify-content:center; flex-direction:column; }
+        #speedometerChart { display:block; }
+        @media (max-width: 767px) {
+            .nota-summary .col-6 { flex: 0 0 50%; max-width: 50%; }
+            #speedometerChart { display:block; }
+            .combined-card .h4 { font-size: 1.1rem; }
+        }
     </style>
 </head>
 <body>
@@ -92,6 +105,9 @@
                 </a>
                 <a href="{{ route('regional.revenue') }}" class="btn btn-light btn-sm me-2">
                     <i class="bi bi-geo-alt"></i> Pendapatan Wilayah
+                </a>
+                <a href="{{ url('regional-sharing') }}" class="btn btn-light btn-sm me-2">
+                    <i class="bi bi-people-fill"></i> Revenue Sharing
                 </a>
                 <a href="{{ route('analisis.kelelahan') }}" class="btn btn-light btn-sm">
                     <i class="bi bi-activity"></i> Analisis Kelelahan
@@ -219,119 +235,65 @@
             </div>
         </div>
         
-        <!-- WT Statistics Row -->
-        <div class="row mb-4">
-            <div class="col-md-4">
-                <div class="card stat-card bg-white" style="border-left: 4px solid #f59e0b;">
-                    <div class="card-body text-center">
-                        <div class="mb-2">
-                            <i class="bi bi-clock fs-1" style="color: #f59e0b;"></i>
-                        </div>
-                        <h3 class="text-dark mb-1">{{ $totalOverall['transaksi_wt_di_atas_30'] }}</h3>
-                        <p class="mb-0 text-muted">WT > 00:30</p>
-                    </div>
-                </div>
-            </div>
-            <div class="col-md-4">
-                <div class="card stat-card bg-white" style="border-left: 4px solid #3b82f6;">
-                    <div class="card-body text-center">
-                        <div class="mb-2">
-                            <i class="bi bi-clock-history fs-1" style="color: #3b82f6;"></i>
-                        </div>
-                        <h3 class="text-dark mb-1">{{ number_format((float)($totalOverall['rata_rata_wt'] ?? 0), 2) }}</h3>
-                        <p class="mb-0 text-muted">Rata-Rata WT</p>
-                    </div>
-                </div>
-            </div>
-            <div class="col-md-4">
-                <div class="card stat-card bg-white" style="border-left: 4px solid #ef4444;">
-                    <div class="card-body text-center">
-                        <div class="mb-2">
-                            <i class="bi bi-exclamation-triangle fs-1" style="color: #ef4444;"></i>
-                        </div>
-                        <h3 class="text-dark mb-1">{{ number_format((float)($totalOverall['max_wt'] ?? 0), 2) }}</h3>
-                        <p class="mb-0 text-muted">Maksimal WT</p>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <!-- Nota Statistics Row -->
-        <div class="row mb-4">
-            <div class="col-md-6">
-                <div class="card stat-card bg-white" style="border-left: 4px solid #3b82f6;">
-                    <div class="card-body text-center">
-                        <div class="mb-2">
-                            <i class="bi bi-file-earmark-text fs-1" style="color: #3b82f6;"></i>
-                        </div>
-                        <h3 class="text-dark mb-1">{{ number_format($totalOverall['total_nota'] ?? 0) }}</h3>
-                        <p class="mb-0 text-muted">Nota Terbit</p>
-                    </div>
-                </div>
-            </div>
-            <div class="col-md-6">
-                <div class="card stat-card bg-white" style="border-left: 4px solid #dc2626;">
-                    <div class="card-body text-center">
-                        <div class="mb-2">
-                            <i class="bi bi-x-circle fs-1" style="color: #dc2626;"></i>
-                        </div>
-                        <h3 class="text-dark mb-1">{{ number_format($totalOverall['nota_batal'] ?? 0) }}</h3>
-                        <p class="mb-0 text-muted">Nota Batal</p>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <div class="row mb-4">
-            <div class="col-md-4">
-                <div class="card stat-card bg-white" style="border-left: 4px solid #f59e0b;">
-                    <div class="card-body text-center">
-                        <div class="mb-2">
-                            <i class="bi bi-hourglass-split fs-1" style="color: #f59e0b;"></i>
-                        </div>
-                        <h3 class="text-dark mb-1">{{ number_format($totalOverall['menunggu_nota'] ?? 0) }}</h3>
-                        <p class="mb-0 text-muted">Menunggu Nota</p>
-                    </div>
-                </div>
-            </div>
-            <div class="col-md-4">
-                <div class="card stat-card bg-white" style="border-left: 4px solid #06b6d4;">
-                    <div class="card-body text-center">
-                        <div class="mb-2">
-                            <i class="bi bi-clipboard-check fs-1" style="color: #06b6d4;"></i>
-                        </div>
-                        <h3 class="text-dark mb-1">{{ number_format($totalOverall['belum_verifikasi'] ?? 0) }}</h3>
-                        <p class="mb-0 text-muted">Belum Verifikasi</p>
-                    </div>
-                </div>
-            </div>
-            <div class="col-md-4">
-                <div class="card stat-card bg-white" style="border-left: 4px solid #10b981;">
-                    <div class="card-body text-center">
-                        <div class="mb-2">
-                            <i class="bi bi-speedometer2 fs-1" style="color: #10b981;"></i>
-                        </div>
-                        <h3 class="text-dark mb-1">{{ number_format($totalOverall['kecepatan_terbit_nota'] ?? 0, 1) }}</h3>
-                        <p class="mb-0 text-muted">Kecepatan Terbit Bentuk 3</p>
-                        <small class="text-muted">Rata-rata waktu terbit (Hari)</small>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <!-- Top Pilot Card -->
-        @if($topPilot)
-        <div class="row mb-4">
-            <div class="col-12">
-                <div class="card stat-card bg-white" style="border-left: 4px solid #f59e0b;">
-                    <div class="card-body">
-                        <div class="row align-items-center">
-                            <div class="col-md-2">
-                                <h5 class="mb-0 text-dark"><i class="bi bi-trophy-fill text-warning"></i> Pilot Produksi Tertinggi</h5>
+        <!-- Combined layout: Left column stacks Waiting Time + Nota Summary; Right column stacks Pilot + Speedometer -->
+        <div class="row mb-2 align-items-stretch">
+            <div class="col-md-6 d-flex flex-column gap-3">
+                <div class="card stat-card bg-white combined-card flex-fill d-flex" style="border-left: 4px solid #f59e0b;">
+                    <div class="card-body d-flex flex-column justify-content-center">
+                        <h5 class="mb-3"><i class="bi bi-clock-history"></i> Waiting Time</h5>
+                        <div class="d-flex justify-content-between align-items-center">
+                            <div class="text-center">
+                                <small class="text-muted">WT &gt; 00:30</small>
+                                <div class="h4 mb-0">{{ number_format($totalOverall['transaksi_wt_di_atas_30'] ?? 0) }}</div>
                             </div>
-                            <div class="col-md-2">
+                            <div class="text-center">
+                                <small class="text-muted">Rata-Rata WT</small>
+                                <div class="h4 mb-0">{{ number_format((float)($totalOverall['rata_rata_wt'] ?? 0), 2) }}</div>
+                            </div>
+                            <div class="text-center">
+                                <small class="text-muted">Maksimal WT</small>
+                                <div class="h4 mb-0">{{ number_format((float)($totalOverall['max_wt'] ?? 0), 2) }}</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="card stat-card bg-white nota-summary flex-fill d-flex" style="border-left: 4px solid #3b82f6;">
+                    <div class="card-body d-flex flex-column justify-content-center">
+                        <h5 class="mb-3"><i class="bi bi-file-earmark-text"></i> Nota Summary</h5>
+                        <div class="row h-100">
+                            <div class="col-6">
+                                <p class="text-muted mb-1"><i class="bi bi-file-earmark-check text-primary me-2"></i>Nota Terbit</p>
+                                <h4 class="mb-1">{{ number_format($totalOverall['total_nota'] ?? 0) }}</h4>
+                            </div>
+                            <div class="col-6">
+                                <p class="text-muted mb-1"><i class="bi bi-x-circle text-danger me-2"></i>Nota Batal</p>
+                                <h4 class="mb-1">{{ number_format($totalOverall['nota_batal'] ?? 0) }}</h4>
+                            </div>
+                            <div class="col-6 mt-3">
+                                <p class="text-muted mb-1"><i class="bi bi-hourglass-split text-warning me-2"></i>Menunggu Nota</p>
+                                <h5 class="mb-1">{{ number_format($totalOverall['menunggu_nota'] ?? 0) }}</h5>
+                            </div>
+                            <div class="col-6 mt-3">
+                                <p class="text-muted mb-1"><i class="bi bi-person-x text-secondary me-2"></i>Belum Verifikasi</p>
+                                <h5 class="mb-1">{{ number_format($totalOverall['belum_verifikasi'] ?? 0) }}</h5>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-md-6 d-flex flex-column gap-3">
+                @if($topPilot)
+                <div class="card stat-card bg-white combined-card flex-fill d-flex" style="border-left: 4px solid #f59e0b;">
+                    <div class="card-body d-flex flex-column justify-content-center align-items-center">
+                        <div class="row w-100 align-items-center">
+                            <div class="col-md-4">
+                                <h5 class="mb-0 text-dark"><i class="bi bi-trophy-fill text-warning"></i> Pilot Produksi Tertinggi</h5>
+                                <small class="text-muted d-block">{{ $topPilot->NM_BRANCH }}</small>
+                            </div>
+                            <div class="col-md-2 text-center">
                                 <h4 class="mb-0 text-dark">{{ $topPilot->NM_PERS_PANDU }}</h4>
-                                <small class="text-muted">{{ $topPilot->NM_BRANCH }}</small>
                             </div>
                             <div class="col-md-2 text-center">
                                 <h4 class="mb-0 text-dark">{{ number_format($topPilot->total_produksi) }}</h4>
@@ -342,20 +304,33 @@
                                 <small class="text-muted">Rata-Rata WT</small>
                             </div>
                             <div class="col-md-2 text-center">
-                                <h5 class="mb-0 text-dark">Rp {{ number_format($topPilot->total_pendapatan_pandu, 0, ',', '.') }}</h5>
-                                <small class="text-muted">Pendapatan Pandu</small>
-                            </div>
-                            <div class="col-md-2 text-center">
                                 <h5 class="mb-0 text-dark">Rp {{ number_format($topPilot->total_pendapatan, 0, ',', '.') }}</h5>
                                 <small class="text-muted">Total Pendapatan</small>
                             </div>
                         </div>
                     </div>
                 </div>
+                @endif
+
+                <div class="card stat-card bg-white combined-card flex-fill d-flex" style="border-left: 4px solid #10b981;">
+                    <div class="card-body p-3">
+                        <div class="row g-0 align-items-center">
+                            <div class="col">
+                                <div class="pe-3">
+                                    <h5 class="mb-2"><i class="bi bi-speedometer2"></i> Kecepatan Terbit (Bentuk 3)</h5>
+                                    <div class="text-muted small">Rata-rata waktu terbit (Hari)</div>
+                                </div>
+                            </div>
+                            <div class="col-auto ps-3">
+                                <div style="width:100%; max-width: 340px; position: relative;">
+                                    <canvas id="speedometerChart" style="width: 100%; height: 170px; display: block;"></canvas>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
             </div>
         </div>
-        @endif
-        @endif
 
         <!-- Chart Section -->
         @if($selectedPeriode != 'all' && $selectedBranch != 'all')
@@ -1089,6 +1064,7 @@
             </div>
         </div>
     </div>
+    @endif
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     <script>
@@ -1245,6 +1221,15 @@
                 }
             });
         }
+        // Custom semicircular gauge for Kecepatan Terbit (Bentuk 3)
+        // Move data to canvas attributes and use external JS module for rendering/animation
+        const speedVal = @json($totalOverall['kecepatan_terbit_nota'] ?? 0);
+        const speedCanvas = document.getElementById('speedometerChart');
+        if (speedCanvas) {
+            speedCanvas.setAttribute('data-speed-value', speedVal);
+            speedCanvas.setAttribute('aria-label', 'Kecepatan Terbit rata-rata dalam hari');
+        }
     </script>
+    <script src="/js/speedometer-gauge.js"></script>
 </body>
 </html>

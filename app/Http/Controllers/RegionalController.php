@@ -337,6 +337,258 @@ class RegionalController extends Controller
             'regionalGroups'
         ));
     }
+
+    public function sharing(Request $request)
+    {
+        $selectedPeriode = $request->get('periode', 'all');
+
+        $conn = DB::connection('dashboard_phinnisi');
+        $schema = $conn->getSchemaBuilder();
+
+        // detect region column
+        $regionCol = null;
+        foreach (['wilayah', 'region', 'nama_wilayah', 'AREA', 'WILAYAH'] as $c) {
+            if ($schema->hasColumn('sharing_regional', $c)) {
+                $regionCol = $c;
+                break;
+            }
+        }
+
+        // detect amount column (fallback)
+        $amountCol = null;
+        foreach (['jumlah', 'amount', 'total', 'value', 'nominal'] as $c) {
+            if ($schema->hasColumn('sharing_regional', $c)) {
+                $amountCol = $c;
+                break;
+            }
+        }
+
+        // get available periods
+        $periods = [];
+        if ($schema->hasTable('sharing_regional')) {
+            $periods = $conn->table('sharing_regional')
+                ->select('periode')
+                ->whereNotNull('periode')
+                ->where('periode', '!=', '')
+                ->groupBy('periode')
+                ->orderByRaw('MAX(periode) desc')
+                ->pluck('periode');
+        }
+
+        if (!$regionCol) {
+            $data = $conn->table('sharing_regional')
+                ->when($selectedPeriode != 'all', function($q) use ($selectedPeriode) { return $q->where('periode', $selectedPeriode); })
+                ->limit(200)
+                ->get();
+
+            return view('regional-sharing', compact('data', 'regionCol', 'amountCol', 'periods', 'selectedPeriode'));
+        }
+
+        // Aggregate specific sharing columns per wilayah when available
+        $possibleCols = ['pandu_umum', 'pandu_tuks', 'tunda_umum', 'tunda_tuks', 'total'];
+        $query = $conn->table('sharing_regional')->select($regionCol);
+        if ($selectedPeriode != 'all') {
+            $query->where('periode', $selectedPeriode);
+        }
+
+        foreach ($possibleCols as $c) {
+            if ($schema->hasColumn('sharing_regional', $c)) {
+                $query->selectRaw("COALESCE(SUM(`{$c}`),0) as {$c}");
+            }
+        }
+
+        $data = $query->groupBy($regionCol)->orderBy($regionCol)->get();
+
+        // totals for cards
+        $makeQuery = function() use ($conn, $selectedPeriode) {
+            $q = $conn->table('sharing_regional');
+            if ($selectedPeriode != 'all') $q->where('periode', $selectedPeriode);
+            return $q;
+        };
+
+        $totalPandu = (float)($makeQuery()->sum('pandu_umum') ?? 0) + (float)($makeQuery()->sum('pandu_tuks') ?? 0);
+        $totalTunda = (float)($makeQuery()->sum('tunda_umum') ?? 0) + (float)($makeQuery()->sum('tunda_tuks') ?? 0);
+        $totalOverall = (float)($makeQuery()->sum('total') ?? 0);
+        $totalBranches = (int)$makeQuery()->distinct()->count('branch');
+
+        // prepare chart data (labels and totals per wilayah)
+        $labels = $data->pluck($regionCol)->map(function($v){ return trim((string)$v); })->values();
+        $totals = $data->map(function($r){
+            return (float)(($r->total ?? (($r->pandu_umum ?? 0) + ($r->pandu_tuks ?? 0) + ($r->tunda_umum ?? 0) + ($r->tunda_tuks ?? 0))));
+        })->values();
+
+        // per-region breakdown for charts
+        $panduSeries = $data->map(function($r){
+            return (float)(($r->pandu_umum ?? 0) + ($r->pandu_tuks ?? 0));
+        })->values();
+        $tundaSeries = $data->map(function($r){
+            return (float)(($r->tunda_umum ?? 0) + ($r->tunda_tuks ?? 0));
+        })->values();
+
+        $chartLabels = $labels->toJson();
+        $chartTotals = $totals->toJson();
+        $chartPandu = $panduSeries->toJson();
+        $chartTunda = $tundaSeries->toJson();
+
+        // prepare regionalData for cards and per-wilayah cards
+        $regionalData = [];
+        foreach ($data as $r) {
+            $regionName = $r->{$regionCol} ?? 'Unknown';
+            $pandu = (float)(($r->pandu_umum ?? 0) + ($r->pandu_tuks ?? 0));
+            $tunda = (float)(($r->tunda_umum ?? 0) + ($r->tunda_tuks ?? 0));
+            $total = (float)($r->total ?? ($pandu + $tunda));
+            $branchCount = (int)$makeQuery()->where($regionCol, $regionName)->distinct()->count('branch');
+            $regionalData[$regionName] = [
+                'pandu_revenue' => $pandu,
+                'tunda_revenue' => $tunda,
+                'total_revenue' => $total,
+                'total_branches' => $branchCount,
+            ];
+        }
+
+        return view('regional-sharing', compact(
+            'data', 'regionCol', 'amountCol', 'periods', 'selectedPeriode',
+            'totalPandu', 'totalTunda', 'totalOverall', 'totalBranches',
+            'chartLabels', 'chartTotals', 'chartPandu', 'chartTunda', 'regionalData'
+        ));
+    }
+
+    public function sharingDetail(Request $request)
+    {
+        $wilayah = $request->get('wilayah', 'all');
+        $selectedPeriode = $request->get('periode', 'all');
+
+        $conn = DB::connection('dashboard_phinnisi');
+        $schema = $conn->getSchemaBuilder();
+
+        // columns to aggregate
+        $possibleCols = ['pandu_umum', 'pandu_tuks', 'tunda_umum', 'tunda_tuks', 'total'];
+
+        // detect region column name
+        $regionCol = null;
+        foreach (['wilayah', 'region', 'nama_wilayah', 'AREA', 'WILAYAH'] as $c) {
+            if ($schema->hasColumn('sharing_regional', $c)) {
+                $regionCol = $c;
+                break;
+            }
+        }
+
+        if (!$regionCol) {
+            return redirect()->route('regional.sharing')->with('error', 'Kolom wilayah tidak ditemukan');
+        }
+
+        // base query selecting region and branch
+        $query = $conn->table('sharing_regional')
+            ->select($regionCol, 'branch');
+
+        if ($selectedPeriode != 'all') {
+            $query->where('periode', $selectedPeriode);
+        }
+
+        // when specific wilayah requested, filter
+        if ($wilayah !== 'all') {
+            $query->where($regionCol, $wilayah);
+        }
+
+        foreach ($possibleCols as $c) {
+            if ($schema->hasColumn('sharing_regional', $c)) {
+                $query->selectRaw("COALESCE(SUM(`{$c}`),0) as {$c}");
+            }
+        }
+
+        $rows = $query->groupBy($regionCol, 'branch')->orderBy($regionCol)->orderBy('branch')->get();
+
+        if ($wilayah === 'all') {
+            // group rows by wilayah for display
+            $grouped = $rows->groupBy(function($r) use ($regionCol) {
+                return $r->{$regionCol} ?? 'Unknown';
+            });
+
+            return view('regional-sharing-detail', [
+                'groupedBranchData' => $grouped,
+                'wilayah' => 'all',
+                'selectedPeriode' => $selectedPeriode,
+            ]);
+        }
+
+        // single wilayah -> return flat list in branchData for backward compat
+        $branchData = $rows;
+        return view('regional-sharing-detail', compact('branchData', 'wilayah', 'selectedPeriode'));
+    }
+
+    public function exportSharingExcel(Request $request)
+    {
+        $selectedPeriode = $request->get('periode', 'all');
+
+        $conn = DB::connection('dashboard_phinnisi');
+        $schema = $conn->getSchemaBuilder();
+
+        // detect region column
+        $regionCol = null;
+        foreach (['wilayah', 'region', 'nama_wilayah', 'AREA', 'WILAYAH'] as $c) {
+            if ($schema->hasColumn('sharing_regional', $c)) {
+                $regionCol = $c;
+                break;
+            }
+        }
+
+        if (!$regionCol) {
+            abort(404, 'Kolom wilayah tidak ditemukan pada tabel sharing_regional');
+        }
+
+        $possibleCols = ['pandu_umum', 'pandu_tuks', 'tunda_umum', 'tunda_tuks', 'total'];
+
+        // fetch detailed rows grouped by wilayah then branch
+        $query = $conn->table('sharing_regional')
+            ->select($regionCol, 'branch');
+        if ($selectedPeriode != 'all') {
+            $query->where('periode', $selectedPeriode);
+        }
+        foreach ($possibleCols as $c) {
+            if ($schema->hasColumn('sharing_regional', $c)) {
+                $query->selectRaw("COALESCE(SUM(`{$c}`),0) as {$c}");
+            }
+        }
+
+        $rows = $query->groupBy($regionCol, 'branch')->orderBy($regionCol)->orderBy('branch')->get();
+
+        // Create spreadsheet
+        $spreadsheet = new Spreadsheet();
+        $sheet = $spreadsheet->getActiveSheet();
+        $sheet->setTitle('Regional Sharing');
+
+        $headers = ['Wilayah', 'Branch', 'Pandu Umum', 'Pandu TUKS', 'Tunda Umum', 'Tunda TUKS', 'Total'];
+        $col = 'A';
+        foreach ($headers as $h) {
+            $sheet->setCellValue($col.'1', $h);
+            $col++;
+        }
+
+        $rowNum = 2;
+        foreach ($rows as $r) {
+            $sheet->setCellValue('A'.$rowNum, $r->{$regionCol});
+            $sheet->setCellValue('B'.$rowNum, $r->branch);
+            $sheet->setCellValue('C'.$rowNum, $r->pandu_umum ?? 0);
+            $sheet->setCellValue('D'.$rowNum, $r->pandu_tuks ?? 0);
+            $sheet->setCellValue('E'.$rowNum, $r->tunda_umum ?? 0);
+            $sheet->setCellValue('F'.$rowNum, $r->tunda_tuks ?? 0);
+            $sheet->setCellValue('G'.$rowNum, $r->total ?? (($r->pandu_umum ?? 0) + ($r->pandu_tuks ?? 0) + ($r->tunda_umum ?? 0) + ($r->tunda_tuks ?? 0)));
+            $rowNum++;
+        }
+
+        // auto size columns
+        foreach (range('A', 'G') as $columnID) {
+            $sheet->getColumnDimension($columnID)->setAutoSize(true);
+        }
+
+        $filename = 'regional_sharing_' . ($selectedPeriode == 'all' ? 'all' : $selectedPeriode) . '_' . date('Ymd_His') . '.xlsx';
+
+        $tempFile = tempnam(sys_get_temp_dir(), 'xlsx');
+        $writer = new Xlsx($spreadsheet);
+        $writer->save($tempFile);
+
+        return response()->download($tempFile, $filename)->deleteFileAfterSend(true);
+    }
     
     public function exportExcel(Request $request)
     {
