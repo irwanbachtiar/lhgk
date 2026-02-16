@@ -7,6 +7,7 @@ use Illuminate\Support\Facades\Artisan;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\NotaController;
 use App\Http\Controllers\RegionalController;
+use App\Http\Controllers\TrafikController;
 use App\Models\Lhgk;
 
 Route::get('/', [DashboardController::class, 'index'])->name('dashboard');
@@ -34,6 +35,9 @@ Route::get('/regional-detail/export-excel', [RegionalController::class, 'exportE
 Route::get('/regional-sharing', [RegionalController::class, 'sharing'])->name('regional.sharing');
 Route::get('/regional-sharing/detail', [RegionalController::class, 'sharingDetail'])->name('regional.sharing.detail');
 Route::get('/regional-sharing/export', [RegionalController::class, 'exportSharingExcel'])->name('regional.sharing.export');
+
+// Trafik (dashboard_phinnisi.trafik)
+Route::get('/trafik', [TrafikController::class, 'index'])->name('trafik');
 
 // Sync Phinnisi routes (manual trigger)
 Route::get('/sync-phinnisi-pandu', function() {

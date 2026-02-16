@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg width="64" height="48" viewBox="0 0 64 48" xmlns="http://www.w3.org/2000/svg" aria-hidden="true" focusable="false">
+  <title>Tugboat</title>
+  <g fill="none" fill-rule="evenodd">
+    <rect width="64" height="48" rx="6" fill="#e6f7ff"/>
+    <g transform="translate(6 8)">
+      <!-- hull -->
+      <path d="M2 26 L52 26 L46 34 L8 34 Z" fill="#1f6feb"/>
+      <!-- deck -->
+      <rect x="8" y="18" width="34" height="8" rx="1" fill="#0b5ed7"/>
+      <!-- cabin -->
+      <rect x="22" y="8" width="12" height="10" rx="1" fill="#fff"/>
+      <rect x="24" y="10" width="4" height="6" fill="#0b5ed7"/>
+      <rect x="30" y="10" width="4" height="6" fill="#0b5ed7"/>
+      <!-- funnel -->
+      <rect x="18" y="6" width="4" height="6" rx="1" fill="#333"/>
+      <!-- water line -->
+      <path d="M0 28 C6 30 18 30 32 28 C46 26 58 26 64 28" stroke="#75b6ff" stroke-width="1.5" fill="none"/>
+    </g>
+  </g>
+</svg>

@@ -7,12 +7,59 @@
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script>
+        // Dashboard action bar handlers (attach after DOM ready)
+        document.addEventListener('DOMContentLoaded', function(){
+            const downloadBtn = document.getElementById('btnDownloadPdf');
+            const refreshBtn = document.getElementById('btnRefresh');
+            const applyBtn = document.getElementById('btnApplyFilters');
+            const form = document.getElementById('dashboardFilterForm');
+
+            if(downloadBtn){
+                downloadBtn.addEventListener('click', function(){
+                    try{
+                        const params = new URLSearchParams(window.location.search);
+                        params.set('preview_print', '1');
+                        const url = window.location.pathname + '?' + params.toString();
+                        const w = window.open(url, '_blank');
+                        if(w) w.focus();
+                    }catch(e){
+                        console.error(e);
+                        alert('Gagal menyiapkan download PDF');
+                    }
+                });
+            }
+
+            if(refreshBtn){
+                refreshBtn.addEventListener('click', function(){
+                    window.location.reload();
+                });
+            }
+
+            if(applyBtn && form){
+                applyBtn.addEventListener('click', function(){
+                    form.submit();
+                });
+            }
+        });
+    </script>
     <style>
         body {
             background-color: #f8f9fa;
         }
+        :root {
+            --card-radius: 12px;
+            --accent-pink: #f093fb;
+            --accent-green: #8bea66;
+            --accent-cyan: #66dfea;
+            --accent-teal: #10b981;
+            --accent-blue: #3b82f6;
+            --accent-orange: #ff7f50;
+            --accent-indigo: #667eea;
+            --accent-amber: #f59e0b;
+        }
         .stat-card {
-            border-radius: 12px;
+            border-radius: var(--card-radius);
             box-shadow: 0 2px 8px rgba(0,0,0,0.08);
             transition: all 0.3s ease;
             border: 1px solid rgba(0,0,0,0.05);
@@ -63,6 +110,15 @@
             display: inline-block;
             margin: 2px;
         }
+        /* Emphasize numeric value inside via-badges for Realisasi cards */
+        .via-badge strong {
+            font-size: 1.2rem;
+            font-weight: 600;
+            color: #111827;
+            display: inline-block;
+            margin-left: 6px;
+            line-height: 1;
+        }
         .via-mobile {
             background-color: #e8f5e9;
             color: #2e7d32;
@@ -83,8 +139,29 @@
         .nota-summary h4 { font-weight: 700; }
         .nota-summary h5 { font-weight: 600; }
         .nota-summary .col-6 { padding-bottom: 8px; }
+        /* Minimal donut layout */
+        .nota-summary { display:flex; align-items:center; justify-content:center; flex-direction:column; }
+        .nota-summary .card-body { padding-left: 0; padding-right: 1rem; }
+        .nota-summary .col-12.col-md-4 { padding-left: 0; }
+        .nota-summary .title-shift { margin-left: -1.6rem; }
+        @media (min-width: 768px) {
+            .nota-summary.match-height, .speedometer-card.match-height { min-height: 260px; }
+        }
+        .nota-summary .nota-canvas-wrap { width:160px; max-width:40%; }
         .speedometer-wrap { display:flex; align-items:center; justify-content:center; flex-direction:column; }
         #speedometerChart { display:block; }
+        /* Accent classes to replace inline border-left styles */
+        .card-accent--pink { border-left: 4px solid var(--accent-pink); }
+        .card-accent--green { border-left: 4px solid var(--accent-green); }
+        .card-accent--cyan { border-left: 4px solid var(--accent-cyan); }
+        .card-accent--teal { border-left: 4px solid var(--accent-teal); }
+        .card-accent--blue { border-left: 4px solid var(--accent-blue); }
+        .card-accent--orange { border-left: 4px solid var(--accent-orange); }
+        .card-accent--indigo { border-left: 4px solid var(--accent-indigo); }
+        .card-accent--amber { border-left: 4px solid var(--accent-amber); }
+
+        /* Metric value utility */
+        .metric-value { font-size: 1.8rem; font-weight: 700; line-height: 1; }
         @media (max-width: 767px) {
             .nota-summary .col-6 { flex: 0 0 50%; max-width: 50%; }
             #speedometerChart { display:block; }
@@ -121,7 +198,7 @@
         <div class="row mb-4">
             <div class="col-12">
                 <div class="period-filter">
-                    <form method="GET" action="{{ route('dashboard') }}" class="row align-items-center">
+                    <form id="dashboardFilterForm" method="GET" action="{{ route('dashboard') }}" class="row align-items-center">
                         <div class="col-md-2">
                             <label class="form-label"><i class="bi bi-funnel"></i> Filter:</label>
                         </div>
@@ -151,12 +228,29 @@
                                 @endforeach
                             </select>
                         </div>
-                        <div class="col-md-3">
-                            @if($selectedPeriode != 'all' || $selectedBranch != 'all')
-                                <a href="{{ route('dashboard') }}" class="btn btn-outline-secondary mt-4">
-                                    <i class="bi bi-x-circle"></i> Reset Filter
-                                </a>
-                            @endif
+                        <div class="col-md-3 d-flex justify-content-end align-items-center">
+                            <div>
+                                @if($selectedPeriode != 'all' || $selectedBranch != 'all')
+                                    <a href="{{ route('dashboard') }}" class="btn btn-outline-secondary me-2">
+                                        <i class="bi bi-x-circle"></i> Reset
+                                    </a>
+                                @endif
+                            </div>
+                            <div class="btn-toolbar" role="toolbar" aria-label="Dashboard actions">
+                                <div class="btn-group" role="group" aria-label="Export and refresh">
+                                    <button type="button" id="btnDownloadPdf" class="btn btn-sm btn-outline-primary" title="Download current page as PDF">
+                                        <i class="bi bi-download"></i> Download
+                                    </button>
+                                    <button type="button" id="btnRefresh" class="btn btn-sm btn-outline-secondary" title="Refresh dashboard">
+                                        <i class="bi bi-arrow-clockwise"></i>
+                                    </button>
+                                </div>
+                                <div class="btn-group ms-2" role="group">
+                                    <button type="button" id="btnApplyFilters" class="btn btn-sm btn-primary" title="Apply filters">
+                                        <i class="bi bi-funnel-fill"></i> Apply
+                                    </button>
+                                </div>
+                            </div>
                         </div>
                     </form>
                 </div>
@@ -178,67 +272,134 @@
         @else
         <!-- Overall Statistics -->
         <div class="row mb-4">
+            <!-- Total Pandu moved into Realisasi row (kept out of top summary) -->
             <div class="col-md-2">
-                <div class="card stat-card bg-white" style="border-left: 4px solid #667eea;">
+                <div class="card stat-card bg-white card-accent--pink">
                     <div class="card-body text-center">
                         <div class="mb-2">
-                            <i class="bi bi-person-badge fs-1" style="color: #667eea;"></i>
+                            <i class="bi bi-receipt fs-1" style="color: var(--accent-pink);"></i>
                         </div>
-                        <h3 class="text-dark mb-1">{{ $totalOverall['total_pandu'] }}</h3>
-                        <p class="mb-0 text-muted small">Total Pandu</p>
-                    </div>
-                </div>
-            </div>
-            <div class="col-md-2">
-                <div class="card stat-card bg-white" style="border-left: 4px solid #f093fb;">
-                    <div class="card-body text-center">
-                        <div class="mb-2">
-                            <i class="bi bi-receipt fs-1" style="color: #f093fb;"></i>
-                        </div>
-                        <h3 class="text-dark mb-1">{{ number_format($totalOverall['total_transaksi']) }}</h3>
-                        <p class="mb-0 text-muted small">Total Transaksi</p>
+                        <h3 class="text-dark mb-1 metric-value">{{ number_format($totalOverall['total_transaksi']) }}</h3>
+                        <p class="mb-0 text-muted small">Gerakan</p>
                     </div>
                 </div>
             </div>
             <div class="col-md-3">
-                <div class="card stat-card bg-white" style="border-left: 4px solid #8bea66;">
+                <div class="card stat-card bg-white card-accent--green">
                     <div class="card-body text-center">
                         <div class="mb-2">
-                            <i class="bi bi-cash-coin fs-1" style="color: #8bea66a;"></i>
+                            <i class="bi bi-cash-coin fs-1" style="color: var(--accent-green);"></i>
                         </div>
-                        <h4 class="text-dark mb-1">Rp {{ number_format($totalOverall['total_pendapatan_pandu'], 0, ',', '.') }}</h4>
+                        <h4 class="text-dark mb-1 metric-value">Rp {{ number_format($totalOverall['total_pendapatan_pandu'], 0, ',', '.') }}</h4>
                         <p class="mb-0 text-muted small">Total Pendapatan Pandu</p>
                     </div>
                 </div>
             </div>
             <div class="col-md-3">
-                <div class="card stat-card bg-white" style="border-left: 4px solid #66dfea;">
+                <div class="card stat-card bg-white card-accent--cyan">
                     <div class="card-body text-center">
                         <div class="mb-2">
-                            <i class="bi bi-water fs-1" style="color: #66dfea;"></i>
+                            <i class="bi bi-water fs-1" style="color: var(--accent-cyan);"></i>
                         </div>
-                        <h4 class="text-dark mb-1">Rp {{ number_format($totalOverall['total_pendapatan_tunda'], 0, ',', '.') }}</h4>
+                        <h4 class="text-dark mb-1 metric-value">Rp {{ number_format($totalOverall['total_pendapatan_tunda'], 0, ',', '.') }}</h4>
                         <p class="mb-0 text-muted small">Total Pendapatan Tunda</p>
                     </div>
                 </div>
             </div>
-            <div class="col-md-2">
-                <div class="card stat-card bg-white" style="border-left: 4px solid #10b981;">
+            <div class="col-md-4">
+                <div class="card stat-card bg-white card-accent--teal">
                     <div class="card-body text-center">
                         <div class="mb-2">
-                            <i class="bi bi-graph-up-arrow fs-1" style="color: #10b981;"></i>
+                            <i class="bi bi-graph-up-arrow fs-1" style="color: var(--accent-teal);"></i>
                         </div>
-                        <h4 class="text-dark mb-1">Rp {{ number_format($totalOverall['total_pendapatan_pandu'] + $totalOverall['total_pendapatan_tunda'], 0, ',', '.') }}</h4>
+                        <h4 class="text-dark mb-1 metric-value">Rp {{ number_format($totalOverall['total_pendapatan_pandu'] + $totalOverall['total_pendapatan_tunda'], 0, ',', '.') }}</h4>
                         <p class="mb-0 text-muted small">Total Pendapatan</p>
                     </div>
                 </div>
             </div>
         </div>
         
+        <!-- Realisasi Cards: Pemanduan & Penundaan -->
+        <div class="row mb-3">
+            {{-- realisasiPandu and realisasiTunda are provided by controller --}}
+
+            <div class="col-md-3">
+                <div class="card stat-card bg-white card-accent--blue">
+                    <div class="card-body">
+                        <h6 class="mb-2"><i class="bi bi-file-earmark-text"></i> Realisasi Pemanduan</h6>
+                        <div class="small text-muted mb-2"></div>
+                        @php
+                            $pandu_mobile = (int) data_get($realisasiPandu, 'mobile', 0);
+                            $pandu_web = (int) data_get($realisasiPandu, 'web', 0);
+                            $pandu_partial = (int) data_get($realisasiPandu, 'partial', 0);
+                            $pandu_total = $pandu_mobile + $pandu_web + $pandu_partial;
+                            $pandu_mobile_pct = $pandu_total > 0 ? round(($pandu_mobile / $pandu_total) * 100, 1) : 0;
+                            $pandu_web_pct = $pandu_total > 0 ? round(($pandu_web / $pandu_total) * 100, 1) : 0;
+                            $pandu_partial_pct = $pandu_total > 0 ? round(($pandu_partial / $pandu_total) * 100, 1) : 0;
+                        @endphp
+                        <div class="d-flex gap-2">
+                            <span class="via-badge via-mobile"><i class="bi bi-phone"></i> Mobile: <strong>{{ number_format($pandu_mobile) }}</strong> ({{ $pandu_mobile_pct }}%)</span>
+                            <span class="via-badge via-web"><i class="bi bi-laptop"></i> Web: <strong>{{ number_format($pandu_web) }}</strong> ({{ $pandu_web_pct }}%)</span>
+                            @if($pandu_partial > 0)
+                                <span class="via-badge"><i class="bi bi-puzzle"></i> Partial: <strong>{{ number_format($pandu_partial) }}</strong> ({{ $pandu_partial_pct }}%)</span>
+                            @endif
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-md-3">
+                <div class="card stat-card bg-white card-accent--teal">
+                    <div class="card-body">
+                        <h6 class="mb-2"><i class="bi bi-clock-history"></i> Realisasi Penundaan</h6>
+                        <div class="small text-muted mb-2"></div>
+                        @php
+                            $tunda_mobile = $realisasiTunda->mobile ?? 0;
+                            $tunda_web = $realisasiTunda->web ?? 0;
+                            $tunda_partial = $realisasiTunda->partial ?? 0;
+                            $tunda_total = $tunda_mobile + $tunda_web + $tunda_partial;
+                            $tunda_mobile_pct = $tunda_total > 0 ? round(($tunda_mobile / $tunda_total) * 100, 1) : 0;
+                            $tunda_web_pct = $tunda_total > 0 ? round(($tunda_web / $tunda_total) * 100, 1) : 0;
+                            $tunda_partial_pct = $tunda_total > 0 ? round(($tunda_partial / $tunda_total) * 100, 1) : 0;
+                        @endphp
+                        <div class="d-flex gap-2">
+                            <span class="via-badge via-mobile"><i class="bi bi-phone"></i> Mobile: <strong>{{ number_format($tunda_mobile) }}</strong> ({{ $tunda_mobile_pct }}%)</span>
+                            <span class="via-badge via-web"><i class="bi bi-laptop"></i> Web: <strong>{{ number_format($tunda_web) }}</strong> ({{ $tunda_web_pct }}%)</span>
+                            @if($tunda_partial > 0)
+                                <span class="via-badge"><i class="bi bi-puzzle"></i> Partial: <strong>{{ number_format($tunda_partial) }}</strong> ({{ $tunda_partial_pct }}%)</span>
+                            @endif
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-md-3">
+                <div class="card stat-card bg-white card-accent--orange">
+                    <div class="card-body text-center">
+                        <h6 class="mb-2"><img src="/images/tugboat.svg" alt="Tug" style="width:18px;height:18px;" class="me-1"> Total Tunda</h6>
+                        <div class="small text-muted mb-2"></div>
+                        <div class="h3 mb-0 metric-value">{{ number_format($totalTundaDistinct ?? 0) }}</div>
+                        <p class="mb-0 text-muted small">Unit</p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-md-3">
+                <div class="card stat-card bg-white card-accent--indigo">
+                    <div class="card-body text-center">
+                        <h6 class="mb-2"><i class="bi bi-person-badge me-1"></i> Total Pandu</h6>
+                        <div class="small text-muted mb-2"></div>
+                        <div class="h3 mb-0 metric-value">{{ number_format($totalOverall['total_pandu'] ?? 0) }}</div>
+                        <p class="mb-0 text-muted small">Orang</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
         <!-- Combined layout: Left column stacks Waiting Time + Nota Summary; Right column stacks Pilot + Speedometer -->
         <div class="row mb-2 align-items-stretch">
             <div class="col-md-6 d-flex flex-column gap-3">
-                <div class="card stat-card bg-white combined-card flex-fill d-flex" style="border-left: 4px solid #f59e0b;">
+                <div class="card stat-card bg-white combined-card flex-fill d-flex card-accent--amber">
                     <div class="card-body d-flex flex-column justify-content-center">
                         <h5 class="mb-3"><i class="bi bi-clock-history"></i> Waiting Time</h5>
                         <div class="d-flex justify-content-between align-items-center">
@@ -258,25 +419,31 @@
                     </div>
                 </div>
 
-                <div class="card stat-card bg-white nota-summary flex-fill d-flex" style="border-left: 4px solid #3b82f6;">
-                    <div class="card-body d-flex flex-column justify-content-center">
-                        <h5 class="mb-3"><i class="bi bi-file-earmark-text"></i> Nota Summary</h5>
-                        <div class="row h-100">
-                            <div class="col-6">
-                                <p class="text-muted mb-1"><i class="bi bi-file-earmark-check text-primary me-2"></i>Nota Terbit</p>
-                                <h4 class="mb-1">{{ number_format($totalOverall['total_nota'] ?? 0) }}</h4>
+                <div class="card stat-card bg-white nota-summary flex-fill d-flex match-height card-accent--blue">
+                    <div class="card-body ps-0">
+                        <div class="d-flex align-items-center justify-content-between flex-wrap">
+                            <div class="nota-left" style="flex:0 0 220px; padding-left:0;">
+                                <h5 class="mb-0 title-shift"><i class="bi bi-file-earmark-text"></i> Nota Summary</h5>
+                                <div class="text-muted small">Distribusi status nota</div>
+
+                                {{-- Pilot realisasi info removed from Nota Summary per request --}}
                             </div>
-                            <div class="col-6">
-                                <p class="text-muted mb-1"><i class="bi bi-x-circle text-danger me-2"></i>Nota Batal</p>
-                                <h4 class="mb-1">{{ number_format($totalOverall['nota_batal'] ?? 0) }}</h4>
+
+                            <div class="nota-canvas-wrap mx-3" style="flex:0 0 160px;">
+                                <canvas id="notaSummaryChart" style="width:100%; height:200px; display:block;"></canvas>
                             </div>
-                            <div class="col-6 mt-3">
-                                <p class="text-muted mb-1"><i class="bi bi-hourglass-split text-warning me-2"></i>Menunggu Nota</p>
-                                <h5 class="mb-1">{{ number_format($totalOverall['menunggu_nota'] ?? 0) }}</h5>
-                            </div>
-                            <div class="col-6 mt-3">
-                                <p class="text-muted mb-1"><i class="bi bi-person-x text-secondary me-2"></i>Belum Verifikasi</p>
-                                <h5 class="mb-1">{{ number_format($totalOverall['belum_verifikasi'] ?? 0) }}</h5>
+
+                            <div class="nota-legend text-end small text-muted" style="flex:0 0 220px;">
+                                <div id="notaSummaryLegend">
+                                    <div class="mb-1"><i class="bi bi-circle-fill" style="color:#3b82f6"></i> Terbit: <strong>{{ number_format($totalOverall['total_nota'] ?? 0) }}</strong></div>
+                                    <div class="mb-1"><i class="bi bi-circle-fill" style="color:#ef4444"></i> Batal: <strong>{{ number_format($totalOverall['nota_batal'] ?? 0) }}</strong></div>
+                                    <div class="mb-1"><i class="bi bi-circle-fill" style="color:#f59e0b"></i> Menunggu: <strong>{{ number_format($totalOverall['menunggu_nota'] ?? 0) }}</strong></div>
+                                    <div><i class="bi bi-circle-fill" style="color:#6b7280"></i> Belum Verif: <strong>{{ number_format($totalOverall['belum_verifikasi'] ?? 0) }}</strong></div>
+                                </div>
+
+                                <div class="mt-2 small text-muted">
+                                    Total: <strong>{{ number_format((($totalOverall['total_nota'] ?? 0) + ($totalOverall['nota_batal'] ?? 0) + ($totalOverall['menunggu_nota'] ?? 0) + ($totalOverall['belum_verifikasi'] ?? 0))) }}</strong>
+                                </div>
                             </div>
                         </div>
                     </div>
@@ -285,7 +452,7 @@
 
             <div class="col-md-6 d-flex flex-column gap-3">
                 @if($topPilot)
-                <div class="card stat-card bg-white combined-card flex-fill d-flex" style="border-left: 4px solid #f59e0b;">
+                <div class="card stat-card bg-white combined-card flex-fill d-flex card-accent--amber">
                     <div class="card-body d-flex flex-column justify-content-center align-items-center">
                         <div class="row w-100 align-items-center">
                             <div class="col-md-4">
@@ -312,7 +479,7 @@
                 </div>
                 @endif
 
-                <div class="card stat-card bg-white combined-card flex-fill d-flex" style="border-left: 4px solid #10b981;">
+                <div class="card stat-card bg-white combined-card flex-fill d-flex speedometer-card match-height card-accent--teal">
                     <div class="card-body p-3">
                         <div class="row g-0 align-items-center">
                             <div class="col">
@@ -1221,9 +1388,68 @@
                 }
             });
         }
+        // Nota Summary donut (minimal)
+        (function(){
+            const terbit = {{ $totalOverall['total_nota'] ?? 0 }};
+            const batal = {{ $totalOverall['nota_batal'] ?? 0 }};
+            const menunggu = {{ $totalOverall['menunggu_nota'] ?? 0 }};
+            const belum = {{ $totalOverall['belum_verifikasi'] ?? 0 }};
+            const total = terbit + batal + menunggu + belum;
+
+            const notaCtxEl = document.getElementById('notaSummaryChart');
+            if (!notaCtxEl) return;
+
+                const notaChart = new Chart(notaCtxEl.getContext('2d'), {
+                type: 'doughnut',
+                data: {
+                    labels: ['Terbit','Batal','Menunggu','Belum Verif'],
+                    datasets: [{
+                        data: [terbit, batal, menunggu, belum],
+                        backgroundColor: ['#3b82f6','#ef4444','#f59e0b','#6b7280'],
+                        borderColor: ['#ffffff','#ffffff','#ffffff','#ffffff'],
+                        borderWidth: 2
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    radius: '90%',
+                    cutout: '60%',
+                    plugins: {
+                        legend: { display: false },
+                        tooltip: {
+                            callbacks: {
+                                label: function(ctx) {
+                                    const v = ctx.parsed || 0;
+                                    const pct = total > 0 ? ((v/total)*100).toFixed(1) : '0.0';
+                                    return ctx.label + ': ' + v + ' (' + pct + '%)';
+                                }
+                            }
+                        }
+                    }
+                },
+                plugins: [{
+                    id: 'centerText',
+                    afterDraw: chart => {
+                        const w = chart.width, h = chart.height;
+                        const ctx = chart.ctx;
+                        ctx.restore();
+                        const fontSize = Math.min(w, h) / 6;
+                        ctx.font = fontSize + 'px sans-serif';
+                        ctx.fillStyle = '#111827';
+                        ctx.textAlign = 'center';
+                        ctx.textBaseline = 'middle';
+                        const centerText = total > 0 ? Math.round((terbit/total)*100) + '%' : '0%';
+                        ctx.fillText(centerText, w/2, h/2.1);
+                        ctx.save();
+                    }
+                }]
+            });
+        })();
+
         // Custom semicircular gauge for Kecepatan Terbit (Bentuk 3)
         // Move data to canvas attributes and use external JS module for rendering/animation
-        const speedVal = @json($totalOverall['kecepatan_terbit_nota'] ?? 0);
+        const speedVal = {{ $totalOverall['kecepatan_terbit_nota'] ?? 0 }};
         const speedCanvas = document.getElementById('speedometerChart');
         if (speedCanvas) {
             speedCanvas.setAttribute('data-speed-value', speedVal);
@@ -1231,5 +1457,24 @@
         }
     </script>
     <script src="/js/speedometer-gauge.js"></script>
+    <script>
+        // If this page was opened with preview_print=1, trigger print dialog
+        (function(){
+            try{
+                const params = new URLSearchParams(window.location.search);
+                if(params.get('preview_print') === '1'){
+                    window.addEventListener('load', function(){
+                        // Give browser a brief moment to render charts
+                        setTimeout(function(){
+                            window.print();
+                            // Do not force-close; user may want to save
+                        }, 700);
+                    });
+                }
+            }catch(e){
+                console.error('print preview init error', e);
+            }
+        })();
+    </script>
 </body>
 </html>

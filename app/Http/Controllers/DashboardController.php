@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use Illuminate\Http\Request;
 use App\Models\Lhgk;
 use Illuminate\Support\Facades\DB;
+use Barryvdh\DomPDF\Facade\Pdf;
 
 class DashboardController extends Controller
 {
@@ -388,7 +389,9 @@ class DashboardController extends Controller
             $statusNotaCount = 0;
             $showWaitingTime = false;
             $waitingTimeCount = 0;
-            return view('dashboard', compact('statistics', 'totalOverall', 'periods', 'selectedPeriode', 'regionalGroups', 'allBranches', 'selectedBranch', 'topPilot', 'shipStatsByGT', 'showDeparture', 'departureDelayCount', 'showStatusNota', 'statusNotaCount', 'showWaitingTime', 'waitingTimeCount'));
+            $realisasiPandu = (object)['web' => 0, 'mobile' => 0, 'partial' => 0];
+            $realisasiTunda = (object)['web' => 0, 'mobile' => 0, 'partial' => 0];
+            return view('dashboard', compact('statistics', 'totalOverall', 'periods', 'selectedPeriode', 'regionalGroups', 'allBranches', 'selectedBranch', 'topPilot', 'shipStatsByGT', 'showDeparture', 'departureDelayCount', 'showStatusNota', 'statusNotaCount', 'showWaitingTime', 'waitingTimeCount', 'realisasiPandu', 'realisasiTunda'));
         }
 
         // Build query with period filter
@@ -452,6 +455,57 @@ class DashboardController extends Controller
             ->selectRaw('AVG(DATEDIFF(STR_TO_DATE(BILL_DATE, "%d-%m-%Y"), STR_TO_DATE(SELESAI_PELAKSANAAN, "%d-%m-%Y"))) as avg_days')
             ->value('avg_days') ?? 0;
 
+        // Realisasi counts for Pemanduan (PENDAPATAN_PANDU) and Penundaan (PENDAPATAN_TUNDA)
+        try {
+            // Count REALISAS_PILOT_VIA values for the selected periode/branch
+            // (do not filter by PENDAPATAN_PANDU so all rows count)
+            $realisasiPandu = Lhgk::where('PERIODE', $selectedPeriode)
+                ->where('NM_BRANCH', $selectedBranch)
+                ->selectRaw("SUM(CASE WHEN UPPER(REALISAS_PILOT_VIA) = 'WEB' THEN 1 ELSE 0 END) as web, SUM(CASE WHEN UPPER(REALISAS_PILOT_VIA) = 'MOBILE' THEN 1 ELSE 0 END) as mobile, SUM(CASE WHEN UPPER(REALISAS_PILOT_VIA) = 'PARTIAL' THEN 1 ELSE 0 END) as partial")
+                ->first();
+        } catch (\Exception $e) {
+            $realisasiPandu = (object)['web' => 0, 'mobile' => 0, 'partial' => 0];
+        }
+
+        try {
+            // Prefer counting per-tug columns if present (REALISASI_TUG1_VIA..REALISASI_TUG4_VIA)
+            $schema = DB::connection('dashboard_phinnisi')->getSchemaBuilder();
+            $hasTugCols = $schema->hasColumn('lhgk', 'realisas_tug1_via') || $schema->hasColumn('lhgk', 'realisas_tug2_via') || $schema->hasColumn('lhgk', 'realisas_tug3_via') || $schema->hasColumn('lhgk', 'realisas_tug4_via');
+
+            // Use tug columns if present; do NOT fallback to REALISAS_PILOT_VIA
+            if ($hasTugCols) {
+                // Count each column occurrence separately (rows may have multiple tugs)
+                $realisasiTunda = Lhgk::where('PERIODE', $selectedPeriode)
+                    ->where('NM_BRANCH', $selectedBranch)
+                    ->selectRaw(
+                        "(
+                            SUM(CASE WHEN UPPER(COALESCE(realisas_tug1_via,'')) = 'WEB' THEN 1 ELSE 0 END) +
+                            SUM(CASE WHEN UPPER(COALESCE(realisas_tug2_via,'')) = 'WEB' THEN 1 ELSE 0 END) +
+                            SUM(CASE WHEN UPPER(COALESCE(realisas_tug3_via,'')) = 'WEB' THEN 1 ELSE 0 END) +
+                            SUM(CASE WHEN UPPER(COALESCE(realisas_tug4_via,'')) = 'WEB' THEN 1 ELSE 0 END)
+                        ) as web,
+                        (
+                            SUM(CASE WHEN UPPER(COALESCE(realisas_tug1_via,'')) = 'MOBILE' THEN 1 ELSE 0 END) +
+                            SUM(CASE WHEN UPPER(COALESCE(realisas_tug2_via,'')) = 'MOBILE' THEN 1 ELSE 0 END) +
+                            SUM(CASE WHEN UPPER(COALESCE(realisas_tug3_via,'')) = 'MOBILE' THEN 1 ELSE 0 END) +
+                            SUM(CASE WHEN UPPER(COALESCE(realisas_tug4_via,'')) = 'MOBILE' THEN 1 ELSE 0 END)
+                        ) as mobile,
+                        (
+                            SUM(CASE WHEN UPPER(COALESCE(realisas_tug1_via,'')) = 'PARTIAL' THEN 1 ELSE 0 END) +
+                            SUM(CASE WHEN UPPER(COALESCE(realisas_tug2_via,'')) = 'PARTIAL' THEN 1 ELSE 0 END) +
+                            SUM(CASE WHEN UPPER(COALESCE(realisas_tug3_via,'')) = 'PARTIAL' THEN 1 ELSE 0 END) +
+                            SUM(CASE WHEN UPPER(COALESCE(realisas_tug4_via,'')) = 'PARTIAL' THEN 1 ELSE 0 END)
+                        ) as partial"
+                    )
+                    ->first();
+            } else {
+                // Columns not present — return zeros to reflect requested source
+                $realisasiTunda = (object)['web' => 0, 'mobile' => 0, 'partial' => 0];
+            }
+        } catch (\Exception $e) {
+            $realisasiTunda = (object)['web' => 0, 'mobile' => 0, 'partial' => 0];
+        }
+
         // Hitung total nota dari pandu_prod (sama seperti di monitoring nota)
         $totalNota = DB::connection('dashboard_phinnisi')->table('pandu_prod')
             ->select('INVOICE')
@@ -488,6 +542,23 @@ class DashboardController extends Controller
             'belum_verifikasi' => (clone $baseQuery)->where('STATUS_NOTA', 'belum verifikasi')->count(),
             'kecepatan_terbit_nota' => round($kecepatanTerbitNota, 1)
         ];
+
+        // Count distinct tunda kapal across NM_KAPAL_1/2/3 (ignore duplicates)
+        try {
+            $tundaResult = DB::connection('dashboard_phinnisi')->selectOne(
+                "SELECT COUNT(DISTINCT nm) as total FROM (
+                    SELECT NM_KAPAL_1 as nm FROM lhgk WHERE PERIODE = ? AND NM_BRANCH = ? AND NM_KAPAL_1 IS NOT NULL AND NM_KAPAL_1 != ''
+                    UNION ALL
+                    SELECT NM_KAPAL_2 as nm FROM lhgk WHERE PERIODE = ? AND NM_BRANCH = ? AND NM_KAPAL_2 IS NOT NULL AND NM_KAPAL_2 != ''
+                    UNION ALL
+                    SELECT NM_KAPAL_3 as nm FROM lhgk WHERE PERIODE = ? AND NM_BRANCH = ? AND NM_KAPAL_3 IS NOT NULL AND NM_KAPAL_3 != ''
+                ) t",
+                [$selectedPeriode, $selectedBranch, $selectedPeriode, $selectedBranch, $selectedPeriode, $selectedBranch]
+            );
+            $totalTundaDistinct = $tundaResult->total ?? 0;
+        } catch (\Exception $e) {
+            $totalTundaDistinct = 0;
+        }
 
         // Get top pilot dengan produksi tertinggi
         $topPilotQuery = Lhgk::select('NM_PERS_PANDU', 'NM_BRANCH')
@@ -678,7 +749,20 @@ class DashboardController extends Controller
                 ->appends(['periode' => $selectedPeriode, 'cabang' => $selectedBranch, 'show_waiting_time' => 1]);
         }
 
-        return view('dashboard', compact('statistics', 'totalOverall', 'periods', 'selectedPeriode', 'regionalGroups', 'allBranches', 'selectedBranch', 'topPilot', 'shipStatsByGT', 'showDeparture', 'departureDelayCount', 'departureDelayData', 'showStatusNota', 'statusNotaCount', 'statusNotaData', 'filterStatusNota', 'showWaitingTime', 'waitingTimeCount', 'waitingTimeData'));
+        $viewData = compact('statistics', 'totalOverall', 'periods', 'selectedPeriode', 'regionalGroups', 'allBranches', 'selectedBranch', 'topPilot', 'shipStatsByGT', 'showDeparture', 'departureDelayCount', 'departureDelayData', 'showStatusNota', 'statusNotaCount', 'statusNotaData', 'filterStatusNota', 'showWaitingTime', 'waitingTimeCount', 'waitingTimeData', 'realisasiPandu', 'realisasiTunda', 'totalTundaDistinct');
+
+        // Server-side PDF export (requires barryvdh/laravel-dompdf installed)
+        if ($request->get('export') === 'pdf') {
+            try {
+                $filename = 'Dashboard_' . str_replace(' ', '_', $selectedBranch) . '_' . str_replace('-', '', $selectedPeriode) . '_' . date('YmdHis') . '.pdf';
+                $pdf = Pdf::loadView('dashboard', $viewData)->setPaper('a4', 'landscape');
+                return $pdf->download($filename);
+            } catch (\Exception $e) {
+                return redirect()->back()->with('error', 'Gagal membuat PDF: ' . $e->getMessage());
+            }
+        }
+
+        return view('dashboard', $viewData);
     }
 
     public function exportDepartureDelay(Request $request)
