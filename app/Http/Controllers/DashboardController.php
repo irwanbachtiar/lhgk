@@ -694,6 +694,8 @@ class DashboardController extends Controller
                     'PENDAPATAN_TUNDA',
                     'STATUS_NOTA'
                 )
+                // selisih hari: difference between selesai pelaksanaan and last day of PERIODE
+                ->selectRaw("DATEDIFF(LAST_DAY(STR_TO_DATE(CONCAT('01-', PERIODE), '%d-%m-%Y')), STR_TO_DATE(SELESAI_PELAKSANAAN, '%d-%m-%Y')) as SELISIH_HARI")
                 ->whereIn('STATUS_NOTA', $statusNotaFilter)
                 ->where('PERIODE', $selectedPeriode)
                 ->where('NM_BRANCH', $selectedBranch)
@@ -895,7 +897,7 @@ class DashboardController extends Controller
             $statusNotaFilter = [$filterStatusNota];
         }
 
-        // Get all status nota data for export
+        // Get all status nota data for export (include selisih hari)
         $statusNotaData = Lhgk::select(
                 'NO_UKK',
                 'NM_KAPAL',
@@ -907,6 +909,7 @@ class DashboardController extends Controller
                 'PENDAPATAN_TUNDA',
                 'STATUS_NOTA'
             )
+            ->selectRaw("DATEDIFF(LAST_DAY(STR_TO_DATE(CONCAT('01-', PERIODE), '%d-%m-%Y')), STR_TO_DATE(SELESAI_PELAKSANAAN, '%d-%m-%Y')) as SELISIH_HARI")
             ->whereIn('STATUS_NOTA', $statusNotaFilter)
             ->where('PERIODE', $selectedPeriode)
             ->where('NM_BRANCH', $selectedBranch)
@@ -934,7 +937,7 @@ class DashboardController extends Controller
             // Add BOM for UTF-8
             fprintf($file, chr(0xEF).chr(0xBB).chr(0xBF));
             
-            // Header
+            // Header (include Selisih (hari))
             fputcsv($file, [
                 'No',
                 'No. UKK',
@@ -943,6 +946,7 @@ class DashboardController extends Controller
                 'Nama Pandu',
                 'Mulai Pelaksanaan',
                 'Selesai Pelaksanaan',
+                'Selisih (hari)',
                 'Pendapatan Pandu',
                 'Pendapatan Tunda',
                 'Total Pendapatan',
@@ -960,6 +964,7 @@ class DashboardController extends Controller
                     $data->NM_PERS_PANDU,
                     $data->MULAI_PELAKSANAAN,
                     $data->SELESAI_PELAKSANAAN,
+                    ($data->SELISIH_HARI !== null ? $data->SELISIH_HARI : ''),
                     number_format($data->PENDAPATAN_PANDU, 0, ',', '.'),
                     number_format($data->PENDAPATAN_TUNDA, 0, ',', '.'),
                     number_format($data->PENDAPATAN_PANDU + $data->PENDAPATAN_TUNDA, 0, ',', '.'),

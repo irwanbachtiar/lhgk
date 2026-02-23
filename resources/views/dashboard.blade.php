@@ -167,6 +167,14 @@
             #speedometerChart { display:block; }
             .combined-card .h4 { font-size: 1.1rem; }
         }
+        /* Status Nota table tweaks */
+        .status-nota-table th { vertical-align: middle; text-transform: none; font-weight: 700; }
+        .status-nota-table td { vertical-align: middle; }
+        .status-nota-table .ukk-badge { background: #6c757d; color: #fff; padding: .35rem .6rem; border-radius: .35rem; font-size: .8rem; }
+        .status-nota-table .nm-kapal { max-width: 260px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .status-nota-table .selisih-badge.bg-success { background-color: #10b981 !important; }
+        .status-nota-table .selisih-badge.bg-danger { background-color: #ef4444 !important; }
+        .status-nota-table .selisih-badge.bg-secondary { background-color: #6c757d !important; }
     </style>
 </head>
 <body>
@@ -778,6 +786,7 @@
                                         <th>Cabang</th>
                                         <th>Gerakan</th>
                                         <th>Selesai Pelaksanaan</th>
+                                        <th>Selisih (hari)</th>
                                         <th>Invoice Date</th>
                                         <th class="text-center">Selisih (Hari)</th>
                                         <th class="text-end">Pendapatan Pandu</th>
@@ -910,28 +919,37 @@
                             <table class="table table-hover table-striped">
                                 <thead class="table-dark">
                                     <tr>
-                                        <th>No</th>
-                                        <th>No. UKK</th>
-                                        <th>Nama Kapal</th>
-                                        <th>Pelayaran</th>
-                                        <th>Nama Pandu</th>
-                                        <th>Mulai Pelaksanaan</th>
-                                        <th>Selesai Pelaksanaan</th>
-                                        <th class="text-end">Pendapatan Pandu</th>
-                                        <th class="text-end">Pendapatan Tunda</th>
-                                        <th class="text-center">Status Nota</th>
+                                        <th style="width:48px">No</th>
+                                        <th style="width:140px">No. UKK</th>
+                                        <th style="width:260px">Nama Kapal</th>
+                                        <th style="width:120px">Pelayaran</th>
+                                        <th style="width:180px">Nama Pandu</th>
+                                        <th style="width:160px">Mulai Pelaksanaan</th>
+                                        <th style="width:160px">Selesai Pelaksanaan</th>
+                                        <th style="width:110px" class="text-center">Selisih (hari)</th>
+                                        <th class="text-end" style="width:140px">Pendapatan Pandu</th>
+                                        <th class="text-end" style="width:140px">Pendapatan Tunda</th>
+                                        <th class="text-center" style="width:120px">Status Nota</th>
                                     </tr>
                                 </thead>
                                 <tbody>
                                     @foreach($statusNotaData as $index => $data)
                                     <tr>
                                         <td>{{ $statusNotaData->firstItem() + $index }}</td>
-                                        <td><span class="badge bg-secondary">{{ $data->NO_UKK }}</span></td>
-                                        <td><strong>{{ $data->NM_KAPAL }}</strong></td>
+                                        <td><span class="ukk-badge">{{ $data->NO_UKK }}</span></td>
+                                        <td class="nm-kapal"><strong title="{{ $data->NM_KAPAL }}">{{ Str::limit($data->NM_KAPAL, 40) }}</strong></td>
                                         <td>{{ $data->PELAYARAN ?? '-' }}</td>
                                         <td>{{ $data->NM_PERS_PANDU }}</td>
-                                        <td>{{ $data->MULAI_PELAKSANAAN }}</td>
-                                        <td>{{ $data->SELESAI_PELAKSANAAN }}</td>
+                                        <td class="text-nowrap small">{{ $data->MULAI_PELAKSANAAN }}</td>
+                                        <td class="text-nowrap small">{{ $data->SELESAI_PELAKSANAAN }}</td>
+                                        @php $s = $data->SELISIH_HARI; @endphp
+                                        <td class="text-center">
+                                            @if($s === null || $s === '')
+                                                -
+                                            @else
+                                                <span class="badge selisih-badge {{ $s < 0 ? 'bg-danger' : ($s == 0 ? 'bg-secondary' : 'bg-success') }}">{{ $s }}</span>
+                                            @endif
+                                        </td>
                                         <td class="text-end">Rp {{ number_format($data->PENDAPATAN_PANDU, 0, ',', '.') }}</td>
                                         <td class="text-end">Rp {{ number_format($data->PENDAPATAN_TUNDA, 0, ',', '.') }}</td>
                                         <td class="text-center">

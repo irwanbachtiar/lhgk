@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Carbon\Carbon;
 
 class TrafikController extends Controller
 {
@@ -222,6 +223,58 @@ class TrafikController extends Controller
                 }
 
                 $rows = $rowsQuery->limit(1000)->get();
+
+                // compute "selisih (hari)" — difference in days between
+                // selesai pelaksanaan and the closing day of the report month
+                $endOfMonth = null;
+                if (isset($m) && isset($y)) {
+                    try {
+                        $endOfMonth = Carbon::createFromDate($y, $m, 1)->endOfMonth();
+                    } catch (\Exception $e) {
+                        $endOfMonth = null;
+                    }
+                }
+
+                $rows = $rows->map(function($row) use ($endOfMonth) {
+                    $arr = (array) $row;
+                    $new = [];
+
+                    foreach ($arr as $k => $v) {
+                        $new[$k] = $v;
+
+                        // insert additional column immediately after the selesai pelaksanaan column
+                        $keyLow = strtolower($k);
+                        if ($keyLow === 'selesai_pelaksanaan' || $keyLow === 'selesai pelaksanaan') {
+                            $diff = '';
+                            if ($endOfMonth && !empty($v)) {
+                                $parsed = null;
+                                $formats = ['d-m-Y', 'Y-m-d', 'd/m/Y', 'Y/m/d'];
+                                foreach ($formats as $fmt) {
+                                    try {
+                                        $parsed = Carbon::createFromFormat($fmt, trim($v));
+                                        break;
+                                    } catch (\Exception $e) {
+                                    }
+                                }
+                                if (! $parsed) {
+                                    try {
+                                        $parsed = new Carbon(trim($v));
+                                    } catch (\Exception $e) {
+                                        $parsed = null;
+                                    }
+                                }
+
+                                if ($parsed) {
+                                    $diff = $parsed->diffInDays($endOfMonth, false);
+                                }
+                            }
+
+                            $new['selisih (hari)'] = $diff;
+                        }
+                    }
+
+                    return (object) $new;
+                });
             } catch (\Exception $e) {
                 $rows = collect();
             }
