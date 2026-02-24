@@ -288,20 +288,24 @@ class RegionalController extends Controller
         // Only load data if period is selected
         if ($selectedPeriode != 'all') {
             foreach ($regionalGroups as $wilayah => $branches) {
-                // Get detailed data per branch - OPTIMIZED with groupBy
+                // Get detailed data per branch - compute split revenue by revenue account prefix
                 $branchPanduData = DB::connection('dashboard_phinnisi')->table('pandu_prod')
                     ->select('NAME_BRANCH')
-                    ->selectRaw('SUM(REVENUE) as total_revenue')
-                    ->selectRaw('COUNT(DISTINCT BILLING) as total_transaksi')
+                    ->selectRaw("SUM(REVENUE) as total_revenue")
+                    ->selectRaw("COUNT(DISTINCT BILLING) as total_transaksi")
+                    ->selectRaw("SUM(CASE WHEN LEFT(REVENUE_ACCOUNT,4) = '4010' THEN REVENUE ELSE 0 END) as pandu_derum")
+                    ->selectRaw("SUM(CASE WHEN LEFT(REVENUE_ACCOUNT,4) = '4110' THEN REVENUE ELSE 0 END) as pandu_tersus")
                     ->whereIn('NAME_BRANCH', $branches)
                     ->whereRaw('DATE_FORMAT(STR_TO_DATE(INVOICE_DATE, \'%d-%m-%Y\'), \'%m-%Y\') = ?', [$selectedPeriode])
                     ->groupBy('NAME_BRANCH')
                     ->get()
                     ->keyBy('NAME_BRANCH');
-                
+
                 $branchTundaData = DB::connection('dashboard_phinnisi')->table('tunda_prod')
                     ->select('NAME_BRANCH')
-                    ->selectRaw('SUM(REVENUE) as total_revenue')
+                    ->selectRaw("SUM(REVENUE) as total_revenue")
+                    ->selectRaw("SUM(CASE WHEN LEFT(REVENUE_ACCOUNT,4) = '4010' THEN REVENUE ELSE 0 END) as tunda_derum")
+                    ->selectRaw("SUM(CASE WHEN LEFT(REVENUE_ACCOUNT,4) = '4110' THEN REVENUE ELSE 0 END) as tunda_tersus")
                     ->whereIn('NAME_BRANCH', $branches)
                     ->whereRaw('DATE_FORMAT(STR_TO_DATE(INVOICE_DATE, \'%d-%m-%Y\'), \'%m-%Y\') = ?', [$selectedPeriode])
                     ->groupBy('NAME_BRANCH')
@@ -312,14 +316,23 @@ class RegionalController extends Controller
                 foreach ($branches as $branch) {
                     $panduData = $branchPanduData->get($branch);
                     $tundaData = $branchTundaData->get($branch);
-                    
-                    $branchPandu = $panduData->total_revenue ?? 0;
-                    $branchTunda = $tundaData->total_revenue ?? 0;
+
+                    $panduDerum = $panduData->pandu_derum ?? 0;
+                    $panduTersus = $panduData->pandu_tersus ?? 0;
+                    $tundaDerum = $tundaData->tunda_derum ?? 0;
+                    $tundaTersus = $tundaData->tunda_tersus ?? 0;
                     $branchTransaksi = $panduData->total_transaksi ?? 0;
-                    
+
+                    $branchPandu = ($panduDerum + $panduTersus);
+                    $branchTunda = ($tundaDerum + $tundaTersus);
+
                     // Only add branches with data
                     if ($branchPandu > 0 || $branchTunda > 0) {
                         $branchDetails[$wilayah][$branch] = [
+                            'pandu_derum' => $panduDerum,
+                            'pandu_tersus' => $panduTersus,
+                            'tunda_derum' => $tundaDerum,
+                            'tunda_tersus' => $tundaTersus,
                             'pandu' => $branchPandu,
                             'tunda' => $branchTunda,
                             'total' => $branchPandu + $branchTunda,
@@ -604,17 +617,21 @@ class RegionalController extends Controller
         foreach ($regionalGroups as $wilayah => $branches) {
             $branchPanduData = DB::connection('dashboard_phinnisi')->table('pandu_prod')
                 ->select('NAME_BRANCH')
-                ->selectRaw('SUM(REVENUE) as total_revenue')
-                ->selectRaw('COUNT(DISTINCT BILLING) as total_transaksi')
+                ->selectRaw("SUM(REVENUE) as total_revenue")
+                ->selectRaw("COUNT(DISTINCT BILLING) as total_transaksi")
+                ->selectRaw("SUM(CASE WHEN LEFT(REVENUE_ACCOUNT,4) = '4010' THEN REVENUE ELSE 0 END) as pandu_derum")
+                ->selectRaw("SUM(CASE WHEN LEFT(REVENUE_ACCOUNT,4) = '4110' THEN REVENUE ELSE 0 END) as pandu_tersus")
                 ->whereIn('NAME_BRANCH', $branches)
                 ->whereRaw('DATE_FORMAT(STR_TO_DATE(INVOICE_DATE, \'%d-%m-%Y\'), \'%m-%Y\') = ?', [$selectedPeriode])
                 ->groupBy('NAME_BRANCH')
                 ->get()
                 ->keyBy('NAME_BRANCH');
-            
+
             $branchTundaData = DB::connection('dashboard_phinnisi')->table('tunda_prod')
                 ->select('NAME_BRANCH')
-                ->selectRaw('SUM(REVENUE) as total_revenue')
+                ->selectRaw("SUM(REVENUE) as total_revenue")
+                ->selectRaw("SUM(CASE WHEN LEFT(REVENUE_ACCOUNT,4) = '4010' THEN REVENUE ELSE 0 END) as tunda_derum")
+                ->selectRaw("SUM(CASE WHEN LEFT(REVENUE_ACCOUNT,4) = '4110' THEN REVENUE ELSE 0 END) as tunda_tersus")
                 ->whereIn('NAME_BRANCH', $branches)
                 ->whereRaw('DATE_FORMAT(STR_TO_DATE(INVOICE_DATE, \'%d-%m-%Y\'), \'%m-%Y\') = ?', [$selectedPeriode])
                 ->groupBy('NAME_BRANCH')
@@ -626,12 +643,20 @@ class RegionalController extends Controller
                 $panduData = $branchPanduData->get($branch);
                 $tundaData = $branchTundaData->get($branch);
                 
-                $branchPandu = $panduData->total_revenue ?? 0;
-                $branchTunda = $tundaData->total_revenue ?? 0;
+                $panduDerum = $panduData->pandu_derum ?? 0;
+                $panduTersus = $panduData->pandu_tersus ?? 0;
+                $tundaDerum = $tundaData->tunda_derum ?? 0;
+                $tundaTersus = $tundaData->tunda_tersus ?? 0;
+                $branchPandu = ($panduDerum + $panduTersus);
+                $branchTunda = ($tundaDerum + $tundaTersus);
                 $branchTransaksi = $panduData->total_transaksi ?? 0;
-                
+
                 if ($branchPandu > 0 || $branchTunda > 0) {
                     $branchDetails[$wilayah][$branch] = [
+                        'pandu_derum' => $panduDerum,
+                        'pandu_tersus' => $panduTersus,
+                        'tunda_derum' => $tundaDerum,
+                        'tunda_tersus' => $tundaTersus,
                         'pandu' => $branchPandu,
                         'tunda' => $branchTunda,
                         'total' => $branchPandu + $branchTunda,
@@ -679,12 +704,12 @@ class RegionalController extends Controller
         
         // Title
         $sheet->setCellValue('A1', 'LAPORAN PENDAPATAN DETAIL PER WILAYAH');
-        $sheet->mergeCells('A1:F1');
+        $sheet->mergeCells('A1:H1');
         $sheet->getStyle('A1')->applyFromArray($titleStyle);
         $sheet->getRowDimension(1)->setRowHeight(25);
         
         $sheet->setCellValue('A2', 'Periode: ' . $selectedPeriode);
-        $sheet->mergeCells('A2:F2');
+        $sheet->mergeCells('A2:H2');
         $sheet->getStyle('A2')->getFont()->setBold(true)->setSize(11);
         
         $currentRow = 4;
@@ -702,11 +727,13 @@ class RegionalController extends Controller
             // Column headers
             $sheet->setCellValue('A' . $currentRow, 'No');
             $sheet->setCellValue('B' . $currentRow, 'Nama Cabang');
-            $sheet->setCellValue('C' . $currentRow, 'Pendapatan Pandu');
-            $sheet->setCellValue('D' . $currentRow, 'Pendapatan Tunda');
-            $sheet->setCellValue('E' . $currentRow, 'Total Pendapatan');
-            $sheet->setCellValue('F' . $currentRow, 'Transaksi');
-            $sheet->getStyle('A' . $currentRow . ':F' . $currentRow)->applyFromArray($headerStyle);
+            $sheet->setCellValue('C' . $currentRow, 'Pandu Derum');
+            $sheet->setCellValue('D' . $currentRow, 'Pandu Tersus');
+            $sheet->setCellValue('E' . $currentRow, 'Tunda Derum');
+            $sheet->setCellValue('F' . $currentRow, 'Tunda Tersus');
+            $sheet->setCellValue('G' . $currentRow, 'Total Pendapatan');
+            $sheet->setCellValue('H' . $currentRow, 'Transaksi');
+            $sheet->getStyle('A' . $currentRow . ':H' . $currentRow)->applyFromArray($headerStyle);
             $sheet->getRowDimension($currentRow)->setRowHeight(20);
             $currentRow++;
             
@@ -716,28 +743,40 @@ class RegionalController extends Controller
             $totalTunda = 0;
             $totalRevenue = 0;
             $totalTransaksi = 0;
+            $totalPanduDerum = 0;
+            $totalPanduTersus = 0;
+            $totalTundaDerum = 0;
+            $totalTundaTersus = 0;
             
             foreach ($branches as $branchName => $data) {
                 $sheet->setCellValue('A' . $currentRow, $no++);
                 $sheet->setCellValue('B' . $currentRow, $branchName);
-                $sheet->setCellValue('C' . $currentRow, $data['pandu']);
-                $sheet->setCellValue('D' . $currentRow, $data['tunda']);
-                $sheet->setCellValue('E' . $currentRow, $data['total']);
-                $sheet->setCellValue('F' . $currentRow, $data['transaksi']);
-                
+                $sheet->setCellValue('C' . $currentRow, $data['pandu_derum'] ?? 0);
+                $sheet->setCellValue('D' . $currentRow, $data['pandu_tersus'] ?? 0);
+                $sheet->setCellValue('E' . $currentRow, $data['tunda_derum'] ?? 0);
+                $sheet->setCellValue('F' . $currentRow, $data['tunda_tersus'] ?? 0);
+                $sheet->setCellValue('G' . $currentRow, $data['total']);
+                $sheet->setCellValue('H' . $currentRow, $data['transaksi']);
+
                 // Format currency
                 $sheet->getStyle('C' . $currentRow)->getNumberFormat()->setFormatCode('#,##0');
                 $sheet->getStyle('D' . $currentRow)->getNumberFormat()->setFormatCode('#,##0');
                 $sheet->getStyle('E' . $currentRow)->getNumberFormat()->setFormatCode('#,##0');
-                
+                $sheet->getStyle('F' . $currentRow)->getNumberFormat()->setFormatCode('#,##0');
+                $sheet->getStyle('G' . $currentRow)->getNumberFormat()->setFormatCode('#,##0');
+
                 // Borders
-                $sheet->getStyle('A' . $currentRow . ':F' . $currentRow)->getBorders()->getAllBorders()
+                $sheet->getStyle('A' . $currentRow . ':H' . $currentRow)->getBorders()->getAllBorders()
                     ->setBorderStyle(\PhpOffice\PhpSpreadsheet\Style\Border::BORDER_THIN);
-                
+
                 $totalPandu += $data['pandu'];
                 $totalTunda += $data['tunda'];
                 $totalRevenue += $data['total'];
                 $totalTransaksi += $data['transaksi'];
+                $totalPanduDerum += $data['pandu_derum'] ?? 0;
+                $totalPanduTersus += $data['pandu_tersus'] ?? 0;
+                $totalTundaDerum += $data['tunda_derum'] ?? 0;
+                $totalTundaTersus += $data['tunda_tersus'] ?? 0;
                 
                 $currentRow++;
             }
@@ -745,30 +784,36 @@ class RegionalController extends Controller
             // Total row
             $sheet->setCellValue('A' . $currentRow, '');
             $sheet->setCellValue('B' . $currentRow, 'TOTAL ' . $wilayah);
-            $sheet->setCellValue('C' . $currentRow, $totalPandu);
-            $sheet->setCellValue('D' . $currentRow, $totalTunda);
-            $sheet->setCellValue('E' . $currentRow, $totalRevenue);
-            $sheet->setCellValue('F' . $currentRow, $totalTransaksi);
-            
+            $sheet->setCellValue('C' . $currentRow, $totalPanduDerum ?? 0);
+            $sheet->setCellValue('D' . $currentRow, $totalPanduTersus ?? 0);
+            $sheet->setCellValue('E' . $currentRow, $totalTundaDerum ?? 0);
+            $sheet->setCellValue('F' . $currentRow, $totalTundaTersus ?? 0);
+            $sheet->setCellValue('G' . $currentRow, $totalRevenue);
+            $sheet->setCellValue('H' . $currentRow, $totalTransaksi);
+
             $sheet->getStyle('C' . $currentRow)->getNumberFormat()->setFormatCode('#,##0');
             $sheet->getStyle('D' . $currentRow)->getNumberFormat()->setFormatCode('#,##0');
             $sheet->getStyle('E' . $currentRow)->getNumberFormat()->setFormatCode('#,##0');
-            
-            $sheet->getStyle('A' . $currentRow . ':F' . $currentRow)->applyFromArray($totalStyle);
+            $sheet->getStyle('F' . $currentRow)->getNumberFormat()->setFormatCode('#,##0');
+            $sheet->getStyle('G' . $currentRow)->getNumberFormat()->setFormatCode('#,##0');
+
+            $sheet->getStyle('A' . $currentRow . ':H' . $currentRow)->applyFromArray($totalStyle);
             $currentRow += 2;
         }
         
         // Set column widths
         $sheet->getColumnDimension('A')->setWidth(6);
         $sheet->getColumnDimension('B')->setWidth(35);
-        $sheet->getColumnDimension('C')->setWidth(20);
-        $sheet->getColumnDimension('D')->setWidth(20);
-        $sheet->getColumnDimension('E')->setWidth(22);
-        $sheet->getColumnDimension('F')->setWidth(12);
-        
+        $sheet->getColumnDimension('C')->setWidth(18);
+        $sheet->getColumnDimension('D')->setWidth(18);
+        $sheet->getColumnDimension('E')->setWidth(18);
+        $sheet->getColumnDimension('F')->setWidth(18);
+        $sheet->getColumnDimension('G')->setWidth(22);
+        $sheet->getColumnDimension('H')->setWidth(12);
+
         // Set alignment
         $sheet->getStyle('A4:A' . ($currentRow - 1))->getAlignment()->setHorizontal(\PhpOffice\PhpSpreadsheet\Style\Alignment::HORIZONTAL_CENTER);
-        $sheet->getStyle('C4:F' . ($currentRow - 1))->getAlignment()->setHorizontal(\PhpOffice\PhpSpreadsheet\Style\Alignment::HORIZONTAL_RIGHT);
+        $sheet->getStyle('C4:G' . ($currentRow - 1))->getAlignment()->setHorizontal(\PhpOffice\PhpSpreadsheet\Style\Alignment::HORIZONTAL_RIGHT);
         
         // Generate filename
         $filename = 'Pendapatan_Detail_PerWilayah_' . str_replace('-', '_', $selectedPeriode) . '_' . date('Ymd_His') . '.xlsx';

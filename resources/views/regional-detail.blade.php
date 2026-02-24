@@ -332,7 +332,7 @@
         @else
             @foreach($branchDetails as $wilayah => $branches)
                 @if(!empty($branches))
-                    @php
+                        @php
                         $wilayahParts = explode(' ', $wilayah);
                         if ($wilayah == 'JAI') {
                             $sectionClass = 'jai';
@@ -345,6 +345,10 @@
                         $totalTunda = array_sum(array_column($branches, 'tunda'));
                         $totalRevenue = array_sum(array_column($branches, 'total'));
                         $totalTransaksi = array_sum(array_column($branches, 'transaksi'));
+                        $totalPanduDerum = array_sum(array_column($branches, 'pandu_derum'));
+                        $totalPanduTersus = array_sum(array_column($branches, 'pandu_tersus'));
+                        $totalTundaDerum = array_sum(array_column($branches, 'tunda_derum'));
+                        $totalTundaTersus = array_sum(array_column($branches, 'tunda_tersus'));
                     @endphp
                     
                     <div class="wilayah-section {{ $sectionClass }}" id="wilayah-{{ $wilayah }}">
@@ -379,9 +383,11 @@
                                         <tr>
                                             <th style="width: 50px;">No</th>
                                             <th>Nama Cabang</th>
-                                            <th class="text-end" style="width: 160px;">Pandu</th>
-                                            <th class="text-end" style="width: 160px;">Tunda</th>
-                                            <th class="text-end" style="width: 180px;">Total</th>
+                                            <th class="text-end" style="width: 140px;">Pandu Derum</th>
+                                            <th class="text-end" style="width: 140px;">Pandu Tersus</th>
+                                            <th class="text-end" style="width: 140px;">Tunda Derum</th>
+                                            <th class="text-end" style="width: 140px;">Tunda Tersus</th>
+                                            <th class="text-end" style="width: 160px;">Total</th>
                                             <th class="text-end" style="width: 100px;">Transaksi</th>
                                         </tr>
                                     </thead>
@@ -393,8 +399,10 @@
                                                     <i class="bi bi-pin-map text-primary me-2" style="font-size: 0.875rem;"></i>
                                                     <span>{{ $branchName }}</span>
                                                 </td>
-                                                <td class="text-end grid-number-success">{{ number_format($data['pandu'], 0, ',', '.') }}</td>
-                                                <td class="text-end grid-number-info">{{ number_format($data['tunda'], 0, ',', '.') }}</td>
+                                                <td class="text-end grid-number-success">{{ number_format($data['pandu_derum'] ?? 0, 0, ',', '.') }}</td>
+                                                <td class="text-end grid-number-success">{{ number_format($data['pandu_tersus'] ?? 0, 0, ',', '.') }}</td>
+                                                <td class="text-end grid-number-info">{{ number_format($data['tunda_derum'] ?? 0, 0, ',', '.') }}</td>
+                                                <td class="text-end grid-number-info">{{ number_format($data['tunda_tersus'] ?? 0, 0, ',', '.') }}</td>
                                                 <td class="text-end grid-number-warning">{{ number_format($data['total'], 0, ',', '.') }}</td>
                                                 <td class="text-end grid-number-primary">{{ number_format($data['transaksi']) }}</td>
                                             </tr>
@@ -405,8 +413,10 @@
                                             <td colspan="2" class="text-end">
                                                 <i class="bi bi-calculator me-1"></i>TOTAL
                                             </td>
-                                            <td class="text-end grid-number-success">{{ number_format($totalPandu, 0, ',', '.') }}</td>
-                                            <td class="text-end grid-number-info">{{ number_format($totalTunda, 0, ',', '.') }}</td>
+                                            <td class="text-end grid-number-success">{{ number_format($totalPanduDerum, 0, ',', '.') }}</td>
+                                            <td class="text-end grid-number-success">{{ number_format($totalPanduTersus, 0, ',', '.') }}</td>
+                                            <td class="text-end grid-number-info">{{ number_format($totalTundaDerum, 0, ',', '.') }}</td>
+                                            <td class="text-end grid-number-info">{{ number_format($totalTundaTersus, 0, ',', '.') }}</td>
                                             <td class="text-end grid-number-warning">{{ number_format($totalRevenue, 0, ',', '.') }}</td>
                                             <td class="text-end grid-number-primary">{{ number_format($totalTransaksi) }}</td>
                                         </tr>
