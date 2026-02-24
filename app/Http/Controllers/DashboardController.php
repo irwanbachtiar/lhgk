@@ -1629,7 +1629,8 @@ class DashboardController extends Controller
             $dateObj = \DateTime::createFromFormat($format, $date);
             if ($dateObj !== false) {
                 // Return in DD-MM-YYYY format with leading zeros
-                return $dateObj->format('d-m-Y')            }
+                return $dateObj->format('d-m-Y');
+            }
         }
         
         // If no format matches, return original value
