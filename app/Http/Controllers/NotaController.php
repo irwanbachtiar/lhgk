@@ -160,12 +160,9 @@ class NotaController extends Controller
             }
 
             // Statistics - only get totals, no need to paginate data
-            // Count distinct INVOICE with conditions:
-            // - BILLING tidak mengandung "HIS" (nota batal)
-            // - INVOICE tidak mengandung "INV"
+            // Count distinct INVOICE
             $totalNota = DB::connection('dashboard_phinnisi')->table('pandu_prod')
                 ->select('INVOICE')
-                ->where('BILLING', 'NOT LIKE', '%HIS%')
                 ->where('INVOICE', 'NOT LIKE', '%INV%')
                 ->when($selectedPeriode != 'all', function($q) use ($selectedPeriode) {
                     return $q->whereRaw('DATE_FORMAT(STR_TO_DATE(INVOICE_DATE, \'%d-%m-%Y\'), \'%m-%Y\') = ?', [$selectedPeriode]);
@@ -176,7 +173,7 @@ class NotaController extends Controller
                 ->distinct()
                 ->count('INVOICE');
             
-            // Sum revenue directly from REVENUE column (including duplicates)
+            // Sum revenue directly from REVENUE column (all rows)
             $totalPendapatanPandu = DB::connection('dashboard_phinnisi')->table('pandu_prod')
                 ->when($selectedPeriode != 'all', function($q) use ($selectedPeriode) {
                     return $q->whereRaw('DATE_FORMAT(STR_TO_DATE(INVOICE_DATE, \'%d-%m-%Y\'), \'%m-%Y\') = ?', [$selectedPeriode]);
@@ -184,10 +181,9 @@ class NotaController extends Controller
                 ->when($selectedBranch != 'all', function($q) use ($selectedBranch) {
                     return $q->where('NAME_BRANCH', $selectedBranch);
                 })
-                ->where('BILLING', 'NOT LIKE', 'HIS%')
                 ->sum('REVENUE');
             
-            // Get total tunda revenue - sum directly from REVENUE column (including duplicates)
+            // Get total tunda revenue - sum directly from REVENUE column (all rows)
             $totalPendapatanTunda = DB::connection('dashboard_phinnisi')->table('tunda_prod')
                 ->when($selectedPeriode != 'all', function($q) use ($selectedPeriode) {
                     return $q->whereRaw('DATE_FORMAT(STR_TO_DATE(INVOICE_DATE, \'%d-%m-%Y\'), \'%m-%Y\') = ?', [$selectedPeriode]);
@@ -195,7 +191,6 @@ class NotaController extends Controller
                 ->when($selectedBranch != 'all', function($q) use ($selectedBranch) {
                     return $q->where('NAME_BRANCH', $selectedBranch);
                 })
-                ->where('BILLING', 'NOT LIKE', 'HIS%')
                 ->sum('REVENUE');
             
             // Get cancelled invoices (Nota Batal) - BILLING starting with "HIS"
@@ -211,7 +206,7 @@ class NotaController extends Controller
                 ->distinct()
                 ->count('BILLING');
             
-            // Get total revenue from cancelled invoices (Pandu)
+            // Get total revenue from cancelled invoices (Pandu) - sum directly from REVENUE column
             $totalPendapatanPanduBatal = DB::connection('dashboard_phinnisi')->table('pandu_prod')
                 ->where('BILLING', 'LIKE', 'HIS%')
                 ->when($selectedPeriode != 'all', function($q) use ($selectedPeriode) {
@@ -233,7 +228,7 @@ class NotaController extends Controller
                 })
                 ->sum('REVENUE');
             
-            // Get revenue per pilot (PILOT from pandu_prod) - sum all REVENUE including duplicates
+            // Get revenue per pilot - sum directly from REVENUE column (all rows)
             $revenuePerPandu = DB::connection('dashboard_phinnisi')->table('pandu_prod')
                 ->where('PILOT', '!=', '')
                 ->whereNotNull('PILOT')
@@ -243,7 +238,7 @@ class NotaController extends Controller
                 ->when($selectedBranch != 'all', function($q) use ($selectedBranch) {
                     return $q->where('NAME_BRANCH', $selectedBranch);
                 })
-                ->select('PILOT', DB::raw('SUM(REVENUE) as total_revenue'), DB::raw('COUNT(DISTINCT BILLING) as total_transaksi'))
+                ->select('PILOT', DB::raw('SUM(REVENUE) as total_revenue'), DB::raw('COUNT(*) as total_transaksi'))
                 ->groupBy('PILOT')
                 ->orderByDesc('total_revenue')
                 ->get();
@@ -274,7 +269,6 @@ class NotaController extends Controller
                             ->leftJoin(DB::raw('(SELECT BILLING, MAX(NAME_BRANCH) as NAME_BRANCH FROM dashboard_phinnisi.pandu_prod GROUP BY BILLING) as pandu'), 'tunda.BILLING', '=', 'pandu.BILLING')
                             ->where("tunda.{$tundaNameColumn}", '!=', '')
                             ->whereNotNull("tunda.{$tundaNameColumn}")
-                            ->where('tunda.BILLING', 'NOT LIKE', 'HIS%')
                             ->when($selectedPeriode != 'all', function($q) use ($selectedPeriode) {
                                 return $q->whereRaw('DATE_FORMAT(STR_TO_DATE(tunda.INVOICE_DATE, \'%d-%m-%Y\'), \'%m-%Y\') = ?', [$selectedPeriode]);
                             })
