@@ -786,9 +786,8 @@
                                         <th>Cabang</th>
                                         <th>Gerakan</th>
                                         <th>Selesai Pelaksanaan</th>
-                                        <th>Selisih (hari)</th>
-                                        <th>Invoice Date</th>
-                                        <th class="text-center">Selisih (Hari)</th>
+                                        <th>Tanggal Invoice</th>
+                                        <th class="text-center">Selisih (hari)</th>
                                         <th class="text-end">Pendapatan Pandu</th>
                                         <th class="text-end">Pendapatan Tunda</th>
                                     </tr>

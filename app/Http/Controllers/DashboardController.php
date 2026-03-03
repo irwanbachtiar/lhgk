@@ -830,8 +830,8 @@ class DashboardController extends Controller
                 'Cabang',
                 'Gerakan',
                 'Selesai Pelaksanaan',
-                'Invoice Date',
-                'Selisih (Hari)',
+                'Tanggal Invoice',
+                'Selisih (hari)',
                 'Pendapatan Pandu',
                 'Pendapatan Tunda',
                 'Total Pendapatan'
