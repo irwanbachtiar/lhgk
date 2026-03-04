@@ -13,9 +13,69 @@
     td.uraian.level-2 .uraian-label{color:#198754;font-weight:600}
     .numeric{text-align:right}
     .table-fixed thead th{position:sticky;top:0;background:#fff}
+    
+    /* Global Loading Animation */
+    .global-loading-overlay {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(0, 0, 0, 0.7);
+        backdrop-filter: blur(3px);
+        z-index: 9999;
+        display: none;
+        align-items: center;
+        justify-content: center;
+        animation: fadeIn 0.3s ease-in;
+    }
+    .global-loading-content {
+        background: white;
+        padding: 40px;
+        border-radius: 20px;
+        text-align: center;
+        box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+        animation: slideIn 0.4s ease-out;
+        max-width: 300px;
+    }
+    .global-loading-spinner {
+        width: 60px;
+        height: 60px;
+        border: 4px solid #f3f3f3;
+        border-top: 4px solid #667eea;
+        border-radius: 50%;
+        animation: spin 1s linear infinite;
+        margin: 0 auto 20px;
+    }
+    .global-loading-text {
+        color: #333;
+        font-weight: 500;
+        font-size: 16px;
+        margin: 0;
+    }
+    @keyframes fadeIn {
+        from { opacity: 0; }
+        to { opacity: 1; }
+    }
+    @keyframes slideIn {
+        from { transform: translateY(-30px); opacity: 0; }
+        to { transform: translateY(0); opacity: 1; }
+    }
+    @keyframes spin {
+        0% { transform: rotate(0deg); }
+        100% { transform: rotate(360deg); }
+    }
   </style>
 </head>
 <body>
+  <!-- Global Loading Overlay -->
+  <div id="globalLoading" class="global-loading-overlay">
+    <div class="global-loading-content">
+      <div class="global-loading-spinner"></div>
+      <p class="global-loading-text" id="loadingText">Memproses data...</p>
+    </div>
+  </div>
+
   <nav class="navbar navbar-dark mb-4" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);">
     <div class="container-fluid">
       <span class="navbar-brand mb-0 h1"><i class="bi bi-graph-up-arrow"></i> Trafik</span>
@@ -251,6 +311,41 @@
     $('#export-json').on('click',function(){ var out=[]; $('.grid').each(function(){ var r=$(this).data('row'); var f=$(this).data('field'); if(!out[r]) out[r]={row:r}; out[r][f]=$(this).val(); }); var arr=Object.values(out); var b=new Blob([JSON.stringify(arr,null,2)],{type:'application/json'}); var a=document.createElement('a'); a.href=URL.createObjectURL(b); a.download='trafik-demo.json'; a.click(); });
     // initial compute
     setTimeout(computeAll,100);
+    
+    // Global Loading Functions
+    window.showGlobalLoading = function(message = 'Memproses data...') {
+        const overlay = document.getElementById('globalLoading');
+        const text = document.getElementById('loadingText');
+        if (overlay) {
+            if (text) text.textContent = message;
+            overlay.style.display = 'flex';
+            document.body.style.overflow = 'hidden';
+        }
+    }
+    
+    window.hideGlobalLoading = function() {
+        const overlay = document.getElementById('globalLoading');
+        if (overlay) {
+            overlay.style.display = 'none';
+            document.body.style.overflow = '';
+        }
+    }
+    
+    // Auto-show loading for form submissions
+    const forms = document.querySelectorAll('form');
+    forms.forEach(form => {
+        form.addEventListener('submit', function() {
+            showGlobalLoading('Memproses permintaan...');
+        });
+    });
+    
+    // Handle select onchange submissions  
+    const selects = document.querySelectorAll('select[onchange*="submit"]');
+    selects.forEach(select => {
+        select.addEventListener('change', function() {
+            showGlobalLoading('Memuat data...');
+        });
+    });
   })();
   </script>
 </body>
