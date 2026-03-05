@@ -1,352 +1,240 @@
-<!doctype html>
+
+<!DOCTYPE html>
 <html lang="id">
 <head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width,initial-scale=1">
-  <title>Trafik</title>
-  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-  <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css" rel="stylesheet">
-  <style>
-    body{background:#f8f9fa}
-    td.uraian .uraian-label::before{content:'•';display:inline-block;width:1rem;margin-right:.25rem}
-    td.uraian.level-1 .uraian-label{color:#0d6efd;font-weight:700}
-    td.uraian.level-2 .uraian-label{color:#198754;font-weight:600}
-    .numeric{text-align:right}
-    .table-fixed thead th{position:sticky;top:0;background:#fff}
-    
-    /* Global Loading Animation */
-    .global-loading-overlay {
-        position: fixed;
-        top: 0;
-        left: 0;
-        width: 100%;
-        height: 100%;
-        background: rgba(0, 0, 0, 0.7);
-        backdrop-filter: blur(3px);
-        z-index: 9999;
-        display: none;
-        align-items: center;
-        justify-content: center;
-        animation: fadeIn 0.3s ease-in;
-    }
-    .global-loading-content {
-        background: white;
-        padding: 40px;
-        border-radius: 20px;
-        text-align: center;
-        box-shadow: 0 20px 60px rgba(0,0,0,0.3);
-        animation: slideIn 0.4s ease-out;
-        max-width: 300px;
-    }
-    .global-loading-spinner {
-        width: 60px;
-        height: 60px;
-        border: 4px solid #f3f3f3;
-        border-top: 4px solid #667eea;
-        border-radius: 50%;
-        animation: spin 1s linear infinite;
-        margin: 0 auto 20px;
-    }
-    .global-loading-text {
-        color: #333;
-        font-weight: 500;
-        font-size: 16px;
-        margin: 0;
-    }
-    @keyframes fadeIn {
-        from { opacity: 0; }
-        to { opacity: 1; }
-    }
-    @keyframes slideIn {
-        from { transform: translateY(-30px); opacity: 0; }
-        to { transform: translateY(0); opacity: 1; }
-    }
-    @keyframes spin {
-        0% { transform: rotate(0deg); }
-        100% { transform: rotate(360deg); }
-    }
-  </style>
+  <meta charset="UTF-8" />
+  <title>Preview Dashboard Operasional</title>
+  <script src="https://cdn.tailwindcss.com"></script>
 </head>
-<body>
-  <!-- Global Loading Overlay -->
-  <div id="globalLoading" class="global-loading-overlay">
-    <div class="global-loading-content">
-      <div class="global-loading-spinner"></div>
-      <p class="global-loading-text" id="loadingText">Memproses data...</p>
-    </div>
-  </div>
+<body class="bg-slate-100">
 
-  <nav class="navbar navbar-dark mb-4" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);">
-    <div class="container-fluid">
-      <span class="navbar-brand mb-0 h1"><i class="bi bi-graph-up-arrow"></i> Trafik</span>
-      <div>
-        <a href="{{ route('dashboard') }}" class="btn btn-light btn-sm me-2"><i class="bi bi-house"></i> Dashboard</a>
-        <a href="{{ route('dashboard.operasional') }}" class="btn btn-light btn-sm me-2">Operasional</a>
-        <a href="{{ route('monitoring.nota') }}" class="btn btn-light btn-sm">Monitoring Nota</a>
-      </div>
-    </div>
-  </nav>
+  <div class="max-w-7xl mx-auto p-6">
+    <div class="grid grid-cols-12 gap-6">
 
-  <div class="container">
-    <div class="row mb-4">
-      <div class="col-12">
-        <div class="period-filter" style="background:white;padding:15px;border-radius:8px;box-shadow:0 2px 4px rgba(0,0,0,0.06);">
-          <form id="trafikFilterForm" method="GET" action="{{ url()->current() }}" class="row g-2 align-items-center">
-            <div class="col-md-2">
-              <label class="form-label"><i class="bi bi-funnel"></i> Filter</label>
+      <!-- SIDEBAR -->
+      <aside class="col-span-2 bg-white rounded-xl shadow p-4">
+        <h2 class="text-sm font-semibold text-slate-700 mb-4">Filter Wilayah</h2>
+        <div class="space-y-2">
+          <button class="w-full text-left px-3 py-2 rounded-lg bg-blue-50 text-blue-600 font-medium">Wilayah 1</button>
+          <button class="w-full text-left px-3 py-2 rounded-lg hover:bg-slate-100 text-slate-600">Wilayah 2</button>
+          <button class="w-full text-left px-3 py-2 rounded-lg hover:bg-slate-100 text-slate-600">Wilayah 3</button>
+          <button class="w-full text-left px-3 py-2 rounded-lg hover:bg-slate-100 text-slate-600">Wilayah 4</button>
+        </div>
+      </aside>
+
+      <!-- MAIN -->
+      <main class="col-span-10 space-y-6">
+
+        <h1 class="text-xl font-semibold text-slate-800">Dashboard Operasional Pelabuhan</h1>
+
+        <!-- KPI -->
+        <div class="grid grid-cols-12 gap-4">
+          <div class="col-span-3 bg-white rounded-xl shadow p-4">
+            <p class="text-sm text-slate-500">Call Kapal</p>
+            <p class="text-3xl font-bold mt-2">1.245</p>
+            <p class="text-xs text-slate-400">Call</p>
+          </div>
+          <div class="col-span-3 bg-white rounded-xl shadow p-4">
+            <p class="text-sm text-slate-500">Produksi Pemanduan</p>
+            <p class="text-3xl font-bold text-green-600 mt-2">3.580.000</p>
+            <p class="text-xs text-slate-400">GT / Grk</p>
+          </div>
+          <div class="col-span-3 bg-white rounded-xl shadow p-4">
+            <p class="text-sm text-slate-500">Produksi Penundaan</p>
+            <p class="text-3xl font-bold text-orange-500 mt-2">125.400</p>
+            <p class="text-xs text-slate-400">GT / Jam</p>
+          </div>
+          <div class="col-span-3 bg-white rounded-xl shadow p-4">
+            <p class="text-sm text-slate-500">Pendapatan</p>
+            <p class="text-3xl font-bold text-emerald-700 mt-2">Rp 12,45 M</p>
+            <p class="text-xs text-slate-400">Rupiah</p>
+          </div>
+        </div>
+
+        <!DOCTYPE html>
+        <html lang="id">
+        <head>
+        <meta charset="UTF-8">
+        <title>Dashboard Kunjungan Kapal</title>
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+
+        <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+        <script src="https://cdn.jsdelivr.net/npm/apexcharts"></script>
+
+        <style>
+        body { background:#f4f6f9; }
+        .card {
+            border:none;
+            border-radius:12px;
+            box-shadow:0 4px 12px rgba(0,0,0,0.05);
+        }
+        .kpi-title { font-size:14px; color:#6c757d; }
+        .kpi-value { font-size:22px; font-weight:700; }
+        .tree-level-1 { font-weight:bold; }
+        .tree-level-2 { padding-left:20px; }
+        .tree-level-3 { padding-left:40px; }
+        .tree-level-4 { padding-left:60px; }
+        .tree-level-5 { padding-left:80px; }
+        th { font-size:13px; }
+        </style>
+        </head>
+        <body>
+
+        <div class="container-fluid p-4">
+
+        <!-- HEADER -->
+        <div class="d-flex justify-content-between mb-4">
+            <div>
+                <h4 class="fw-bold">Dashboard Monitoring Kunjungan Kapal</h4>
+                <small class="text-muted">Call & Gross Tonnage (GT)</small>
+            </div>
+            <div class="d-flex align-items-center">
+                <form id="filtersForm" method="GET" class="d-flex align-items-center gap-2" action="">
+                    <select name="branch" id="branchFilter" class="form-select filter-input" style="width:160px">
+                        <option value="">-- Semua Cabang --</option>
+                        <option value="1">Cabang 1</option>
+                        <option value="2">Cabang 2</option>
+                        <option value="3">Cabang 3</option>
+                    </select>
+
+                    <input type="date" name="start_date" id="startDate" class="form-control filter-input" style="width:160px">
+                    <input type="date" name="end_date" id="endDate" class="form-control filter-input" style="width:160px">
+
+                    <!-- Apply button positioned to the right of period filters -->
+                    <button type="submit" id="applyFilters" class="btn btn-primary ms-2">Apply</button>
+                </form>
+
+                <div class="ms-3">
+                    <button class="btn btn-outline-secondary">Export Excel</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- KPI CARDS -->
+        <div class="row mb-4">
+            <div class="col-md-4">
+                <div class="card p-3">
+                    <div class="kpi-title">Total Kunjungan</div>
+                    <div class="kpi-value">Call: {{ number_format($dashboardSummary['total_real_call'] ?? 0) }}</div>
+                    <div class="kpi-value text-primary">GT: {{ number_format($dashboardSummary['total_real_gt'] ?? 0) }}</div>
+                </div>
             </div>
             <div class="col-md-4">
-              <label class="form-label"><i class="bi bi-building"></i> Cabang</label>
-              <select name="cabang" class="form-select">
-                <option value="all" {{ ($selectedBranch ?? 'all') == 'all' ? 'selected' : '' }}>Semua Cabang</option>
-                @if(!empty($regionalGroups))
-                  @foreach($regionalGroups as $group => $branches)
-                    @if(count($branches) > 0)
-                      <optgroup label="{{ $group }}">
-                        @foreach($branches as $b)
-                          <option value="{{ $b }}" {{ ($selectedBranch ?? '') == $b ? 'selected' : '' }}>{{ Str::limit($b, 60) }}</option>
-                        @endforeach
-                      </optgroup>
-                    @endif
-                  @endforeach
-                @endif
-                @if(!empty($otherBranches))
-                  <optgroup label="Lainnya">
-                    @foreach($otherBranches as $b)
-                      <option value="{{ $b }}" {{ ($selectedBranch ?? '') == $b ? 'selected' : '' }}>{{ Str::limit($b, 60) }}</option>
+                <div class="card p-3">
+                    <div class="kpi-title">Luar Negeri</div>
+                    @php
+                        $ln_call = 0; $ln_gt = 0;
+                        foreach($trafikData ?? [] as $w=>$d) { $ln_call += $d['luar_negeri']['total_real_call'] ?? $d['luar_negeri']['total_call'] ?? 0; $ln_gt += $d['luar_negeri']['total_real_gt'] ?? $d['luar_negeri']['total_gt'] ?? 0; }
+                    @endphp
+                    <div class="kpi-value">Call: {{ number_format($ln_call) }}</div>
+                    <div class="kpi-value text-success">GT: {{ number_format($ln_gt) }}</div>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="card p-3">
+                    <div class="kpi-title">Dalam Negeri</div>
+                    @php
+                        $dn_call = 0; $dn_gt = 0;
+                        foreach($trafikData ?? [] as $w=>$d) { $dn_call += $d['dalam_negeri']['total_real_call'] ?? $d['dalam_negeri']['total_call'] ?? 0; $dn_gt += $d['dalam_negeri']['total_real_gt'] ?? $d['dalam_negeri']['total_gt'] ?? 0; }
+                    @endphp
+                    <div class="kpi-value">Call: {{ number_format($dn_call) }}</div>
+                    <div class="kpi-value text-warning">GT: {{ number_format($dn_gt) }}</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- CHART -->
+        <div class="row mb-4">
+            <div class="col-md-12">
+                <div class="card p-3">
+                    <h6>Trend Call vs GT</h6>
+                    <div id="trendChart"></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- TREE TABLE -->
+        <div class="card p-3">
+            <h6>Summary Hierarki</h6>
+            <table class="table table-hover">
+                <thead>
+                    <tr>
+                        <th>Uraian</th>
+                        <th class="text-end">Call</th>
+                        <th class="text-end">GT</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @php
+                        // Simple flattened summary: show top 4 locations aggregated across wilayah
+                        $rows = [];
+                        foreach($trafikData ?? [] as $wil=>$wdata) {
+                            foreach(['dalam_negeri','luar_negeri'] as $k) {
+                                foreach($wdata[$k]['locations'] ?? [] as $lok=>$vals) {
+                                    $rows[] = [
+                                        'uraian' => $lok,
+                                        'call' => $vals['realisasi_call'] ?? $vals['call'] ?? 0,
+                                        'gt' => $vals['realisasi_gt'] ?? $vals['gt'] ?? 0,
+                                    ];
+                                }
+                            }
+                        }
+                        if (empty($rows)) {
+                            $rows = [ ['uraian'=>'Dermaga Umum','call'=>4500,'gt'=>3200000], ['uraian'=>'Pelayaran Luar Negeri','call'=>2700,'gt'=>2100000], ['uraian'=>'Kapal','call'=>1900,'gt'=>1600000], ['uraian'=>'General Cargo','call'=>700,'gt'=>650000] ];
+                        }
+                    @endphp
+
+                    @foreach(array_slice($rows,0,10) as $r)
+                    <tr>
+                        <td class="tree-level-1">{{ $r['uraian'] }}</td>
+                        <td class="text-end">{{ number_format($r['call']) }}</td>
+                        <td class="text-end">{{ number_format($r['gt']) }}</td>
+                    </tr>
                     @endforeach
-                  </optgroup>
-                @endif
-              </select>
-            </div>
-
-            <div class="col-md-3">
-              <label class="form-label"><i class="bi bi-calendar-range"></i> Periode</label>
-              <select name="periode" class="form-select">
-                <option value="all" {{ ($selectedPeriode ?? 'all') == 'all' ? 'selected' : '' }}>Semua Periode</option>
-                @if(!empty($periods))
-                  @foreach($periods as $period)
-                    <option value="{{ $period }}" {{ ($selectedPeriode ?? '') == $period ? 'selected' : '' }}>{{ $period }}</option>
-                  @endforeach
-                @endif
-              </select>
-            </div>
-
-            <div class="col-md-3 d-flex align-items-end justify-content-end">
-              <div class="me-2">
-                @if(($selectedPeriode ?? 'all') != 'all' || ($selectedBranch ?? 'all') != 'all')
-                  <a href="{{ url()->current() }}" class="btn btn-outline-secondary">Reset</a>
-                @endif
-              </div>
-              <div>
-                <button type="submit" class="btn btn-primary">Tampilkan</button>
-              </div>
-            </div>
-          </form>
-        </div>
-      </div>
-    </div>
-
-    <!-- Sample Rows removed per request -->
-
-    @if(isset($rows) && is_iterable($rows) && count($rows) > 0)
-      <div class="card mb-4">
-        <div class="card-body">
-          <h5 class="card-title">Data Trafik — Periode: {{ $selectedPeriode }} · Cabang: {{ $selectedBranch }}</h5>
-          <div class="table-responsive">
-            <table class="table table-striped table-sm">
-              <thead>
-                <tr>
-                  @foreach(array_keys((array)collect($rows)->first()) as $col)
-                    <th>{{ $col }}</th>
-                  @endforeach
-                </tr>
-              </thead>
-              <tbody>
-                @foreach($rows as $r)
-                  <tr>
-                    @foreach((array)$r as $v)
-                      <td>{{ $v }}</td>
-                    @endforeach
-                  </tr>
-                @endforeach
-              </tbody>
+                </tbody>
             </table>
-          </div>
         </div>
-      </div>
-    @elseif(isset($rows) && is_iterable($rows) && count($rows) == 0)
-      <div class="card mb-4">
-        <div class="card-body">
-          <h5 class="card-title">Demo Trafik (Data contoh — tidak ada data dari server)</h5>
-          <div class="table-responsive">
-            <table id="trafik-table-empty" class="table table-bordered table-sm">
-              <thead style="background:#f1f1f1">
-                <tr>
-                  <th rowspan="2">URAIAN</th>
-                  <th rowspan="2">SATUAN</th>
-                  <th colspan="3" class="text-center">ANGGARAN</th>
-                  <th colspan="2" class="text-center">REALISASI</th>
-                  <th rowspan="2" class="text-center">REALISASI THN LALU</th>
-                  <th colspan="4" class="text-center">TREND REALISASI</th>
-                </tr>
-                <tr>
-                  <th class="text-end">1 TAHUN (1)</th>
-                  <th class="text-end">SD BULAN INI (2)</th>
-                  <th class="text-end">BULAN INI (3)</th>
-                  <th class="text-end">SD BULAN INI (4)</th>
-                  <th class="text-end">BULAN INI (5)</th>
-                  <th class="text-end">7 = 4:2</th>
-                  <th class="text-end">8 = 4:1</th>
-                  <th class="text-end">9 = 5:3</th>
-                  <th class="text-end">10 = 4:6</th>
-                </tr>
-              </thead>
-              <tbody>
-                <tr>
-                  <td rowspan="2">Kunjungan Kapal Berdasarkan Lokasi Sandar, Jenis Pelayaran dan Jenis Muatan Kapal</td>
-                  <td>Call</td>
-                  <td class="text-end">1,200.00</td>
-                  <td class="text-end">900.00</td>
-                  <td class="text-end">100.00</td>
-                  <td class="text-end">950.00</td>
-                  <td class="text-end">110.00</td>
-                  <td class="text-end">800.00</td>
-                  <td class="text-end">1.06</td>
-                  <td class="text-end">0.79</td>
-                  <td class="text-end">1.10</td>
-                  <td class="text-end">1.19</td>
-                </tr>
-                <tr>
-                  <td>GT</td>
-                  <td class="text-end">60,000.00</td>
-                  <td class="text-end">45,000.00</td>
-                  <td class="text-end">5,000.00</td>
-                  <td class="text-end">48,000.00</td>
-                  <td class="text-end">5,200.00</td>
-                  <td class="text-end">40,000.00</td>
-                  <td class="text-end">1.07</td>
-                  <td class="text-end">0.80</td>
-                  <td class="text-end">0.96</td>
-                  <td class="text-end">1.20</td>
-                </tr>
-              </tbody>
-            </table>
-          </div>
-        </div>
-      </div>
-    @else
-      <!-- Fallback demo editable grid when controller data not provided -->
-      <div class="card mb-4">
-        <div class="card-body">
-          <h5 class="card-title">Demo Trafik (Data contoh)</h5>
-          <div class="table-responsive">
-            <table id="trafik-table" class="table table-bordered table-sm">
-              <thead style="background:#f1f1f1">
-                <tr>
-                  <th rowspan="2">URAIAN</th>
-                  <th rowspan="2">SATUAN</th>
-                  <th colspan="3" class="text-center">ANGGARAN</th>
-                  <th colspan="2" class="text-center">REALISASI</th>
-                  <th rowspan="2" class="text-center">REALISASI THN LALU</th>
-                  <th colspan="4" class="text-center">TREND REALISASI</th>
-                </tr>
-                <tr>
-                  <th class="text-end">1 TAHUN (1)</th>
-                  <th class="text-end">SD BULAN INI (2)</th>
-                  <th class="text-end">BULAN INI (3)</th>
-                  <th class="text-end">SD BULAN INI (4)</th>
-                  <th class="text-end">BULAN INI (5)</th>
-                  <th class="text-end">7 = 4:2</th>
-                  <th class="text-end">8 = 4:1</th>
-                  <th class="text-end">9 = 5:3</th>
-                  <th class="text-end">10 = 4:6</th>
-                </tr>
-              </thead>
-              <tbody>
-                <tr>
-                  <td rowspan="2">Kunjungan Kapal Berdasarkan Lokasi Sandar, Jenis Pelayaran dan Jenis Muatan Kapal</td>
-                  <td>Call</td>
-                  <td class="text-end">1,200.00</td>
-                  <td class="text-end">900.00</td>
-                  <td class="text-end">100.00</td>
-                  <td class="text-end">950.00</td>
-                  <td class="text-end">110.00</td>
-                  <td class="text-end">800.00</td>
-                  <td class="text-end">1.06</td>
-                  <td class="text-end">0.79</td>
-                  <td class="text-end">1.10</td>
-                  <td class="text-end">1.19</td>
-                </tr>
-                <tr>
-                  <td>GT</td>
-                  <td class="text-end">60,000.00</td>
-                  <td class="text-end">45,000.00</td>
-                  <td class="text-end">5,000.00</td>
-                  <td class="text-end">48,000.00</td>
-                  <td class="text-end">5,200.00</td>
-                  <td class="text-end">40,000.00</td>
-                  <td class="text-end">1.07</td>
-                  <td class="text-end">0.80</td>
-                  <td class="text-end">0.96</td>
-                  <td class="text-end">1.20</td>
-                </tr>
-              </tbody>
-            </table>
-          </div>
-        </div>
-      </div>
-    @endif
-  </div>
 
-  <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
-  <script>
-  (function(){
-    function num(v){ if(v===undefined||v===null||v==='') return 0; v=String(v).replace(/[^0-9,.-]/g,'').replace(/,/g,'.'); var n=Number(v); return isNaN(n)?0:n; }
-    function div(a,b){ b=num(b); if(b===0) return 0; return num(a)/b; }
-    function computeRow(row){ var ang1=num($('[data-row="'+row+'"][data-field="ang_1"]').val()); var ang2=num($('[data-row="'+row+'"][data-field="ang_2"]').val()); var ang3=num($('[data-row="'+row+'"][data-field="ang_3"]').val()); var r4=num($('[data-row="'+row+'"][data-field="real_4"]').val()); var r5=num($('[data-row="'+row+'"][data-field="real_5"]').val()); var r6=num($('[data-row="'+row+'"][data-field="real_thn_lalu_6"]').val()); $('[data-row="'+row+'"][data-field="t7"]').val((div(r4,ang2)||0).toLocaleString('id-ID',{maximumFractionDigits:2})); $('[data-row="'+row+'"][data-field="t8"]').val((div(r4,ang1)||0).toLocaleString('id-ID',{maximumFractionDigits:2})); $('[data-row="'+row+'"][data-field="t9"]').val((div(r5,ang3)||0).toLocaleString('id-ID',{maximumFractionDigits:2})); $('[data-row="'+row+'"][data-field="t10"]').val((div(r4,r6)||0).toLocaleString('id-ID',{maximumFractionDigits:2})); }
-    function computeAll(){ var rows={}; $('.grid').each(function(){ rows[$(this).data('row')]=true; }); Object.keys(rows).forEach(computeRow); }
-    $(document).on('input change','.grid',function(){ computeAll(); });
-    $('#reset-demo').on('click',function(){ location.reload(); });
-    $('#export-json').on('click',function(){ var out=[]; $('.grid').each(function(){ var r=$(this).data('row'); var f=$(this).data('field'); if(!out[r]) out[r]={row:r}; out[r][f]=$(this).val(); }); var arr=Object.values(out); var b=new Blob([JSON.stringify(arr,null,2)],{type:'application/json'}); var a=document.createElement('a'); a.href=URL.createObjectURL(b); a.download='trafik-demo.json'; a.click(); });
-    // initial compute
-    setTimeout(computeAll,100);
-    
-    // Global Loading Functions
-    window.showGlobalLoading = function(message = 'Memproses data...') {
-        const overlay = document.getElementById('globalLoading');
-        const text = document.getElementById('loadingText');
-        if (overlay) {
-            if (text) text.textContent = message;
-            overlay.style.display = 'flex';
-            document.body.style.overflow = 'hidden';
-        }
-    }
-    
-    window.hideGlobalLoading = function() {
-        const overlay = document.getElementById('globalLoading');
-        if (overlay) {
-            overlay.style.display = 'none';
-            document.body.style.overflow = '';
-        }
-    }
-    
-    // Auto-show loading for form submissions
-    const forms = document.querySelectorAll('form');
-    forms.forEach(form => {
-        form.addEventListener('submit', function() {
-            showGlobalLoading('Memproses permintaan...');
+        </div>
+
+        <script>
+        var options = {
+            chart: { type: 'line', height: 350 },
+            series: [
+                { name: 'Call', data: [1200,1500,1700,1600,1800] },
+                { name: 'GT', data: [800000,900000,950000,920000,1000000] }
+            ],
+            xaxis: { categories: ['Jan','Feb','Mar','Apr','Mei'] },
+            yaxis: [
+                { title: { text: "Call" } },
+                { opposite: true, title: { text: "GT" } }
+            ]
+        };
+        new ApexCharts(document.querySelector("#trendChart"), options).render();
+        </script>
+
+        <script>
+        document.addEventListener('DOMContentLoaded', function(){
+            // Prevent existing global change handlers from auto-loading data on filter change
+            const filters = document.querySelectorAll('.filter-input');
+            const stops = [];
+            filters.forEach(el => {
+                const handler = function(e){ e.stopImmediatePropagation(); };
+                el.addEventListener('change', handler, true);
+                stops.push({el, handler});
+            });
+
+            const form = document.getElementById('filtersForm');
+            if (!form) return;
+
+            // On apply (form submit) remove interceptors so any global listeners can run if needed,
+            // then allow normal submission to proceed (GET request will reload page with filters)
+            form.addEventListener('submit', function(e){
+                stops.forEach(s => s.el.removeEventListener('change', s.handler, true));
+                // allow default submission to continue
+            });
         });
-    });
-    
-    // Handle select onchange submissions  
-    const selects = document.querySelectorAll('select[onchange*="submit"]');
-    selects.forEach(select => {
-        select.addEventListener('change', function() {
-            showGlobalLoading('Memuat data...');
-        });
-    });
-  })();
-  </script>
-</body>
-</html>
+        </script>
+
+        </body>
+        </html>
