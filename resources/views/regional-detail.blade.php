@@ -361,14 +361,17 @@
                     <label class="form-label fw-bold"><i class="bi bi-funnel"></i> Filter Periode:</label>
                 </div>
                 <div class="col-md-4">
-                    <select name="periode" class="form-select" onchange="this.form.submit()">
-                        <option value="all" {{ $selectedPeriode == 'all' ? 'selected' : '' }}>Pilih Periode</option>
-                        @foreach($periods as $period)
-                            <option value="{{ $period }}" {{ $selectedPeriode == $period ? 'selected' : '' }}>
-                                {{ $period }}
-                            </option>
-                        @endforeach
-                    </select>
+                    <div class="d-flex">
+                        <select name="periode" class="form-select filter-input">
+                            <option value="all" {{ $selectedPeriode == 'all' ? 'selected' : '' }}>Pilih Periode</option>
+                            @foreach($periods as $period)
+                                <option value="{{ $period }}" {{ $selectedPeriode == $period ? 'selected' : '' }}>
+                                    {{ $period }}
+                                </option>
+                            @endforeach
+                        </select>
+                        <button type="button" class="btn btn-primary ms-2" onclick="document.getElementById('globalLoading').style.display='flex'; this.closest('form').submit();">Apply</button>
+                    </div>
                 </div>
                 <div class="col-md-6">
                     @if($selectedPeriode != 'all')

@@ -228,7 +228,7 @@
                         </div>
                         <div class="col-md-3">
                             <label class="form-label"><i class="bi bi-building"></i> Cabang:</label>
-                            <select name="cabang" class="form-select" onchange="this.form.submit()">
+                            <select name="cabang" class="form-select filter-input">
                                 <option value="all" {{ $selectedBranch == 'all' ? 'selected' : '' }}>Semua Cabang</option>
                                 @foreach($regionalGroups as $wilayah => $branches)
                                     <optgroup label="{{ $wilayah }}">
@@ -243,14 +243,17 @@
                         </div>
                         <div class="col-md-3">
                             <label class="form-label"><i class="bi bi-calendar-range"></i> Periode:</label>
-                            <select name="periode" class="form-select" onchange="this.form.submit()">
+                            <div class="d-flex">
+                                <select name="periode" class="form-select filter-input">
                                 <option value="all" {{ $selectedPeriode == 'all' ? 'selected' : '' }}>Semua Periode</option>
                                 @foreach($periods as $period)
                                     <option value="{{ $period }}" {{ $selectedPeriode == $period ? 'selected' : '' }}>
                                         {{ $period }}
                                     </option>
                                 @endforeach
-                            </select>
+                                </select>
+                                <button type="button" class="btn btn-primary ms-2" onclick="document.getElementById('globalLoading').style.display='flex'; this.closest('form').submit();">Apply</button>
+                            </div>
                         </div>
                         <div class="col-md-3">
                             @if($selectedPeriode != 'all' || $selectedBranch != 'all')

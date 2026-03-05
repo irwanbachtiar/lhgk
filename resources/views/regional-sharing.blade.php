@@ -115,12 +115,15 @@
             <form method="GET" action="{{ route('regional.sharing') }}" class="row align-items-center">
                 <div class="col-md-2"><label class="form-label"><i class="bi bi-funnel"></i> Periode:</label></div>
                 <div class="col-md-4">
-                    <select name="periode" class="form-select" onchange="this.form.submit()">
-                        <option value="all" {{ ($selectedPeriode ?? 'all') == 'all' ? 'selected' : '' }}>Pilih Periode</option>
-                        @foreach($periods as $p)
-                            <option value="{{ $p }}" {{ (isset($selectedPeriode) && $selectedPeriode == $p) ? 'selected' : '' }}>{{ $p }}</option>
-                        @endforeach
-                    </select>
+                    <div class="d-flex">
+                        <select name="periode" class="form-select filter-input">
+                            <option value="all" {{ ($selectedPeriode ?? 'all') == 'all' ? 'selected' : '' }}>Pilih Periode</option>
+                            @foreach($periods as $p)
+                                <option value="{{ $p }}" {{ (isset($selectedPeriode) && $selectedPeriode == $p) ? 'selected' : '' }}>{{ $p }}</option>
+                            @endforeach
+                        </select>
+                        <button type="button" class="btn btn-primary ms-2" onclick="document.getElementById('globalLoading').style.display='flex'; this.closest('form').submit();">Apply</button>
+                    </div>
                 </div>
                 <div class="col-md-3">
                     @if(isset($selectedPeriode) && $selectedPeriode != 'all')

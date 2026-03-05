@@ -108,7 +108,7 @@
                 </div>
                 <div class="col-md-4">
                     <label class="form-label"><i class="bi bi-building"></i> Cabang:</label>
-                    <select name="cabang" class="form-select" onchange="this.form.submit()">
+                    <select name="cabang" class="form-select filter-input">
                         <option value="all" {{ $selectedCabang == 'all' ? 'selected' : '' }}>Semua Cabang</option>
                         @foreach($allBranches as $branch)
                             <option value="{{ $branch }}" {{ $selectedCabang == $branch ? 'selected' : '' }}>{{ Str::limit($branch, 80) }}</option>
@@ -117,12 +117,15 @@
                 </div>
                 <div class="col-md-4">
                     <label class="form-label"><i class="bi bi-calendar-range"></i> Periode:</label>
-                    <select name="periode" class="form-select" onchange="this.form.submit()">
-                        <option value="all" {{ $selectedPeriode == 'all' ? 'selected' : '' }}>Semua Periode</option>
-                        @foreach($periods as $p)
-                            <option value="{{ $p }}" {{ $selectedPeriode == $p ? 'selected' : '' }}>{{ $p }}</option>
-                        @endforeach
-                    </select>
+                    <div class="d-flex">
+                        <select name="periode" class="form-select filter-input">
+                            <option value="all" {{ $selectedPeriode == 'all' ? 'selected' : '' }}>Semua Periode</option>
+                            @foreach($periods as $p)
+                                <option value="{{ $p }}" {{ $selectedPeriode == $p ? 'selected' : '' }}>{{ $p }}</option>
+                            @endforeach
+                        </select>
+                        <button type="button" class="btn btn-primary ms-2" onclick="showGlobalLoading(); this.closest('form').submit();">Apply</button>
+                    </div>
                 </div>
                 <div class="col-md-2">
                     @if($selectedPeriode != 'all' || $selectedCabang != 'all')

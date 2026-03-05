@@ -38,7 +38,14 @@
 
             if(applyBtn && form){
                 applyBtn.addEventListener('click', function(){
-                    form.submit();
+                    const overlay = document.getElementById('globalLoading');
+                    if(overlay) overlay.style.display = 'flex';
+                    try {
+                        form.submit();
+                    } catch(e){
+                        if(overlay) overlay.style.display = 'none';
+                        console.error(e);
+                    }
                 });
             }
         });
@@ -272,7 +279,7 @@
                         </div>
                         <div class="col-md-3">
                             <label class="form-label"><i class="bi bi-building"></i> Cabang:</label>
-                            <select name="cabang" class="form-select" onchange="this.form.submit()">
+                            <select name="cabang" class="form-select filter-input">
                                 <option value="all" {{ $selectedBranch == 'all' ? 'selected' : '' }}>Semua Cabang</option>
                                 @foreach($regionalGroups as $wilayah => $branches)
                                     <optgroup label="{{ $wilayah }}">
@@ -287,14 +294,20 @@
                         </div>
                         <div class="col-md-3">
                             <label class="form-label"><i class="bi bi-calendar-range"></i> Periode:</label>
-                            <select name="periode" class="form-select" onchange="this.form.submit()">
-                                <option value="all" {{ $selectedPeriode == 'all' ? 'selected' : '' }}>Semua Periode</option>
-                                @foreach($periods as $period)
-                                    <option value="{{ $period }}" {{ $selectedPeriode == $period ? 'selected' : '' }}>
-                                        {{ $period }}
-                                    </option>
-                                @endforeach
-                            </select>
+                            <div class="d-flex">
+                                <select name="periode" class="form-select filter-input">
+                                    <option value="all" {{ $selectedPeriode == 'all' ? 'selected' : '' }}>Semua Periode</option>
+                                    @foreach($periods as $period)
+                                        <option value="{{ $period }}" {{ $selectedPeriode == $period ? 'selected' : '' }}>
+                                            {{ $period }}
+                                        </option>
+                                    @endforeach
+                                </select>
+
+                                <button type="button" id="btnApplyFilters" class="btn btn-sm btn-primary ms-2" title="Apply filters">
+                                    <i class="bi bi-funnel-fill"></i> Apply
+                                </button>
+                            </div>
                         </div>
                         <div class="col-md-3 d-flex justify-content-end align-items-center">
                             <div>
@@ -313,11 +326,7 @@
                                         <i class="bi bi-arrow-clockwise"></i>
                                     </button>
                                 </div>
-                                <div class="btn-group ms-2" role="group">
-                                    <button type="button" id="btnApplyFilters" class="btn btn-sm btn-primary" title="Apply filters">
-                                        <i class="bi bi-funnel-fill"></i> Apply
-                                    </button>
-                                </div>
+                                
                             </div>
                         </div>
                     </form>
@@ -950,11 +959,12 @@
                                     <input type="hidden" name="show_status_nota" value="1">
                                     <div class="input-group">
                                         <label class="input-group-text bg-info text-white"><i class="bi bi-funnel-fill"></i></label>
-                                        <select name="filter_status_nota" class="form-select" onchange="this.form.submit()">
+                                        <select name="filter_status_nota" class="form-select filter-input">
                                             <option value="all" {{ $filterStatusNota == 'all' ? 'selected' : '' }}>Semua Status</option>
                                             <option value="menunggu nota" {{ $filterStatusNota == 'menunggu nota' ? 'selected' : '' }}>Menunggu Nota</option>
                                             <option value="belum verifikasi" {{ $filterStatusNota == 'belum verifikasi' ? 'selected' : '' }}>Belum Verifikasi</option>
                                         </select>
+                                        <button type="button" class="btn btn-primary" onclick="document.getElementById('globalLoading').style.display='flex'; this.closest('form').submit();">Apply</button>
                                     </div>
                                 </form>
                             </div>
