@@ -13,6 +13,7 @@ class NotaController extends Controller
         return [
             'WILAYAH 1' => [
                 'REGIONAL 1 BELAWAN',
+                'REGIONAL 1 BATAM',
                 'REGIONAL 1 PANGKALAN SUSU',
                 'REGIONAL 1 TEMBILAHAN',
                 'REGIONAL 1 TANJUNG BALAI KARIMUN',

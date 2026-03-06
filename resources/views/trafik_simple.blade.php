@@ -5,86 +5,380 @@
 <title>Dashboard Kunjungan Kapal</title>
 <meta name="viewport" content="width=device-width, initial-scale=1">
 
-<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+<link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/apexcharts"></script>
 
 <style>
-body { background:#f4f6f9; }
-.card {
-    border:none;
-    border-radius:12px;
-    box-shadow:0 4px 12px rgba(0,0,0,0.05);
-}
-.kpi-title { font-size:14px; color:#6c757d; }
-.kpi-value { font-size:22px; font-weight:700; }
-.tree-level-1 { font-weight:bold; }
-.tree-level-2 { padding-left:20px; }
-.tree-level-3 { padding-left:40px; }
-.tree-level-4 { padding-left:60px; }
-.tree-level-5 { padding-left:80px; }
-th { font-size:13px; }
-</style>
+        body {
+            background-color: #f8f9fa;
+        }
+        
+        /* Global Loading Animation */
+        .global-loading-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.7);
+            backdrop-filter: blur(3px);
+            z-index: 9999;
+            display: none;
+            align-items: center;
+            justify-content: center;
+            animation: fadeIn 0.3s ease-in;
+        }
+        .global-loading-content {
+            background: white;
+            padding: 40px;
+            border-radius: 20px;
+            text-align: center;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            animation: slideIn 0.4s ease-out;
+            max-width: 300px;
+        }
+        .global-loading-spinner {
+            width: 60px;
+            height: 60px;
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid #667eea;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 20px;
+        }
+        .global-loading-text {
+            color: #333;
+            font-weight: 500;
+            font-size: 16px;
+            margin: 0;
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+        @keyframes slideIn {
+            from { transform: translateY(-30px); opacity: 0; }
+            to { transform: translateY(0); opacity: 1; }
+        }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        :root {
+            --card-radius: 12px;
+            --accent-pink: #f093fb;
+            --accent-green: #8bea66;
+            --accent-cyan: #66dfea;
+            --accent-teal: #10b981;
+            --accent-blue: #3b82f6;
+            --accent-orange: #ff7f50;
+            --accent-indigo: #667eea;
+            --accent-amber: #f59e0b;
+        }
+        .stat-card {
+            border-radius: var(--card-radius);
+            box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+            transition: all 0.3s ease;
+            border: 1px solid rgba(0,0,0,0.05);
+        }
+        .stat-card:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.12);
+        }
+        .pilot-card {
+            background: linear-gradient(135deg, #e8eaf6 0%, #c5cae9 100%);
+            color: #3f51b5;
+        }
+        .tunda-card {
+            background: linear-gradient(135deg, #fce4ec 0%, #f8bbd0 100%);
+            color: #c2185b;
+        }
+        .navbar {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        }
+        .ship-type-badge {
+            background-color: rgba(255, 255, 255, 0.2);
+            padding: 4px 8px;
+            border-radius: 12px;
+            font-size: 0.75rem;
+            margin: 2px;
+            display: inline-block;
+        }
+        .ship-types-container {
+            margin-top: 10px;
+            padding-top: 10px;
+            border-top: 1px solid rgba(0, 0, 0, 0.1);
+        }
+        .grt-gerak-badge {
+            background-color: #e3f2fd;
+            color: #1976d2;
+            padding: 6px 12px;
+            border-radius: 8px;
+            font-weight: 600;
+            display: inline-block;
+        }
+        .via-badge {
+            background-color: #f3e5f5;
+            color: #7b1fa2;
+            padding: 4px 10px;
+            border-radius: 6px;
+            font-size: 0.85rem;
+            font-weight: 500;
+            display: inline-block;
+            margin: 2px;
+        }
+        /* Emphasize numeric value inside via-badges for Realisasi cards */
+        .via-badge strong {
+            font-size: 1.2rem;
+            font-weight: 600;
+            color: #111827;
+            display: inline-block;
+            margin-left: 6px;
+            line-height: 1;
+        }
+        .via-mobile {
+            background-color: #e8f5e9;
+            color: #2e7d32;
+        }
+        .via-web {
+            background-color: #fff3e0;
+            color: #e65100;
+        }
+        .period-filter {
+            background: white;
+            padding: 15px;
+            border-radius: 15px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        /* Tidy combined cards and speedometer */
+        .combined-card .h4, .combined-card h4, .combined-card h5 { margin: 0; }
+        .combined-card .text-muted { font-size: 0.85rem; }
+        .nota-summary h4 { font-weight: 700; }
+        .nota-summary h5 { font-weight: 600; }
+        .nota-summary .col-6 { padding-bottom: 8px; }
+        /* Minimal donut layout */
+        .nota-summary { display:flex; align-items:center; justify-content:center; flex-direction:column; }
+        .nota-summary .card-body { padding-left: 0; padding-right: 1rem; }
+        .nota-summary .col-12.col-md-4 { padding-left: 0; }
+        .nota-summary .title-shift { margin-left: -1.6rem; }
+        @media (min-width: 768px) {
+            .nota-summary.match-height, .speedometer-card.match-height { min-height: 260px; }
+        }
+        .nota-summary .nota-canvas-wrap { width:160px; max-width:40%; }
+        .speedometer-wrap { display:flex; align-items:center; justify-content:center; flex-direction:column; }
+        #speedometerChart { display:block; }
+        /* Accent classes to replace inline border-left styles */
+        .card-accent--pink { border-left: 4px solid var(--accent-pink); }
+        .card-accent--green { border-left: 4px solid var(--accent-green); }
+        .card-accent--cyan { border-left: 4px solid var(--accent-cyan); }
+        .card-accent--teal { border-left: 4px solid var(--accent-teal); }
+        .card-accent--blue { border-left: 4px solid var(--accent-blue); }
+        .card-accent--orange { border-left: 4px solid var(--accent-orange); }
+        .card-accent--indigo { border-left: 4px solid var(--accent-indigo); }
+        .card-accent--amber { border-left: 4px solid var(--accent-amber); }
+
+        /* Metric value utility */
+        .metric-value { font-size: 1.8rem; font-weight: 700; line-height: 1; }
+        @media (max-width: 767px) {
+            .nota-summary .col-6 { flex: 0 0 50%; max-width: 50%; }
+            #speedometerChart { display:block; }
+            .combined-card .h4 { font-size: 1.1rem; }
+        }
+        /* Status Nota table tweaks */
+        .status-nota-table th { vertical-align: middle; text-transform: none; font-weight: 700; }
+        .status-nota-table td { vertical-align: middle; }
+        .status-nota-table .ukk-badge { background: #6c757d; color: #fff; padding: .35rem .6rem; border-radius: .35rem; font-size: .8rem; }
+        .status-nota-table .nm-kapal { max-width: 260px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .status-nota-table .selisih-badge.bg-success { background-color: #10b981 !important; }
+        .status-nota-table .selisih-badge.bg-danger { background-color: #ef4444 !important; }
+        .status-nota-table .selisih-badge.bg-secondary { background-color: #6c757d !important; }
+    </style>
+    <style>
+        /* Navbar fine-tuning to match Dashboard appearance */
+        .navbar {
+            padding: .45rem 1rem;
+        }
+        /* Explicit dashboard-style blue gradient for trafik header */
+        .navbar-dashboard {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%) !important;
+        }
+        .navbar-dashboard .navbar-brand { color: #fff !important; }
+        .navbar-brand {
+            display: inline-flex;
+            align-items: center;
+            gap: .5rem;
+            font-weight: 600;
+            color: #fff !important;
+        }
+        .navbar-brand .bi {
+            background: rgba(255,255,255,0.12);
+            padding: 6px;
+            border-radius: 8px;
+            font-size: 1rem;
+        }
+        .navbar .btn-light {
+            border-radius: 10px;
+            padding: .35rem .6rem;
+            box-shadow: 0 1px 0 rgba(0,0,0,0.03);
+            color: #2d3748 !important;
+        }
+        .navbar .btn-light .bi { margin-right: .45rem; }
+    </style>
 </head>
 <body>
 
-<div class="container-fluid p-4">
+<div class="container-fluid px-0">
+    <div class="px-4">
+
+<!-- Global Loading Overlay (copied from dashboard) -->
+<div id="globalLoading" class="global-loading-overlay">
+    <div class="global-loading-content">
+        <div class="global-loading-spinner"></div>
+        <p class="global-loading-text" id="loadingText">Memproses data...</p>
+    </div>
+    </div>
+</div>
 
 <!-- HEADER -->
-<div class="d-flex justify-content-between mb-4">
-    <div>
-        <h4 class="fw-bold">Dashboard Monitoring Kunjungan Kapal</h4>
-        <small class="text-muted">Call & Gross Tonnage (GT)</small>
+<nav class="navbar navbar-dark navbar-dashboard mb-4">
+    <div class="container-fluid">
+        <span class="navbar-brand mb-0 h1"><i class="bi bi-graph-up-arrow"></i> Dashboard LHGK</span>
+        <div>
+            <a href="{{ route('dashboard.operasional') }}" class="btn btn-light btn-sm me-2">
+                <i class="bi bi-kanban-fill"></i> Dashboard Operasional
+            </a>
+            <a href="{{ route('monitoring.nota') }}" class="btn btn-light btn-sm me-2">
+                <i class="bi bi-file-earmark-text"></i> Monitoring Nota
+            </a>
+            <a href="{{ route('regional.revenue') }}" class="btn btn-light btn-sm me-2">
+                <i class="bi bi-geo-alt"></i> Pendapatan Wilayah
+            </a>
+            <a href="{{ url('regional-sharing') }}" class="btn btn-light btn-sm me-2">
+                <i class="bi bi-people-fill"></i> Revenue Sharing
+            </a>
+            <a href="{{ route('analisis.kelelahan') }}" class="btn btn-light btn-sm">
+                <i class="bi bi-activity"></i> Analisis Kelelahan
+            </a>
+        </div>
     </div>
-    <div class="d-flex align-items-center">
-        <form id="filtersForm" method="GET" class="d-flex align-items-center gap-2" action="">
-            <select name="branch" id="branchFilter" class="form-select filter-input" style="width:160px">
-                <option value="">-- Semua Cabang --</option>
-                <option value="1">Cabang 1</option>
-                <option value="2">Cabang 2</option>
-                <option value="3">Cabang 3</option>
-            </select>
+</nav>
 
-            <input type="date" name="start_date" id="startDate" class="form-control filter-input" style="width:160px">
-            <input type="date" name="end_date" id="endDate" class="form-control filter-input" style="width:160px">
+<div class="container-fluid">
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="period-filter">
+                <form id="dashboardFilterForm" method="GET" action="" class="row align-items-center">
+                    <div class="col-md-2">
+                        <label class="form-label"><i class="bi bi-funnel"></i> Filter:</label>
+                    </div>
+                    <div class="col-md-2">
+                        <label class="form-label"><i class="bi bi-geo-alt"></i> Wilayah:</label>
+                        <select name="wilayah" id="wilayahFilter" class="form-select filter-input">
+                            <option value="all" {{ request('wilayah') == 'all' ? 'selected' : '' }}>All Wilayah</option>
+                            <option value="wilayah 1" {{ request('wilayah') == 'wilayah 1' ? 'selected' : '' }}>Wilayah 1</option>
+                            <option value="wilayah 2" {{ request('wilayah') == 'wilayah 2' ? 'selected' : '' }}>Wilayah 2</option>
+                            <option value="wilayah 3" {{ request('wilayah') == 'wilayah 3' ? 'selected' : '' }}>Wilayah 3</option>
+                            <option value="wilayah 4" {{ request('wilayah') == 'wilayah 4' ? 'selected' : '' }}>Wilayah 4</option>
+                        </select>
+                    </div>
+                    <div class="col-md-2">
+                        <label class="form-label"><i class="bi bi-calendar-check"></i> Periode:</label>
+                        <div class="d-flex">
+                            <select name="periode" id="periodeFilter" class="form-select filter-input" style="width:160px">
+                                <option value="all">-- Semua Periode --</option>
+                                @if(!empty($periods) && is_array($periods))
+                                    @foreach($periods as $period)
+                                        <option value="{{ $period }}" {{ request('periode') == $period ? 'selected' : '' }}>{{ $period }}</option>
+                                    @endforeach
+                                @else
+                                    <option value="01-2026">01-2026</option>
+                                    <option value="12-2025">12-2025</option>
+                                    <option value="11-2025">11-2025</option>
+                                @endif
+                            </select>
 
-            <button type="submit" id="applyFilters" class="btn btn-primary ms-2">Apply</button>
-        </form>
-
-        <div class="ms-3">
-            <button class="btn btn-outline-secondary">Export Excel</button>
+                            <button type="submit" id="btnApplyFilters" class="btn btn-sm btn-primary ms-2" title="Apply filters">
+                                <i class="bi bi-funnel-fill"></i> Apply
+                            </button>
+                        </div>
+                    </div>
+                    <div class="col-md-3 d-flex justify-content-end align-items-center">
+                        <div>
+                            <a href="{{ url()->current() }}" class="btn btn-outline-secondary me-2">
+                                <i class="bi bi-x-circle"></i> Reset
+                            </a>
+                        </div>
+                        <div class="btn-toolbar" role="toolbar" aria-label="Trafik actions">
+                            <div class="btn-group" role="group" aria-label="Export and refresh">
+                                <button type="button" id="btnDownloadPdf" class="btn btn-sm btn-outline-primary" title="Download current page as PDF">
+                                    <i class="bi bi-download"></i> Download
+                                </button>
+                                <button type="button" id="btnRefresh" class="btn btn-sm btn-outline-secondary" title="Refresh">
+                                    <i class="bi bi-arrow-clockwise"></i>
+                                </button>
+                            </div>
+                            <div class="ms-2">
+                                <button id="btnExportExcel" type="button" class="btn btn-sm btn-outline-secondary">Export Excel</button>
+                            </div>
+                        </div>
+                    </div>
+                </form>
+            </div>
         </div>
     </div>
 </div>
 
 <!-- KPI CARDS -->
 <div class="row mb-4">
-    <div class="col-md-4">
-        <div class="card p-3">
-            <div class="kpi-title">Total Kunjungan</div>
-            <div class="kpi-value">Call: {{ number_format($dashboardSummary['total_real_call'] ?? 0) }}</div>
-            <div class="kpi-value text-primary">GT: {{ number_format($dashboardSummary['total_real_gt'] ?? 0) }}</div>
+    @php
+        $trafik_call = $dashboardSummary['total_real_call'] ?? 0;
+        $trafik_gt = $dashboardSummary['total_real_gt'] ?? 0;
+
+        $produksi_penundaan = 0;
+        $produksi_pemanduan = 0;
+        foreach($trafikData ?? [] as $w => $d) {
+            $produksi_penundaan += $d['produksi_penundaan'] ?? $d['produksi_tunda'] ?? 0;
+            $produksi_pemanduan += $d['produksi_pemanduan'] ?? $d['produksi_pandu'] ?? 0;
+        }
+
+        $pendapatan = 0;
+        if(!empty($totalOverall) && is_array($totalOverall)) {
+            $pendapatan = ($totalOverall['total_pendapatan_pandu'] ?? 0) + ($totalOverall['total_pendapatan_tunda'] ?? 0);
+        } else {
+            $pendapatan = $dashboardSummary['total_pendapatan'] ?? 0;
+        }
+    @endphp
+
+    <div class="col-md-3">
+        <div class="stat-card p-3 card-accent--indigo">
+            <div class="kpi-title">Trafik</div>
+            <div class="kpi-value">Call: {{ number_format($trafik_call) }}</div>
+            <div class="kpi-value text-primary">GT: {{ number_format($trafik_gt) }}</div>
         </div>
     </div>
-    <div class="col-md-4">
-        <div class="card p-3">
-            <div class="kpi-title">Luar Negeri</div>
-            @php
-                $ln_call = 0; $ln_gt = 0;
-                foreach($trafikData ?? [] as $w=>$d) { $ln_call += $d['luar_negeri']['total_real_call'] ?? $d['luar_negeri']['total_call'] ?? 0; $ln_gt += $d['luar_negeri']['total_real_gt'] ?? $d['luar_negeri']['total_gt'] ?? 0; }
-            @endphp
-            <div class="kpi-value">Call: {{ number_format($ln_call) }}</div>
-            <div class="kpi-value text-success">GT: {{ number_format($ln_gt) }}</div>
+
+    <div class="col-md-3">
+        <div class="stat-card p-3 card-accent--orange">
+            <div class="kpi-title">Produksi Penundaan</div>
+            <h4 class="metric-value">{{ number_format($produksi_penundaan) }}</h4>
+            <p class="mb-0 text-muted small">GT / Jam</p>
         </div>
     </div>
-    <div class="col-md-4">
-        <div class="card p-3">
-            <div class="kpi-title">Dalam Negeri</div>
-            @php
-                $dn_call = 0; $dn_gt = 0;
-                foreach($trafikData ?? [] as $w=>$d) { $dn_call += $d['dalam_negeri']['total_real_call'] ?? $d['dalam_negeri']['total_call'] ?? 0; $dn_gt += $d['dalam_negeri']['total_real_gt'] ?? $d['dalam_negeri']['total_gt'] ?? 0; }
-            @endphp
-            <div class="kpi-value">Call: {{ number_format($dn_call) }}</div>
-            <div class="kpi-value text-warning">GT: {{ number_format($dn_gt) }}</div>
+
+    <div class="col-md-3">
+        <div class="stat-card p-3 card-accent--green">
+            <div class="kpi-title">Produksi Pemanduan</div>
+            <h4 class="metric-value">{{ number_format($produksi_pemanduan) }}</h4>
+            <p class="mb-0 text-muted small">GT / Grk</p>
+        </div>
+    </div>
+
+    <div class="col-md-3">
+        <div class="stat-card p-3 card-accent--teal">
+            <div class="kpi-title">Pendapatan</div>
+            <h4 class="metric-value">Rp {{ number_format($pendapatan, 0, ',', '.') }}</h4>
+            <p class="mb-0 text-muted small">Total Pendapatan</p>
         </div>
     </div>
 </div>
@@ -92,17 +386,98 @@ th { font-size:13px; }
 <!-- CHART -->
 <div class="row mb-4">
     <div class="col-md-12">
-        <div class="card p-3">
+        <div class="stat-card p-3">
             <h6>Trend Call vs GT</h6>
             <div id="trendChart"></div>
         </div>
     </div>
 </div>
 
+<!-- COMPARISON: REALISASI vs ANGGARAN -->
+<div class="row mb-4">
+    <div class="col-12">
+        <h6>Perbandingan Realisasi vs Anggaran</h6>
+    </div>
+
+    @php
+        // Safe extraction of realized values
+        $real_call = $dashboardSummary['total_real_call'] ?? 0;
+        $real_gt = $dashboardSummary['total_real_gt'] ?? 0;
+
+        // Try common budget sources: $budgets (preferred) or dashboardSummary budget keys
+        $budget_call = $budgets['call'] ?? $dashboardSummary['budget_call'] ?? 0;
+        $budget_gt = $budgets['gt'] ?? $dashboardSummary['budget_gt'] ?? 0;
+
+        // Produksi values (real and budget)
+        $real_pemanduan = $produksi_pemanduan ?? 0;
+        $real_penundaan = $produksi_penundaan ?? 0;
+        $budget_pemanduan = $budgets['produksi_pemanduan'] ?? $dashboardSummary['budget_pemanduan'] ?? 0;
+        $budget_penundaan = $budgets['produksi_penundaan'] ?? $dashboardSummary['budget_penundaan'] ?? 0;
+
+        // Percent helpers
+        $pct = function($r, $b) {
+            if($b > 0) return round(($r / $b) * 100, 1);
+            return $r > 0 ? 100 : 0;
+        };
+
+        $pct_call = $pct($real_call, $budget_call);
+        $pct_gt = $pct($real_gt, $budget_gt);
+        $pct_pemanduan = $pct($real_pemanduan, $budget_pemanduan);
+        $pct_penundaan = $pct($real_penundaan, $budget_penundaan);
+    @endphp
+
+    <div class="col-md-3">
+        <div class="stat-card p-3">
+            <div class="d-flex justify-content-between"><strong>Call</strong><small>{{ $pct_call }}%</small></div>
+            <div class="mb-2"><small class="text-muted">Realisasi: {{ number_format($real_call) }} — Anggaran: {{ number_format($budget_call) }}</small></div>
+            <div class="progress" style="height:10px">
+                <div class="progress-bar bg-primary" role="progressbar" style="width: {{ min(100,$pct_call) }}%;" aria-valuenow="{{ $pct_call }}" aria-valuemin="0" aria-valuemax="100"></div>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-3">
+        <div class="stat-card p-3">
+            <div class="d-flex justify-content-between"><strong>GT</strong><small>{{ $pct_gt }}%</small></div>
+            <div class="mb-2"><small class="text-muted">Realisasi: {{ number_format($real_gt) }} — Anggaran: {{ number_format($budget_gt) }}</small></div>
+            <div class="progress" style="height:10px">
+                <div class="progress-bar bg-info" role="progressbar" style="width: {{ min(100,$pct_gt) }}%;" aria-valuenow="{{ $pct_gt }}" aria-valuemin="0" aria-valuemax="100"></div>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-3">
+        <div class="stat-card p-3">
+            <div class="d-flex justify-content-between"><strong>Produksi Pemanduan</strong><small>{{ $pct_pemanduan }}%</small></div>
+            <div class="mb-2"><small class="text-muted">Realisasi: {{ number_format($real_pemanduan) }} — Anggaran: {{ number_format($budget_pemanduan) }}</small></div>
+            <div class="progress" style="height:10px">
+                <div class="progress-bar bg-success" role="progressbar" style="width: {{ min(100,$pct_pemanduan) }}%;" aria-valuenow="{{ $pct_pemanduan }}" aria-valuemin="0" aria-valuemax="100"></div>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-3">
+        <div class="stat-card p-3">
+            <div class="d-flex justify-content-between"><strong>Produksi Penundaan</strong><small>{{ $pct_penundaan }}%</small></div>
+            <div class="mb-2"><small class="text-muted">Realisasi: {{ number_format($real_penundaan) }} — Anggaran: {{ number_format($budget_penundaan) }}</small></div>
+            <div class="progress" style="height:10px">
+                <div class="progress-bar bg-warning" role="progressbar" style="width: {{ min(100,$pct_penundaan) }}%;" aria-valuenow="{{ $pct_penundaan }}" aria-valuemin="0" aria-valuemax="100"></div>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-12 mt-3">
+        <div class="stat-card p-3">
+            <div id="comparisonChart"></div>
+        </div>
+    </div>
+
+</div>
+
 <!-- TREE TABLE -->
-<div class="card p-3">
+<div class="stat-card p-3 mt-3">
     <h6>Summary Hierarki</h6>
-    <table class="table table-hover">
+    <table class="table table-hover mb-0">
         <thead>
             <tr>
                 <th>Uraian</th>
@@ -161,6 +536,54 @@ new ApexCharts(document.querySelector("#trendChart"), options).render();
 
 <script>
 document.addEventListener('DOMContentLoaded', function(){
+    // Data for comparison chart (realisasi vs anggaran)
+    const comparisonData = {
+        categories: ['Call','GT','Produksi Pemanduan','Produksi Penundaan'],
+        real: [{{ $real_call }}, {{ $real_gt }}, {{ $real_pemanduan }}, {{ $real_penundaan }}],
+        budget: [{{ $budget_call }}, {{ $budget_gt }}, {{ $budget_pemanduan }}, {{ $budget_penundaan }}]
+    };
+
+    const cmpOptions = {
+        chart: { type: 'bar', height: 280 },
+        series: [
+            { name: 'Realisasi', data: comparisonData.real },
+            { name: 'Anggaran', data: comparisonData.budget }
+        ],
+        xaxis: { categories: comparisonData.categories },
+        yaxis: { labels: { formatter: function(val){ return Math.round(val).toLocaleString(); } } },
+        tooltip: { y: { formatter: function(val){ return val.toLocaleString(); } } },
+        colors: ['#3b82f6', '#93c5fd']
+    };
+
+    new ApexCharts(document.querySelector('#comparisonChart'), cmpOptions).render();
+});
+</script>
+<script>
+document.addEventListener('DOMContentLoaded', function(){
+    const downloadBtn = document.getElementById('btnDownloadPdf');
+    const refreshBtn = document.getElementById('btnRefresh');
+    const applyBtn = document.getElementById('btnApplyFilters');
+    const form = document.getElementById('dashboardFilterForm');
+
+    if(downloadBtn){
+        downloadBtn.addEventListener('click', function(){
+            try{
+                const params = new URLSearchParams(window.location.search);
+                params.set('preview_print', '1');
+                const url = window.location.pathname + '?' + params.toString();
+                const w = window.open(url, '_blank');
+                if(w) w.focus();
+            }catch(e){
+                console.error(e);
+                alert('Gagal menyiapkan download PDF');
+            }
+        });
+    }
+
+    if(refreshBtn){
+        refreshBtn.addEventListener('click', function(){ window.location.reload(); });
+    }
+
     const filters = document.querySelectorAll('.filter-input');
     const stops = [];
     filters.forEach(el => {
@@ -169,15 +592,54 @@ document.addEventListener('DOMContentLoaded', function(){
         stops.push({el, handler});
     });
 
-    const form = document.getElementById('filtersForm');
-    if (!form) return;
-
-    form.addEventListener('submit', function(e){
-        stops.forEach(s => s.el.removeEventListener('change', s.handler, true));
-        // allow default GET submission
-    });
+    if(form){
+        form.addEventListener('submit', function(e){
+            stops.forEach(s => s.el.removeEventListener('change', s.handler, true));
+            // allow default GET submission
+        });
+    }
 });
 </script>
+
+    <script>
+        // Global Loading Functions (from dashboard)
+        function showGlobalLoading(message = 'Memproses data...') {
+            const overlay = document.getElementById('globalLoading');
+            const text = document.getElementById('loadingText');
+            if (overlay) {
+                if (text) text.textContent = message;
+                overlay.style.display = 'flex';
+                document.body.style.overflow = 'hidden';
+            }
+        }
+
+        function hideGlobalLoading() {
+            const overlay = document.getElementById('globalLoading');
+            if (overlay) {
+                overlay.style.display = 'none';
+                document.body.style.overflow = '';
+            }
+        }
+
+        // Auto-show loading for form submissions
+        document.addEventListener('DOMContentLoaded', function() {
+            // Handle form submissions with loading
+            const forms = document.querySelectorAll('form');
+            forms.forEach(form => {
+                form.addEventListener('submit', function() {
+                    showGlobalLoading('Memproses permintaan...');
+                });
+            });
+
+            // Handle select onchange submissions
+            const selects = document.querySelectorAll('select[onchange*="submit"]');
+            selects.forEach(select => {
+                select.addEventListener('change', function() {
+                    showGlobalLoading('Memuat data...');
+                });
+            });
+        });
+    </script>
 
 </body>
 </html>

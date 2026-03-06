@@ -3,82 +3,49 @@
 <html lang="id">
 <head>
   <meta charset="UTF-8" />
-  <title>Preview Dashboard Operasional</title>
-  <script src="https://cdn.tailwindcss.com"></script>
+    <title>Preview Dashboard Operasional</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/apexcharts"></script>
 </head>
 <body class="bg-slate-100">
 
-  <div class="max-w-7xl mx-auto p-6">
-    <div class="grid grid-cols-12 gap-6">
+    <div class="container-fluid px-0">
+        <div class="container px-4">
+            <div class="row gx-3">
 
-      <!-- SIDEBAR -->
-      <aside class="col-span-2 bg-white rounded-xl shadow p-4">
-        <h2 class="text-sm font-semibold text-slate-700 mb-4">Filter Wilayah</h2>
-        <div class="space-y-2">
-          <button class="w-full text-left px-3 py-2 rounded-lg bg-blue-50 text-blue-600 font-medium">Wilayah 1</button>
-          <button class="w-full text-left px-3 py-2 rounded-lg hover:bg-slate-100 text-slate-600">Wilayah 2</button>
-          <button class="w-full text-left px-3 py-2 rounded-lg hover:bg-slate-100 text-slate-600">Wilayah 3</button>
-          <button class="w-full text-left px-3 py-2 rounded-lg hover:bg-slate-100 text-slate-600">Wilayah 4</button>
-        </div>
-      </aside>
+            <!-- SIDEBAR removed per request -->
 
-      <!-- MAIN -->
-      <main class="col-span-10 space-y-6">
+    <!-- MAIN (full width now sidebar removed) -->
+    <main class="col-12">
 
-        <h1 class="text-xl font-semibold text-slate-800">Dashboard Operasional Pelabuhan</h1>
+                <nav class="navbar navbar-dark mb-4">
+                    <div class="container-fluid">
+                        <span class="navbar-brand mb-0 h1"><i class="bi bi-graph-up-arrow"></i> Dashboard LHGK</span>
+                        <div>
+                            <a href="{{ route('dashboard.operasional') }}" class="btn btn-light btn-sm me-2">
+                                <i class="bi bi-kanban-fill"></i> Dashboard Operasional
+                            </a>
+                            <a href="{{ route('monitoring.nota') }}" class="btn btn-light btn-sm me-2">
+                                <i class="bi bi-file-earmark-text"></i> Monitoring Nota
+                            </a>
+                            <a href="{{ route('regional.revenue') }}" class="btn btn-light btn-sm me-2">
+                                <i class="bi bi-geo-alt"></i> Pendapatan Wilayah
+                            </a>
+                            <a href="{{ url('regional-sharing') }}" class="btn btn-light btn-sm me-2">
+                                <i class="bi bi-people-fill"></i> Revenue Sharing
+                            </a>
+                            <a href="{{ route('analisis.kelelahan') }}" class="btn btn-light btn-sm">
+                                <i class="bi bi-activity"></i> Analisis Kelelahan
+                            </a>
+                        </div>
+                    </div>
+                </nav>
 
-        <!-- KPI -->
-        <div class="grid grid-cols-12 gap-4">
-          <div class="col-span-3 bg-white rounded-xl shadow p-4">
-            <p class="text-sm text-slate-500">Call Kapal</p>
-            <p class="text-3xl font-bold mt-2">1.245</p>
-            <p class="text-xs text-slate-400">Call</p>
-          </div>
-          <div class="col-span-3 bg-white rounded-xl shadow p-4">
-            <p class="text-sm text-slate-500">Produksi Pemanduan</p>
-            <p class="text-3xl font-bold text-green-600 mt-2">3.580.000</p>
-            <p class="text-xs text-slate-400">GT / Grk</p>
-          </div>
-          <div class="col-span-3 bg-white rounded-xl shadow p-4">
-            <p class="text-sm text-slate-500">Produksi Penundaan</p>
-            <p class="text-3xl font-bold text-orange-500 mt-2">125.400</p>
-            <p class="text-xs text-slate-400">GT / Jam</p>
-          </div>
-          <div class="col-span-3 bg-white rounded-xl shadow p-4">
-            <p class="text-sm text-slate-500">Pendapatan</p>
-            <p class="text-3xl font-bold text-emerald-700 mt-2">Rp 12,45 M</p>
-            <p class="text-xs text-slate-400">Rupiah</p>
-          </div>
-        </div>
+                <h1 class="text-xl font-semibold text-slate-800">Dashboard Operasional Pelabuhan</h1>
 
-        <!DOCTYPE html>
-        <html lang="id">
-        <head>
-        <meta charset="UTF-8">
-        <title>Dashboard Kunjungan Kapal</title>
-        <meta name="viewport" content="width=device-width, initial-scale=1">
-
-        <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
-        <script src="https://cdn.jsdelivr.net/npm/apexcharts"></script>
-
-        <style>
-        body { background:#f4f6f9; }
-        .card {
-            border:none;
-            border-radius:12px;
-            box-shadow:0 4px 12px rgba(0,0,0,0.05);
-        }
-        .kpi-title { font-size:14px; color:#6c757d; }
-        .kpi-value { font-size:22px; font-weight:700; }
-        .tree-level-1 { font-weight:bold; }
-        .tree-level-2 { padding-left:20px; }
-        .tree-level-3 { padding-left:40px; }
-        .tree-level-4 { padding-left:60px; }
-        .tree-level-5 { padding-left:80px; }
-        th { font-size:13px; }
-        </style>
-        </head>
-        <body>
+                <!-- KPI (moved below filter) -->
 
         <div class="container-fluid p-4">
 
@@ -90,18 +57,31 @@
             </div>
             <div class="d-flex align-items-center">
                 <form id="filtersForm" method="GET" class="d-flex align-items-center gap-2" action="">
-                    <select name="branch" id="branchFilter" class="form-select filter-input" style="width:160px">
-                        <option value="">-- Semua Cabang --</option>
-                        <option value="1">Cabang 1</option>
-                        <option value="2">Cabang 2</option>
-                        <option value="3">Cabang 3</option>
-                    </select>
+                    <div style="display:flex;align-items:center;gap:.5rem">
+                        <select name="wilayah" id="wilayahFilter" class="form-select filter-input" style="width:160px">
+                            <option value="all" {{ request('wilayah') == 'all' ? 'selected' : '' }}>All Wilayah</option>
+                            <option value="wilayah 1" {{ request('wilayah') == 'wilayah 1' ? 'selected' : '' }}>Wilayah 1</option>
+                            <option value="wilayah 2" {{ request('wilayah') == 'wilayah 2' ? 'selected' : '' }}>Wilayah 2</option>
+                            <option value="wilayah 3" {{ request('wilayah') == 'wilayah 3' ? 'selected' : '' }}>Wilayah 3</option>
+                            <option value="wilayah 4" {{ request('wilayah') == 'wilayah 4' ? 'selected' : '' }}>Wilayah 4</option>
+                        </select>
 
-                    <input type="date" name="start_date" id="startDate" class="form-control filter-input" style="width:160px">
-                    <input type="date" name="end_date" id="endDate" class="form-control filter-input" style="width:160px">
+                        <select name="periode" id="periodeFilter" class="form-select filter-input" style="width:160px">
+                            <option value="all">-- Semua Periode --</option>
+                            @if(!empty($periods) && is_array($periods))
+                                @foreach($periods as $period)
+                                    <option value="{{ $period }}" {{ request('periode') == $period ? 'selected' : '' }}>{{ $period }}</option>
+                                @endforeach
+                            @else
+                                <option value="01-2026">01-2026</option>
+                                <option value="12-2025">12-2025</option>
+                                <option value="11-2025">11-2025</option>
+                            @endif
+                        </select>
 
-                    <!-- Apply button positioned to the right of period filters -->
-                    <button type="submit" id="applyFilters" class="btn btn-primary ms-2">Apply</button>
+                        <!-- Apply button positioned to the right of periode select -->
+                        <button type="submit" id="applyFilters" class="btn btn-primary ms-2">Apply</button>
+                    </div>
                 </form>
 
                 <div class="ms-3">
@@ -112,33 +92,54 @@
 
         <!-- KPI CARDS -->
         <div class="row mb-4">
-            <div class="col-md-4">
+            @php
+                $trafik_call = $dashboardSummary['total_real_call'] ?? 0;
+                $trafik_gt = $dashboardSummary['total_real_gt'] ?? 0;
+
+                $produksi_penundaan = 0;
+                $produksi_pemanduan = 0;
+                foreach($trafikData ?? [] as $w => $d) {
+                    $produksi_penundaan += $d['produksi_penundaan'] ?? $d['produksi_tunda'] ?? 0;
+                    $produksi_pemanduan += $d['produksi_pemanduan'] ?? $d['produksi_pandu'] ?? 0;
+                }
+
+                $pendapatan = 0;
+                if(!empty($totalOverall) && is_array($totalOverall)) {
+                    $pendapatan = ($totalOverall['total_pendapatan_pandu'] ?? 0) + ($totalOverall['total_pendapatan_tunda'] ?? 0);
+                } else {
+                    $pendapatan = $dashboardSummary['total_pendapatan'] ?? 0;
+                }
+            @endphp
+
+            <div class="col-md-3">
                 <div class="card p-3">
-                    <div class="kpi-title">Total Kunjungan</div>
-                    <div class="kpi-value">Call: {{ number_format($dashboardSummary['total_real_call'] ?? 0) }}</div>
-                    <div class="kpi-value text-primary">GT: {{ number_format($dashboardSummary['total_real_gt'] ?? 0) }}</div>
+                    <div class="kpi-title">Trafik</div>
+                    <div class="kpi-value">Call: {{ number_format($trafik_call) }}</div>
+                    <div class="kpi-value text-primary">GT: {{ number_format($trafik_gt) }}</div>
                 </div>
             </div>
-            <div class="col-md-4">
+
+            <div class="col-md-3">
                 <div class="card p-3">
-                    <div class="kpi-title">Luar Negeri</div>
-                    @php
-                        $ln_call = 0; $ln_gt = 0;
-                        foreach($trafikData ?? [] as $w=>$d) { $ln_call += $d['luar_negeri']['total_real_call'] ?? $d['luar_negeri']['total_call'] ?? 0; $ln_gt += $d['luar_negeri']['total_real_gt'] ?? $d['luar_negeri']['total_gt'] ?? 0; }
-                    @endphp
-                    <div class="kpi-value">Call: {{ number_format($ln_call) }}</div>
-                    <div class="kpi-value text-success">GT: {{ number_format($ln_gt) }}</div>
+                    <div class="kpi-title">Produksi Penundaan</div>
+                    <h4 class="metric-value">{{ number_format($produksi_penundaan) }}</h4>
+                    <p class="mb-0 text-muted small">GT / Jam</p>
                 </div>
             </div>
-            <div class="col-md-4">
+
+            <div class="col-md-3">
                 <div class="card p-3">
-                    <div class="kpi-title">Dalam Negeri</div>
-                    @php
-                        $dn_call = 0; $dn_gt = 0;
-                        foreach($trafikData ?? [] as $w=>$d) { $dn_call += $d['dalam_negeri']['total_real_call'] ?? $d['dalam_negeri']['total_call'] ?? 0; $dn_gt += $d['dalam_negeri']['total_real_gt'] ?? $d['dalam_negeri']['total_gt'] ?? 0; }
-                    @endphp
-                    <div class="kpi-value">Call: {{ number_format($dn_call) }}</div>
-                    <div class="kpi-value text-warning">GT: {{ number_format($dn_gt) }}</div>
+                    <div class="kpi-title">Produksi Pemanduan</div>
+                    <h4 class="metric-value">{{ number_format($produksi_pemanduan) }}</h4>
+                    <p class="mb-0 text-muted small">GT / Grk</p>
+                </div>
+            </div>
+
+            <div class="col-md-3">
+                <div class="card p-3">
+                    <div class="kpi-title">Pendapatan</div>
+                    <h4 class="metric-value">Rp {{ number_format($pendapatan, 0, ',', '.') }}</h4>
+                    <p class="mb-0 text-muted small">Total Pendapatan</p>
                 </div>
             </div>
         </div>
@@ -236,5 +237,4 @@
         });
         </script>
 
-        </body>
-        </html>
+        
