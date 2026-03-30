@@ -120,6 +120,9 @@
                 <a href="{{ route('regional.detail') }}" class="btn btn-outline-light btn-sm me-2">
                     <i class="bi bi-table"></i> Detail Per Cabang
                 </a>
+                <a href="{{ route('anper') }}" class="btn btn-light btn-sm me-2">
+                    <i class="bi bi-building-fill-gear"></i> Pendapatan Anper
+                </a>
                 <a href="{{ route('monitoring.nota') }}" class="btn btn-light btn-sm me-2">
                     <i class="bi bi-file-earmark-text"></i> Monitoring Nota
                 </a>

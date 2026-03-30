@@ -1,0 +1,76 @@
+php artisan tinker
+
+use Illuminate\Support\Facades\DB;
+
+// Test the same logic as in TrafikController
+$conn = DB::connection('dashboard_phinnisi');
+$rkapTable = 'trafik_rkap_realisasi';
+
+echo "=== Testing filter logic from TrafikController ===\n";
+
+// Step 1: Test table existence
+echo "1. Testing table existence...\n";
+try {
+    $tableExists = $conn->getSchemaBuilder()->hasTable($rkapTable);
+    echo "   Table '$rkapTable' exists: " . ($tableExists ? 'YES' : 'NO') . "\n";
+} catch (Exception $e) {
+    echo "   Error checking table: " . $e->getMessage() . "\n";
+}
+
+// Step 2: Test bulan+tahun columns
+echo "\n2. Testing bulan+tahun columns...\n";
+$hasBulan = true;
+try {
+    $test = $conn->table($rkapTable)->select('bulan','tahun')->limit(1)->first();
+    if (!$test) {
+        $hasBulan = false;
+        echo "   No data found in bulan+tahun columns\n";
+    } else {
+        echo "   Found data: bulan={$test->bulan}, tahun={$test->tahun}\n";
+    }
+} catch (Exception $e) {
+    $hasBulan = false;
+    echo "   Error accessing bulan+tahun: " . $e->getMessage() . "\n";
+}
+
+// Step 3: Generate periods based on hasBulan flag
+echo "\n3. Generating periods...\n";
+echo "   hasBulan = " . ($hasBulan ? 'true' : 'false') . "\n";
+
+if ($hasBulan) {
+    echo "   Using bulan+tahun approach\n";
+    try {
+        $periods = $conn->table($rkapTable)
+            ->selectRaw("CONCAT(LPAD(bulan,2,'0'), '-', tahun) as periode_label")
+            ->whereNotNull('bulan')
+            ->whereNotNull('tahun')
+            ->groupBy('periode_label')
+            ->orderByRaw("STR_TO_DATE(CONCAT('01-', periode_label), '%d-%m-%Y') DESC")
+            ->pluck('periode_label');
+        echo "   Found " . $periods->count() . " periods:\n";
+        foreach ($periods->take(5) as $period) {
+            echo "   - $period\n";
+        }
+    } catch (Exception $e) {
+        echo "   Error in bulan+tahun query: " . $e->getMessage() . "\n";
+    }
+} else {
+    echo "   Using periode column approach\n";
+    try {
+        $periods = $conn->table($rkapTable)
+            ->select('periode')
+            ->whereNotNull('periode')
+            ->where('periode', '!=', '')
+            ->groupBy('periode')
+            ->orderByRaw("STR_TO_DATE(CONCAT('01-', periode), '%d-%m-%Y') DESC")
+            ->pluck('periode');
+        echo "   Found " . $periods->count() . " periods:\n";
+        foreach ($periods->take(5) as $period) {
+            echo "   - $period\n";
+        }
+    } catch (Exception $e) {
+        echo "   Error in periode query: " . $e->getMessage() . "\n";
+    }
+}
+
+exit

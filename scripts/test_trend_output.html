@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Test Wilayah Trend</title>
+    <script src="https://cdn.jsdelivr.net/npm/apexcharts"></script>
+</head>
+<body>
+    <h1>Test Trend Charts</h1>
+    
+    <div id="trendCallChart" style="width: 600px; height: 400px;"></div>
+    <div id="trendGtChart" style="width: 600px; height: 400px;"></div>
+
+<script>
+
+document.addEventListener('DOMContentLoaded', function(){
+    const trendCategories = ["01-2026"];
+    const wilayahData = {"WILAYAH 1":{"real_call":[2500],"budget_call":[2700],"real_gt":[7000],"budget_gt":[7000]},"WILAYAH 2":{"real_call":[2700],"budget_call":[2800],"real_gt":[8610],"budget_gt":[8610]},"WILAYAH 3":{"real_call":[2500],"budget_call":[2600],"real_gt":[7000],"budget_gt":[7000]},"WILAYAH 4":{"real_call":[2700],"budget_call":[2900],"real_gt":[8610],"budget_gt":[8610]}};
+    
+    console.log('Categories:', trendCategories);
+    console.log('Wilayah Data:', wilayahData);
+    
+    // Build series for Call chart
+    const callSeries = [];
+    const gtSeries = [];
+    
+    const colors = ['#3b82f6', '#93c5fd', '#10b981', '#6ee7b7', '#f59e0b', '#fcd34d', '#ef4444', '#fca5a5'];
+    
+    Object.keys(wilayahData).sort().forEach(function(wilayah) {
+        const data = wilayahData[wilayah];
+        
+        // Call series
+        callSeries.push({
+            name: wilayah + ' (Realisasi)',
+            data: data.real_call || []
+        });
+        callSeries.push({
+            name: wilayah + ' (Anggaran)',
+            data: data.budget_call || [],
+            dashArray: 5
+        });
+        
+        // GT series
+        gtSeries.push({
+            name: wilayah + ' (Realisasi)',
+            data: data.real_gt || []
+        });
+        gtSeries.push({
+            name: wilayah + ' (Anggaran)',
+            data: data.budget_gt || [],
+            dashArray: 5
+        });
+    });
+
+    // Call Chart
+    const callOptions = {
+        chart: { type: 'line', height: 360 },
+        series: callSeries,
+        xaxis: { categories: trendCategories },
+        stroke: { width: 3, curve: 'smooth' },
+        yaxis: { 
+            title: { text: 'Call' }
+        },
+        colors: colors
+    };
+
+    // GT Chart
+    const gtOptions = {
+        chart: { type: 'line', height: 360 },
+        series: gtSeries,
+        xaxis: { categories: trendCategories },
+        stroke: { width: 3, curve: 'smooth' },
+        yaxis: { 
+            title: { text: 'GT' }
+        },
+        colors: colors
+    };
+
+    new ApexCharts(document.querySelector('#trendCallChart'), callOptions).render();
+    new ApexCharts(document.querySelector('#trendGtChart'), gtOptions).render();
+});
+</script>
+
+</body>
+</html>

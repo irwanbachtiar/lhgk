@@ -8,6 +8,9 @@ use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\NotaController;
 use App\Http\Controllers\RegionalController;
 use App\Http\Controllers\TrafikController;
+use App\Http\Controllers\SummaryController;
+use App\Http\Controllers\SarprasController;
+use App\Http\Controllers\AnperController;
 use App\Models\Lhgk;
 
 Route::get('/', [DashboardController::class, 'index'])->name('dashboard');
@@ -38,6 +41,13 @@ Route::get('/regional-sharing/export', [RegionalController::class, 'exportSharin
 
 // Trafik (dashboard_phinnisi.trafik)
 Route::get('/trafik', [TrafikController::class, 'index'])->name('trafik');
+
+// Summary
+Route::get('/summary', [SummaryController::class, 'index'])->name('summary');
+Route::get('/sarpras', [SarprasController::class, 'index'])->name('sarpras');
+
+// Pendapatan Per Anak Perusahaan
+Route::get('/anper', [AnperController::class, 'index'])->name('anper');
 
 // Sync Phinnisi routes (manual trigger)
 Route::get('/sync-phinnisi-pandu', function() {

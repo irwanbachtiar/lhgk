@@ -9,6 +9,358 @@ use Barryvdh\DomPDF\Facade\Pdf;
 
 class DashboardController extends Controller
 {
+    public function index(Request $request)
+    {
+        $selectedPeriode = $request->get('periode', 'all');
+        $selectedBranch = $request->get('cabang', 'all');
+
+        $regionalGroups = $this->getRegionalGroups();
+
+        $allBranches = Lhgk::select('NM_BRANCH')
+            ->whereNotNull('NM_BRANCH')
+            ->where('NM_BRANCH', '!=', '')
+            ->groupBy('NM_BRANCH')
+            ->orderBy('NM_BRANCH')
+            ->pluck('NM_BRANCH')
+            ->toArray();
+
+        $periods = Lhgk::select('PERIODE')
+            ->whereNotNull('PERIODE')
+            ->where('PERIODE', '!=', '')
+            ->groupBy('PERIODE')
+            ->orderByRaw("STR_TO_DATE(CONCAT('01-', PERIODE), '%d-%m-%Y') DESC")
+            ->pluck('PERIODE');
+
+        // Initialize statistics - show individual pilot cards like in production
+        $statistics = collect();
+        
+        // Build statistics based on filter selection
+        if ($selectedPeriode != 'all' && $selectedBranch != 'all') {
+            // When filters are selected, calculate individual pilot statistics like in production
+            $baseQuery = Lhgk::where('PERIODE', $selectedPeriode)->where('NM_BRANCH', $selectedBranch);
+            
+            // Build individual pilot statistics (like in production)
+            $statistics = Lhgk::select('NM_PERS_PANDU', 'NM_BRANCH')
+                ->selectRaw('COUNT(*) as total_produksi')
+                ->selectRaw('COUNT(*) as total_transaksi')
+                ->selectRaw('SUM(PENDAPATAN_PANDU) as total_pendapatan_pandu')
+                ->selectRaw('SUM(PENDAPATAN_TUNDA) as total_pendapatan_tunda')
+                ->selectRaw('SUM(PENDAPATAN_PANDU + PENDAPATAN_TUNDA) as total_pendapatan')
+                ->selectRaw('AVG(CAST(SUBSTRING_INDEX(WT, " : ", 1) AS UNSIGNED) + CAST(SUBSTRING_INDEX(WT, " : ", -1) AS UNSIGNED) / 60.0) as rata_rata_wt')
+                ->selectRaw('SUM(CASE WHEN UPPER(REALISAS_PILOT_VIA) = "WEB" THEN 1 ELSE 0 END) as via_web')
+                ->selectRaw('SUM(CASE WHEN UPPER(REALISAS_PILOT_VIA) = "MOBILE" THEN 1 ELSE 0 END) as via_mobile')
+                ->selectRaw('SUM(CASE WHEN UPPER(REALISAS_PILOT_VIA) = "PARTIAL" THEN 1 ELSE 0 END) as via_partial')
+                ->selectRaw('SUM(NULLIF(CAST(KP_GRT AS DECIMAL(12,2)), 0)) as total_grt')
+                ->selectRaw('AVG(NULLIF(CAST(KP_GRT AS DECIMAL(12,2)), 0)) as avg_grt')
+                ->selectRaw('SUM(CASE WHEN (CAST(SUBSTRING_INDEX(WT, " : ", 1) AS UNSIGNED) + CAST(SUBSTRING_INDEX(WT, " : ", -1) AS UNSIGNED) / 60.0) > 0.5 THEN 1 ELSE 0 END) as transaksi_wt_di_atas_30')
+                ->whereNotNull('NM_PERS_PANDU')
+                ->where('NM_PERS_PANDU', '!=', '')
+                ->where('PERIODE', $selectedPeriode)
+                ->where('NM_BRANCH', $selectedBranch)
+                ->groupBy('NM_PERS_PANDU', 'NM_BRANCH')
+                ->orderBy('total_produksi', 'desc')
+                ->get();
+
+            // Add ship types data to each pilot
+            foreach ($statistics as $stat) {
+                $stat->ship_types = Lhgk::select('JN_KAPAL')
+                    ->selectRaw('COUNT(*) as jumlah')
+                    ->where('NM_PERS_PANDU', $stat->NM_PERS_PANDU)
+                    ->where('PERIODE', $selectedPeriode)
+                    ->where('NM_BRANCH', $selectedBranch)
+                    ->whereNotNull('JN_KAPAL')
+                    ->where('JN_KAPAL', '!=', '')
+                    ->groupBy('JN_KAPAL')
+                    ->orderBy('jumlah', 'desc')
+                    ->get();
+            }
+            
+            // Build chart data (separate from statistics cards)
+            $chartData = Lhgk::select('NM_PERS_PANDU', 'NM_BRANCH')
+                ->selectRaw('COUNT(*) as total_transaksi')
+                ->selectRaw('SUM(PENDAPATAN_PANDU) as total_pendapatan_pandu')
+                ->selectRaw('SUM(PENDAPATAN_TUNDA) as total_pendapatan_tunda')
+                ->selectRaw('AVG(CAST(SUBSTRING_INDEX(WT, " : ", 1) AS UNSIGNED) + CAST(SUBSTRING_INDEX(WT, " : ", -1) AS UNSIGNED) / 60.0) as rata_rata_wt')
+                ->selectRaw('AVG(NULLIF(CAST(KP_GRT AS DECIMAL(12,2)), 0)) as total_grt')
+                ->selectRaw('SUM(CASE WHEN (CAST(SUBSTRING_INDEX(WT, " : ", 1) AS UNSIGNED) + CAST(SUBSTRING_INDEX(WT, " : ", -1) AS UNSIGNED) / 60.0) > 0.5 THEN 1 ELSE 0 END) as transaksi_wt_di_atas_30')
+                ->whereNotNull('NM_PERS_PANDU')
+                ->where('NM_PERS_PANDU', '!=', '')
+                ->where('PERIODE', $selectedPeriode)
+                ->where('NM_BRANCH', $selectedBranch)
+                ->groupBy('NM_PERS_PANDU', 'NM_BRANCH')
+                ->orderBy('total_transaksi', 'desc')
+                ->limit(10) // Limit to top 10 pilots for better chart readability
+                ->get();
+            
+            // Calculate total nota from pandu_prod table (similar to exportOperasional)
+            $totalNota = 0;
+            try {
+                $totalNota = DB::connection('dashboard_phinnisi')->table('pandu_prod')
+                    ->select('INVOICE')
+                    ->where('BILLING', 'NOT LIKE', '%HIS%')
+                    ->where('INVOICE', 'NOT LIKE', '%INV%')
+                    ->whereRaw('DATE_FORMAT(STR_TO_DATE(INVOICE_DATE, \'%d-%m-%Y\'), \'%m-%Y\') = ?', [$selectedPeriode])
+                    ->where('NAME_BRANCH', $selectedBranch)
+                    ->distinct()
+                    ->count('INVOICE');
+            } catch (\Exception $e) {
+                $totalNota = 0;
+            }
+            
+            // Hitung kecepatan terbit nota (rata-rata selisih hari antara BILL_DATE dan SELESAI_PELAKSANAAN untuk GERAKAN='DEPARTURE')
+            $kecepatanTerbitNota = 0;
+            try {
+                $kecepatanTerbitNota = (clone $baseQuery)
+                    ->whereRaw("GERAKAN = 'DEPARTURE'")
+                    ->whereNotNull('BILL_DATE')
+                    ->whereNotNull('SELESAI_PELAKSANAAN')
+                    ->where('BILL_DATE', '!=', '')
+                    ->where('SELESAI_PELAKSANAAN', '!=', '')
+                    ->selectRaw('AVG(DATEDIFF(STR_TO_DATE(BILL_DATE, "%d-%m-%Y"), STR_TO_DATE(SELESAI_PELAKSANAAN, "%d-%m-%Y"))) as avg_days')
+                    ->value('avg_days') ?? 0;
+            } catch (\Exception $e) {
+                $kecepatanTerbitNota = 0;
+            }
+            
+            $totalOverall = [
+                'total_nota' => $totalNota,
+                'total_pandu' => (clone $baseQuery)->distinct('NM_PERS_PANDU')->count('NM_PERS_PANDU'),
+                'total_pendapatan_pandu' => (clone $baseQuery)->sum('PENDAPATAN_PANDU') ?? 0,
+                'total_pendapatan_tunda' => (clone $baseQuery)->sum('PENDAPATAN_TUNDA') ?? 0,
+                'total_transaksi' => (clone $baseQuery)->count(),
+                'transaksi_wt_di_atas_30' => (clone $baseQuery)->whereRaw("(CAST(SUBSTRING_INDEX(WT, ' : ', 1) AS UNSIGNED) + CAST(SUBSTRING_INDEX(WT, ' : ', -1) AS UNSIGNED) / 60.0) > 0.5")->count(),
+                'rata_rata_wt' => (clone $baseQuery)->selectRaw("AVG(CAST(SUBSTRING_INDEX(WT, ' : ', 1) AS UNSIGNED) + CAST(SUBSTRING_INDEX(WT, ' : ', -1) AS UNSIGNED) / 60.0) as avg_wt")->value('avg_wt') ?? 0,
+                'max_wt' => (clone $baseQuery)->selectRaw("MAX(CAST(SUBSTRING_INDEX(WT, ' : ', 1) AS UNSIGNED) + CAST(SUBSTRING_INDEX(WT, ' : ', -1) AS UNSIGNED) / 60.0) as max_wt")->value('max_wt') ?? 0,
+                'nota_batal' => (clone $baseQuery)->where('STATUS_NOTA', 'batal')->count(),
+                'menunggu_nota' => (clone $baseQuery)->where('STATUS_NOTA', 'menunggu nota')->count(),
+                'belum_verifikasi' => (clone $baseQuery)->where('STATUS_NOTA', 'belum verifikasi')->count(),
+                'kecepatan_terbit_nota' => round($kecepatanTerbitNota, 1)
+            ];
+        } else {
+            // When no filters selected, show empty statistics
+            $statistics = collect(); // Empty collection for pilot cards
+            $chartData = collect(); // Empty collection for charts
+            $topPilot = null;
+            $shipStatsByGT = collect();
+            $realisasiPandu = (object)['web' => 0, 'mobile' => 0, 'partial' => 0];
+            $realisasiTunda = (object)['web' => 0, 'mobile' => 0, 'partial' => 0];
+            $totalTundaDistinct = 0;
+            $totalOverall = [
+                'total_nota' => 0,
+                'total_pandu' => 0,
+                'total_pendapatan_pandu' => 0,
+                'total_pendapatan_tunda' => 0,
+                'total_transaksi' => 0,
+                'transaksi_wt_di_atas_30' => 0,
+                'rata_rata_wt' => 0,
+                'max_wt' => 0,
+                'nota_batal' => 0,
+                'menunggu_nota' => 0,
+                'belum_verifikasi' => 0,
+                'kecepatan_terbit_nota' => 0
+            ];
+        }
+        // Initialize other required variables for the view
+        if ($selectedPeriode != 'all' && $selectedBranch != 'all') {
+            // Get top pilot dengan produksi tertinggi
+            $topPilot = Lhgk::select('NM_PERS_PANDU', 'NM_BRANCH')
+                ->selectRaw('COUNT(*) as total_produksi')
+                ->selectRaw('SUM(PENDAPATAN_PANDU) as total_pendapatan_pandu')
+                ->selectRaw('SUM(PENDAPATAN_TUNDA) as total_pendapatan_tunda')
+                ->selectRaw('SUM(PENDAPATAN_PANDU + PENDAPATAN_TUNDA) as total_pendapatan')
+                ->selectRaw('AVG(CAST(SUBSTRING_INDEX(WT, " : ", 1) AS UNSIGNED) + CAST(SUBSTRING_INDEX(WT, " : ", -1) AS UNSIGNED) / 60.0) as rata_rata_wt')
+                ->whereNotNull('NM_PERS_PANDU')
+                ->where('NM_PERS_PANDU', '!=', '')
+                ->where('PERIODE', $selectedPeriode)
+                ->where('NM_BRANCH', $selectedBranch)
+                ->groupBy('NM_PERS_PANDU', 'NM_BRANCH')
+                ->orderBy('total_produksi', 'desc')
+                ->first();
+
+            // Get statistics by RANGE_GT and JENIS_KAPAL_DARI_BENDERA
+            $shipStatsByGT = Lhgk::select('RANGE_GT', 'JENIS_KAPAL_DARI_BENDERA')
+                ->selectRaw('COUNT(*) as total_transaksi')
+                ->selectRaw('SUM(COALESCE(TOTAL_PENDAPATAN_PANDU_CLEAN, 0)) as total_pendapatan_pandu')
+                ->selectRaw('SUM(COALESCE(TOTAL_PENDAPATAN_TUNDA_CLEAN, 0)) as total_pendapatan_tunda')
+                ->selectRaw('SUM(COALESCE(TOTAL_PENDAPATAN_PANDU_CLEAN, 0) + COALESCE(TOTAL_PENDAPATAN_TUNDA_CLEAN, 0)) as total_pendapatan')
+                ->where('PERIODE', $selectedPeriode)
+                ->where('NM_BRANCH', $selectedBranch)
+                ->whereNotNull('RANGE_GT')
+                ->whereNotNull('JENIS_KAPAL_DARI_BENDERA')
+                ->where('RANGE_GT', '!=', '')
+                ->where('JENIS_KAPAL_DARI_BENDERA', '!=', '')
+                ->groupBy('RANGE_GT', 'JENIS_KAPAL_DARI_BENDERA')
+                ->orderByRaw("FIELD(RANGE_GT, '0-3500 GT', '3501-8000 GT', '8001-14000 GT', '14001-18000 GT', '18001-26000 GT', '26001-40000 GT', '40001-75000 GT', '>75000 GT')")
+                ->orderBy('JENIS_KAPAL_DARI_BENDERA')
+                ->get();
+
+            // Realisasi counts
+            $realisasiPandu = Lhgk::where('PERIODE', $selectedPeriode)
+                ->where('NM_BRANCH', $selectedBranch)
+                ->selectRaw("SUM(CASE WHEN UPPER(REALISAS_PILOT_VIA) = 'WEB' THEN 1 ELSE 0 END) as web, SUM(CASE WHEN UPPER(REALISAS_PILOT_VIA) = 'MOBILE' THEN 1 ELSE 0 END) as mobile, SUM(CASE WHEN UPPER(REALISAS_PILOT_VIA) = 'PARTIAL' THEN 1 ELSE 0 END) as partial")
+                ->first();
+            
+            $realisasiTunda = (object)['web' => 0, 'mobile' => 0, 'partial' => 0]; // Default for tunda
+            
+            // Count distinct tunda kapal
+            try {
+                $tundaResult = DB::connection('dashboard_phinnisi')->selectOne(
+                    "SELECT COUNT(DISTINCT nm) as total FROM (
+                        SELECT NM_KAPAL_1 as nm FROM lhgk WHERE PERIODE = ? AND NM_BRANCH = ? AND NM_KAPAL_1 IS NOT NULL AND NM_KAPAL_1 != ''
+                        UNION ALL
+                        SELECT NM_KAPAL_2 as nm FROM lhgk WHERE PERIODE = ? AND NM_BRANCH = ? AND NM_KAPAL_2 IS NOT NULL AND NM_KAPAL_2 != ''
+                        UNION ALL
+                        SELECT NM_KAPAL_3 as nm FROM lhgk WHERE PERIODE = ? AND NM_BRANCH = ? AND NM_KAPAL_3 IS NOT NULL AND NM_KAPAL_3 != ''
+                    ) t",
+                    [$selectedPeriode, $selectedBranch, $selectedPeriode, $selectedBranch, $selectedPeriode, $selectedBranch]
+                );
+                $totalTundaDistinct = $tundaResult->total ?? 0;
+            } catch (\Exception $e) {
+                $realisasiPandu = (object)['web' => 0, 'mobile' => 0, 'partial' => 0];
+                $realisasiTunda = (object)['web' => 0, 'mobile' => 0, 'partial' => 0];
+                $totalTundaDistinct = 0;
+            }
+        } else {
+            // Default values when no filters selected
+            $topPilot = null;
+            $shipStatsByGT = collect();
+            $realisasiPandu = (object)['web' => 0, 'mobile' => 0, 'partial' => 0];
+            $realisasiTunda = (object)['web' => 0, 'mobile' => 0, 'partial' => 0];
+            $totalTundaDistinct = 0;
+        }
+        
+        // Calculate counts for optional sections when filters are selected
+        if ($selectedPeriode != 'all' && $selectedBranch != 'all') {
+            // Get request parameters for showing data
+            $showDeparture = $request->get('show_departure', 0);
+            $showStatusNota = $request->get('show_status_nota', 0);
+            $showWaitingTime = $request->get('show_waiting_time', 0);
+            $filterStatusNota = $request->get('filter_status_nota', 'all');
+            
+            // Count queries for section visibility
+            $departureDelayCount = Lhgk::whereRaw("GERAKAN = 'DEPARTURE'")
+                ->whereNotNull('INVOICE_DATE')
+                ->whereNotNull('SELESAI_PELAKSANAAN')
+                ->where('INVOICE_DATE', '!=', '')
+                ->where('SELESAI_PELAKSANAAN', '!=', '')
+                ->whereRaw('DATEDIFF(STR_TO_DATE(INVOICE_DATE, "%d-%m-%Y"), STR_TO_DATE(SELESAI_PELAKSANAAN, "%d-%m-%Y")) > 2')
+                ->where('PERIODE', $selectedPeriode)
+                ->where('NM_BRANCH', $selectedBranch)
+                ->count();
+
+            // Build status nota filter array
+            $statusNotaFilter = [];
+            if ($filterStatusNota == 'all') {
+                $statusNotaFilter = ['menunggu nota', 'belum verifikasi'];
+            } else {
+                $statusNotaFilter = [$filterStatusNota];
+            }
+            
+            $statusNotaCount = Lhgk::whereIn('STATUS_NOTA', $statusNotaFilter)
+                ->where('PERIODE', $selectedPeriode)
+                ->where('NM_BRANCH', $selectedBranch)
+                ->count();
+
+            $waitingTimeCount = Lhgk::whereRaw("(CAST(SUBSTRING_INDEX(WT, ' : ', 1) AS UNSIGNED) + CAST(SUBSTRING_INDEX(WT, ' : ', -1) AS UNSIGNED) / 60.0) > 0.5")
+                ->where('PERIODE', $selectedPeriode)
+                ->where('NM_BRANCH', $selectedBranch)
+                ->count();
+
+            // Load actual data only if requested
+            $departureDelayData = null;
+            if ($showDeparture && $departureDelayCount > 0) {
+                $departureDelayData = Lhgk::select(
+                        'NO_UKK',
+                        'NM_KAPAL',
+                        'NM_PERS_PANDU',
+                        'NM_BRANCH',
+                        'GERAKAN',
+                        'SELESAI_PELAKSANAAN',
+                        'INVOICE_DATE',
+                        'PENDAPATAN_PANDU',
+                        'PENDAPATAN_TUNDA'
+                    )
+                    ->selectRaw('DATEDIFF(STR_TO_DATE(INVOICE_DATE, "%d-%m-%Y"), STR_TO_DATE(SELESAI_PELAKSANAAN, "%d-%m-%Y")) as selisih_hari')
+                    ->whereRaw("GERAKAN = 'DEPARTURE'")
+                    ->whereNotNull('INVOICE_DATE')
+                    ->whereNotNull('SELESAI_PELAKSANAAN')
+                    ->where('INVOICE_DATE', '!=', '')
+                    ->where('SELESAI_PELAKSANAAN', '!=', '')
+                    ->whereRaw('DATEDIFF(STR_TO_DATE(INVOICE_DATE, "%d-%m-%Y"), STR_TO_DATE(SELESAI_PELAKSANAAN, "%d-%m-%Y")) > 2')
+                    ->where('PERIODE', $selectedPeriode)
+                    ->where('NM_BRANCH', $selectedBranch)
+                    ->orderByRaw('DATEDIFF(STR_TO_DATE(INVOICE_DATE, "%d-%m-%Y"), STR_TO_DATE(SELESAI_PELAKSANAAN, "%d-%m-%Y")) DESC')
+                    ->paginate(10)
+                    ->appends(request()->query());
+            }
+
+            $statusNotaData = null;
+            if ($showStatusNota && $statusNotaCount > 0) {
+                $statusNotaData = Lhgk::select(
+                        'NO_UKK',
+                        'NM_KAPAL',
+                        'PELAYARAN',
+                        'NM_PERS_PANDU',
+                        'MULAI_PELAKSANAAN',
+                        'SELESAI_PELAKSANAAN',
+                        'PENDAPATAN_PANDU',
+                        'PENDAPATAN_TUNDA',
+                        'STATUS_NOTA'
+                    )
+                    ->selectRaw("DATEDIFF(LAST_DAY(STR_TO_DATE(CONCAT('01-', PERIODE), '%d-%m-%Y')), STR_TO_DATE(SELESAI_PELAKSANAAN, '%d-%m-%Y')) as SELISIH_HARI")
+                    ->whereIn('STATUS_NOTA', $statusNotaFilter)
+                    ->where('PERIODE', $selectedPeriode)
+                    ->where('NM_BRANCH', $selectedBranch)
+                    ->orderBy('MULAI_PELAKSANAAN', 'desc')
+                    ->paginate(10)
+                    ->appends(request()->query());
+            }
+
+            $waitingTimeData = null;
+            if ($showWaitingTime && $waitingTimeCount > 0) {
+                $waitingTimeData = Lhgk::select(
+                        'PPKB_CODE',
+                        'NO_UKK',
+                        'NO_BKT_PANDU',
+                        'NM_KAPAL',
+                        'NM_PERS_PANDU',
+                        'TGL_TIBA',
+                        'JAM_TIBA',
+                        'TGL_PMT',
+                        'JAM_PMT',
+                        'PNK',
+                        'KB',
+                        'MULAI_PELAKSANAAN',
+                        'SELESAI_PELAKSANAAN',
+                        'WT',
+                        'PANDU_DARI',
+                        'PANDU_KE'
+                    )
+                    ->selectRaw('(CAST(SUBSTRING_INDEX(WT, " : ", 1) AS UNSIGNED) + CAST(SUBSTRING_INDEX(WT, " : ", -1) AS UNSIGNED) / 60.0) as wt_decimal')
+                    ->whereRaw("(CAST(SUBSTRING_INDEX(WT, ' : ', 1) AS UNSIGNED) + CAST(SUBSTRING_INDEX(WT, ' : ', -1) AS UNSIGNED) / 60.0) > 0.5")
+                    ->where('PERIODE', $selectedPeriode)
+                    ->where('NM_BRANCH', $selectedBranch)
+                    ->orderByRaw('(CAST(SUBSTRING_INDEX(WT, " : ", 1) AS UNSIGNED) + CAST(SUBSTRING_INDEX(WT, " : ", -1) AS UNSIGNED) / 60.0) DESC')
+                    ->paginate(10)
+                    ->appends(request()->query());
+            }
+        } else {
+            $showDeparture = false;
+            $departureDelayCount = 0;
+            $departureDelayData = null;
+            $showStatusNota = false;
+            $statusNotaCount = 0;
+            $statusNotaData = null;
+            $filterStatusNota = 'all';
+            $showWaitingTime = false;
+            $waitingTimeCount = 0;
+            $waitingTimeData = null;
+        }
+
+        // Show main dashboard view with filters, but without data until filters are selected
+        return view('dashboard', compact('statistics', 'chartData', 'totalOverall', 'periods', 'selectedPeriode', 'regionalGroups', 'allBranches', 'selectedBranch', 'topPilot', 'shipStatsByGT', 'showDeparture', 'departureDelayCount', 'departureDelayData', 'showStatusNota', 'statusNotaCount', 'statusNotaData', 'filterStatusNota', 'showWaitingTime', 'waitingTimeCount', 'waitingTimeData', 'realisasiPandu', 'realisasiTunda', 'totalTundaDistinct'));
+    }
+
     private function getRegionalGroups()
     {
         return [
@@ -249,200 +601,12 @@ class DashboardController extends Controller
         $selectedPeriode = $request->get('periode');
         $selectedBranch = $request->get('cabang');
 
+        // Validate required parameters
         if (!$selectedPeriode || !$selectedBranch) {
             return redirect()->back()->with('error', 'Pilih periode dan cabang terlebih dahulu');
         }
 
-        $baseQuery = Lhgk::where('PERIODE', $selectedPeriode)
-            ->where('NM_BRANCH', $selectedBranch);
-
-        $pelayaranCase = "CASE WHEN LOWER(PELAYARAN) LIKE '%luar%' THEN 'Luar Negeri' ELSE 'Dalam Negeri' END";
-
-        $rows = (clone $baseQuery)
-            ->selectRaw("{$pelayaranCase} as pelayaran_group, JN_KAPAL, COUNT(*) as jumlah,
-                AVG(NULLIF(
-                    CASE
-                        WHEN lama_tunda LIKE '%:%' THEN (CAST(SUBSTRING_INDEX(REPLACE(lama_tunda,' ',''), ':', 1) AS DECIMAL(12,2)) + (CAST(SUBSTRING_INDEX(REPLACE(lama_tunda,' ',''), ':', -1) AS DECIMAL(12,2)) / 60.0))
-                        WHEN lama_tunda REGEXP '^[0-9]+(\\.[0-9]+)?$' THEN CAST(lama_tunda AS DECIMAL(12,2))
-                        ELSE NULL
-                    END
-                , 0)) as avg_lama_tunda,
-                SUM(CASE WHEN NULLIF(
-                    CASE
-                        WHEN lama_tunda LIKE '%:%' THEN (CAST(SUBSTRING_INDEX(REPLACE(lama_tunda,' ',''), ':', 1) AS DECIMAL(12,2)) + (CAST(SUBSTRING_INDEX(REPLACE(lama_tunda,' ',''), ':', -1) AS DECIMAL(12,2)) / 60.0))
-                        WHEN lama_tunda REGEXP '^[0-9]+(\\.[0-9]+)?$' THEN CAST(lama_tunda AS DECIMAL(12,2))
-                        ELSE NULL
-                    END
-                , 0) IS NOT NULL THEN 1 ELSE 0 END) as cnt_lama,
-                AVG(NULLIF(CAST(KP_GRT AS DECIMAL(12,2)), 0)) as avg_grt,
-                SUM(CASE WHEN NULLIF(CAST(KP_GRT AS DECIMAL(12,2)), 0) IS NOT NULL THEN 1 ELSE 0 END) as cnt_grt,
-                AVG(NULLIF(CAST(TRT AS DECIMAL(12,2)), 0)) as avg_trt,
-                SUM(CASE WHEN NULLIF(CAST(TRT AS DECIMAL(12,2)), 0) IS NOT NULL THEN 1 ELSE 0 END) as cnt_trt,
-                AVG(NULLIF(CAST(AT_Jam AS DECIMAL(12,2)), 0)) as avg_at,
-                SUM(CASE WHEN NULLIF(CAST(AT_Jam AS DECIMAL(12,2)), 0) IS NOT NULL THEN 1 ELSE 0 END) as cnt_at")
-            ->whereNotNull('JN_KAPAL')
-            ->where('JN_KAPAL', '!=', '')
-            ->groupBy(DB::raw($pelayaranCase), 'JN_KAPAL')
-            ->orderByRaw("{$pelayaranCase} ASC")
-            ->orderBy('JN_KAPAL')
-            ->get();
-
-        // Prepare grouped data for CSV by pelayaran_group then JN_KAPAL
-        $grouped = $rows->groupBy('pelayaran_group');
-
-        $filename = 'Operasional_' . str_replace(' ', '_', $selectedBranch) . '_' . str_replace('-', '', $selectedPeriode) . '_' . date('YmdHis') . '.csv';
-
-        $headers = [
-            'Content-Type' => 'text/csv; charset=UTF-8',
-            'Content-Disposition' => 'attachment; filename="' . $filename . '"',
-        ];
-
-        $callback = function() use ($grouped) {
-            $out = fopen('php://output', 'w');
-            // BOM
-            fprintf($out, chr(0xEF).chr(0xBB).chr(0xBF));
-
-            // Header
-            fputcsv($out, ['Jenis Kapal', 'Pelayaran', 'Jumlah', 'Rata-rata Jam Tunda', 'Rata-rata GT', 'Rata-rata TRT', 'Rata-rata AT']);
-
-            foreach ($grouped as $jn => $items) {
-                // parent totals: sum jumlah, weighted avg
-                $totalJumlah = $items->sum('jumlah');
-                // compute weighted parent averages using counts of non-zero values (cnt_*)
-                $weightedSumLama = $items->reduce(function($carry, $i) {
-                    return $carry + ((float)($i->avg_lama_tunda ?? 0) * (int)($i->cnt_lama ?? 0));
-                }, 0);
-                $weightedSumGrt = $items->reduce(function($carry, $i) {
-                    return $carry + ((float)($i->avg_grt ?? 0) * (int)($i->cnt_grt ?? 0));
-                }, 0);
-                $weightedSumTrt = $items->reduce(function($carry, $i) {
-                    return $carry + ((float)($i->avg_trt ?? 0) * (int)($i->cnt_trt ?? 0));
-                }, 0);
-                $weightedSumAt = $items->reduce(function($carry, $i) {
-                    return $carry + ((float)($i->avg_at ?? 0) * (int)($i->cnt_at ?? 0));
-                }, 0);
-
-                $totalCntLama = $items->sum(function($i) { return (int)($i->cnt_lama ?? 0); });
-                $totalCntGrt = $items->sum(function($i) { return (int)($i->cnt_grt ?? 0); });
-                $totalCntTrt = $items->sum(function($i) { return (int)($i->cnt_trt ?? 0); });
-                $totalCntAt = $items->sum(function($i) { return (int)($i->cnt_at ?? 0); });
-
-                $parentAvgLama = $totalCntLama ? ($weightedSumLama / $totalCntLama) : 0;
-                $parentAvgGrt = $totalCntGrt ? ($weightedSumGrt / $totalCntGrt) : 0;
-                $parentAvgTrt = $totalCntTrt ? ($weightedSumTrt / $totalCntTrt) : 0;
-                $parentAvgAt = $totalCntAt ? ($weightedSumAt / $totalCntAt) : 0;
-
-                fputcsv($out, [$jn, '', $totalJumlah, number_format((float)$parentAvgLama, 2, '.', ''), number_format((float)$parentAvgGrt, 2, '.', ''), number_format((float)$parentAvgTrt, 2, '.', ''), number_format((float)$parentAvgAt, 2, '.', '')]);
-
-                foreach ($items as $it) {
-                    fputcsv($out, [$it->JN_KAPAL ?? '', $it->pelayaran_group ?? '-', $it->jumlah, number_format((float)($it->avg_lama_tunda ?? 0), 2, '.', ''), number_format((float)($it->avg_grt ?? 0), 2, '.', ''), number_format((float)($it->avg_trt ?? 0), 2, '.', ''), number_format((float)($it->avg_at ?? 0), 2, '.', '')]);
-                }
-            }
-
-            fclose($out);
-        };
-
-        return response()->stream($callback, 200, $headers);
-    }
-
-    public function index(Request $request)
-    {
-        // Get selected period and branch
-        $selectedPeriode = $request->get('periode', 'all');
-        $selectedBranch = $request->get('cabang', 'all');
-
-        // Get available branches with regional grouping
-        $regionalGroups = $this->getRegionalGroups();
-        
-        // Get all available branches from database
-        $allBranches = Lhgk::select('NM_BRANCH')
-            ->whereNotNull('NM_BRANCH')
-            ->where('NM_BRANCH', '!=', '')
-            ->groupBy('NM_BRANCH')
-            ->orderBy('NM_BRANCH')
-            ->pluck('NM_BRANCH')
-            ->toArray();
-
-        // Get available periods from PERIODE column (format MM-YYYY)
-        $periods = Lhgk::select('PERIODE')
-            ->whereNotNull('PERIODE')
-            ->where('PERIODE', '!=', '')
-            ->groupBy('PERIODE')
-            ->orderByRaw("STR_TO_DATE(CONCAT('01-', PERIODE), '%d-%m-%Y') DESC")
-            ->pluck('PERIODE');
-
-        // Only load data if both filters are selected (not 'all')
-        if ($selectedPeriode == 'all' || $selectedBranch == 'all') {
-            $statistics = collect();
-            $totalOverall = [
-                'total_nota' => 0,
-                'total_pandu' => 0,
-                'total_pendapatan_pandu' => 0,
-                'total_pendapatan_tunda' => 0,
-                'total_transaksi' => 0,
-                'kecepatan_terbit_nota' => 0
-            ];
-            $topPilot = null;
-            $shipStatsByGT = collect();
-            $showDeparture = false;
-            $departureDelayCount = 0;
-            $showStatusNota = false;
-            $statusNotaCount = 0;
-            $showWaitingTime = false;
-            $waitingTimeCount = 0;
-            $realisasiPandu = (object)['web' => 0, 'mobile' => 0, 'partial' => 0];
-            $realisasiTunda = (object)['web' => 0, 'mobile' => 0, 'partial' => 0];
-            return view('dashboard', compact('statistics', 'totalOverall', 'periods', 'selectedPeriode', 'regionalGroups', 'allBranches', 'selectedBranch', 'topPilot', 'shipStatsByGT', 'showDeparture', 'departureDelayCount', 'showStatusNota', 'statusNotaCount', 'showWaitingTime', 'waitingTimeCount', 'realisasiPandu', 'realisasiTunda'));
-        }
-
-        // Build query with period filter
-        $query = Lhgk::select('NM_PERS_PANDU')
-            ->selectRaw('SUM(PENDAPATAN_PANDU) as total_pendapatan_pandu')
-            ->selectRaw('SUM(PENDAPATAN_TUNDA) as total_pendapatan_tunda')
-            ->selectRaw('COUNT(*) as total_transaksi')
-            ->selectRaw('SUM(COALESCE(KP_GRT, 0)) as total_grt')
-            ->selectRaw('AVG(CAST(SUBSTRING_INDEX(WT, " : ", 1) AS UNSIGNED) + CAST(SUBSTRING_INDEX(WT, " : ", -1) AS UNSIGNED) / 60.0) as rata_rata_wt')
-            ->selectRaw('SUM(CASE WHEN (CAST(SUBSTRING_INDEX(WT, " : ", 1) AS UNSIGNED) + CAST(SUBSTRING_INDEX(WT, " : ", -1) AS UNSIGNED) / 60.0) > 0.5 THEN 1 ELSE 0 END) as transaksi_wt_di_atas_30')
-            ->where('PERIODE', $selectedPeriode)
-            ->where('NM_BRANCH', $selectedBranch);
-
-        $statistics = $query->groupBy('NM_PERS_PANDU')
-            ->orderBy('total_pendapatan_pandu', 'desc')
-            ->get();
-
-        // Get ship type breakdown and realisasi via for each pilot
-        foreach ($statistics as $stat) {
-            // Ship types
-            $shipQuery = Lhgk::select('JN_KAPAL')
-                ->selectRaw('COUNT(*) as jumlah')
-                ->where('NM_PERS_PANDU', $stat->NM_PERS_PANDU)
-                ->whereNotNull('JN_KAPAL')
-                ->where('JN_KAPAL', '!=', '')
-                ->where('PERIODE', $selectedPeriode)
-                ->where('NM_BRANCH', $selectedBranch);
-
-            $stat->ship_types = $shipQuery->groupBy('JN_KAPAL')
-                ->orderBy('jumlah', 'desc')
-                ->get();
-
-            // Realisasi via (Mobile/Web)
-            $viaQuery = Lhgk::select('REALISAS_PILOT_VIA')
-                ->selectRaw('COUNT(*) as jumlah')
-                ->where('NM_PERS_PANDU', $stat->NM_PERS_PANDU)
-                ->whereNotNull('REALISAS_PILOT_VIA')
-                ->where('REALISAS_PILOT_VIA', '!=', '')
-                ->where('PERIODE', $selectedPeriode)
-                ->where('NM_BRANCH', $selectedBranch);
-
-            $realisasiVia = $viaQuery->groupBy('REALISAS_PILOT_VIA')->get();
-            
-            // Format ke array untuk kemudahan akses
-            $stat->via_mobile = $realisasiVia->where('REALISAS_PILOT_VIA', 'MOBILE')->first()->jumlah ?? 0;
-            $stat->via_web = $realisasiVia->where('REALISAS_PILOT_VIA', 'WEB')->first()->jumlah ?? 0;
-            $stat->via_partial = $realisasiVia->where('REALISAS_PILOT_VIA', 'PARTIAL')->first()->jumlah ?? 0;
-        }
-
-        // Get total overall statistics dengan filter periode dan cabang
+        // Base query with filters
         $baseQuery = Lhgk::where('PERIODE', $selectedPeriode)
             ->where('NM_BRANCH', $selectedBranch);
 
@@ -878,6 +1042,110 @@ class DashboardController extends Controller
         };
 
         return response()->stream($callback, 200, $headers);
+    }
+
+    public function sarpras(Request $request)
+    {
+        $selectedPeriode = $request->get('periode', 'all');
+        $selectedBranch = $request->get('cabang', 'all');
+
+        $regionalGroups = $this->getRegionalGroups();
+
+        $allBranches = Lhgk::select('NM_BRANCH')
+            ->whereNotNull('NM_BRANCH')
+            ->where('NM_BRANCH', '!=', '')
+            ->groupBy('NM_BRANCH')
+            ->orderBy('NM_BRANCH')
+            ->pluck('NM_BRANCH')
+            ->toArray();
+
+        $periods = Lhgk::select('PERIODE')
+            ->whereNotNull('PERIODE')
+            ->where('PERIODE', '!=', '')
+            ->groupBy('PERIODE')
+            ->orderByRaw("STR_TO_DATE(CONCAT('01-', PERIODE), '%d-%m-%Y') DESC")
+            ->pluck('PERIODE');
+
+        $mstRows = collect();
+        $mstColumns = [];
+        $mstError = null;
+
+        try {
+            $schema = DB::connection('dashboard_phinnisi')->getSchemaBuilder();
+            if ($schema->hasTable('mst_pandu')) {
+                $mstColumns = $schema->getColumnListing('mst_pandu');
+
+                // Prefer a specific column for MASA BERLAKU ENDORSERMENT PELAUT when present
+                $nameCol = null;
+                $dateCol = null;
+                $preferredDateCol = null;
+                foreach ($mstColumns as $c) {
+                    $lower = strtolower($c);
+                    if (str_contains($lower, 'masa') && str_contains($lower, 'endor') && str_contains($lower, 'pelaut')) {
+                        $preferredDateCol = $c;
+                        break;
+                    }
+                }
+
+                foreach ($mstColumns as $c) {
+                    $lower = strtolower($c);
+                    if (!$nameCol && (str_contains($lower, 'nama') || str_contains($lower, 'name'))) {
+                        $nameCol = $c;
+                    }
+                    if (!$dateCol) {
+                        if ($preferredDateCol) {
+                            $dateCol = $preferredDateCol;
+                        } elseif (str_contains($lower, 'masa') || str_contains($lower, 'berlaku') || str_contains($lower, 'endor') || str_contains($lower, 'expired') || str_contains($lower, 'tgl')) {
+                            $dateCol = $c;
+                        }
+                    }
+                }
+
+                if (!$dateCol || !$nameCol) {
+                    $mstError = 'Kolom nama atau tanggal tidak ditemukan di tabel mst_pandu';
+                } else {
+                    // Build safe backtick names
+                    $nameBack = "`" . str_replace("`", "``", $nameCol) . "`";
+                    $dateBack = "`" . str_replace("`", "``", $dateCol) . "`";
+
+                    // Query: group by name, get nearest upcoming expiry (min) where expiry between today and 3 months ahead
+                    $rows = DB::connection('dashboard_phinnisi')
+                        ->table('mst_pandu')
+                        ->selectRaw("{$nameBack} as name, MIN(COALESCE(STR_TO_DATE({$dateBack}, '%d-%m-%Y'), STR_TO_DATE({$dateBack}, '%Y-%m-%d'))) as next_expiry")
+                        ->whereRaw("COALESCE(STR_TO_DATE({$dateBack}, '%d-%m-%Y'), STR_TO_DATE({$dateBack}, '%Y-%m-%d')) IS NOT NULL")
+                        ->groupBy(DB::raw($nameBack))
+                        ->havingRaw("(next_expiry BETWEEN CURDATE() AND DATE_ADD(CURDATE(), INTERVAL 3 MONTH) OR next_expiry < CURDATE())")
+                        ->orderByRaw('next_expiry ASC')
+                        ->get();
+
+                    // Map results and compute days remaining
+                    $mstRows = collect($rows)->map(function($r) {
+                        $date = $r->next_expiry;
+                        $ymd = null;
+                        try {
+                            $ymd = $date ? date('Y-m-d', strtotime($date)) : null;
+                        } catch (\Exception $e) {
+                            $ymd = null;
+                        }
+                        $diff = null;
+                        if ($ymd) {
+                            $diff = (int) ceil((strtotime($ymd) - strtotime(date('Y-m-d'))) / 86400);
+                        }
+                        return (object)[
+                            'name' => $r->name,
+                            'next_expiry' => $ymd,
+                            'days_remaining' => $diff
+                        ];
+                    });
+                }
+            } else {
+                $mstError = 'Tabel mst_pandu tidak ditemukan pada koneksi dashboard_phinnisi';
+            }
+        } catch (\Exception $e) {
+            $mstError = 'Gagal mengambil data mst_pandu: ' . $e->getMessage();
+        }
+
+        return view('sarpras', compact('periods', 'selectedPeriode', 'regionalGroups', 'allBranches', 'selectedBranch', 'mstRows', 'mstColumns', 'mstError'));
     }
 
     public function exportStatusNota(Request $request)

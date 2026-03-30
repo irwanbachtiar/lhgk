@@ -246,19 +246,19 @@
     <div class="container-fluid">
         <span class="navbar-brand mb-0 h1"><i class="bi bi-graph-up-arrow"></i> Trafik</span>
         <div>
-            <a href="{{ route('dashboard.operasional') }}" class="btn btn-light btn-sm me-2">
+            <a href="<?php echo e(route('dashboard.operasional')); ?>" class="btn btn-light btn-sm me-2">
                 <i class="bi bi-kanban-fill"></i> Dashboard Operasional
             </a>
-            <a href="{{ route('monitoring.nota') }}" class="btn btn-light btn-sm me-2">
+            <a href="<?php echo e(route('monitoring.nota')); ?>" class="btn btn-light btn-sm me-2">
                 <i class="bi bi-file-earmark-text"></i> Monitoring Nota
             </a>
-            <a href="{{ route('regional.revenue') }}" class="btn btn-light btn-sm me-2">
+            <a href="<?php echo e(route('regional.revenue')); ?>" class="btn btn-light btn-sm me-2">
                 <i class="bi bi-geo-alt"></i> Pendapatan Wilayah
             </a>
-            <a href="{{ url('regional-sharing') }}" class="btn btn-light btn-sm me-2">
+            <a href="<?php echo e(url('regional-sharing')); ?>" class="btn btn-light btn-sm me-2">
                 <i class="bi bi-people-fill"></i> Revenue Sharing
             </a>
-            <a href="{{ route('analisis.kelelahan') }}" class="btn btn-light btn-sm">
+            <a href="<?php echo e(route('analisis.kelelahan')); ?>" class="btn btn-light btn-sm">
                 <i class="bi bi-activity"></i> Analisis Kelelahan
             </a>
         </div>
@@ -280,15 +280,15 @@
                         <div class="d-flex">
                             <select name="periode" id="periodeFilter" class="form-select filter-input" style="width:160px">
                                 <option value="all">-- Semua Periode --</option>
-                                @if(!empty($periods) && count($periods) > 0)
-                                    @foreach($periods as $period)
-                                        <option value="{{ $period }}" {{ request('periode') == $period ? 'selected' : '' }}>{{ $period }}</option>
-                                    @endforeach
-                                @else
+                                <?php if(!empty($periods) && count($periods) > 0): ?>
+                                    <?php $__currentLoopData = $periods; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $period): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
+                                        <option value="<?php echo e($period); ?>" <?php echo e(request('periode') == $period ? 'selected' : ''); ?>><?php echo e($period); ?></option>
+                                    <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>
+                                <?php else: ?>
                                     <option value="01-2026">01-2026</option>
                                     <option value="12-2025">12-2025</option>
                                     <option value="11-2025">11-2025</option>
-                                @endif
+                                <?php endif; ?>
                             </select>
 
                             <button type="submit" id="btnApplyFilters" class="btn btn-sm btn-primary ms-2" title="Apply filters">
@@ -298,7 +298,7 @@
                     </div>
                     <div class="col-md-3 d-flex justify-content-end align-items-center">
                         <div>
-                            <a href="{{ url()->current() }}" class="btn btn-outline-secondary me-2">
+                            <a href="<?php echo e(url()->current()); ?>" class="btn btn-outline-secondary me-2">
                                 <i class="bi bi-x-circle"></i> Reset
                             </a>
                         </div>
@@ -324,7 +324,7 @@
 
 <!-- KPI CARDS -->
 <div class="row mb-4">
-    @php
+    <?php
         // Use controller-provided KPI values from filtered query
         $trafik_call = $totalCall ?? 0;
         $trafik_gt = $totalGt ?? 0;
@@ -337,20 +337,20 @@
         // YTD logic variables for global use
         $periodeParts = explode('-', $selectedPeriode ?? 'all');
         $isYTD = $selectedPeriode != 'all' && count($periodeParts) === 2 && intval(ltrim($periodeParts[0], '0')) > 1;
-    @endphp
+    ?>
 
     <div class="col-md-3">
         <div class="stat-card p-3 card-accent--indigo">
             <div class="kpi-title">
                 Trafik
-                @if($isYTD)
+                <?php if($isYTD): ?>
                     <small class="text-info d-block" style="font-size: 0.65rem; font-weight: 400;">
-                        <i class="bi bi-calendar-range"></i> YTD (Jan-{{ $periodeParts[0] }}/{{ $periodeParts[1] }})
+                        <i class="bi bi-calendar-range"></i> YTD (Jan-<?php echo e($periodeParts[0]); ?>/<?php echo e($periodeParts[1]); ?>)
                     </small>
-                @endif
+                <?php endif; ?>
             </div>
-            <h4 class="metric-value">Call: {{ number_format($trafik_call) }}</h4>
-            <h4 class="metric-value text-primary">GT: {{ number_format($trafik_gt) }}</h4>
+            <h4 class="metric-value">Call: <?php echo e(number_format($trafik_call)); ?></h4>
+            <h4 class="metric-value text-primary">GT: <?php echo e(number_format($trafik_gt)); ?></h4>
         </div>
     </div>
 
@@ -358,13 +358,13 @@
         <div class="stat-card p-3 card-accent--orange">
             <div class="kpi-title">
                 Produksi Penundaan
-                @if($isYTD)
+                <?php if($isYTD): ?>
                     <small class="text-info d-block" style="font-size: 0.65rem; font-weight: 400;">
-                        <i class="bi bi-calendar-range"></i> YTD (Jan-{{ $periodeParts[0] }}/{{ $periodeParts[1] }})
+                        <i class="bi bi-calendar-range"></i> YTD (Jan-<?php echo e($periodeParts[0]); ?>/<?php echo e($periodeParts[1]); ?>)
                     </small>
-                @endif
+                <?php endif; ?>
             </div>
-            <h4 class="metric-value">{{ number_format($produksi_penundaan) }}</h4>
+            <h4 class="metric-value"><?php echo e(number_format($produksi_penundaan)); ?></h4>
             <p class="mb-0 text-muted small">GT / Jam</p>
         </div>
     </div>
@@ -373,13 +373,13 @@
         <div class="stat-card p-3 card-accent--green">
             <div class="kpi-title">
                 Produksi Pemanduan
-                @if($isYTD)
+                <?php if($isYTD): ?>
                     <small class="text-info d-block" style="font-size: 0.65rem; font-weight: 400;">
-                        <i class="bi bi-calendar-range"></i> YTD (Jan-{{ $periodeParts[0] }}/{{ $periodeParts[1] }})
+                        <i class="bi bi-calendar-range"></i> YTD (Jan-<?php echo e($periodeParts[0]); ?>/<?php echo e($periodeParts[1]); ?>)
                     </small>
-                @endif
+                <?php endif; ?>
             </div>
-            <h4 class="metric-value">{{ number_format($produksi_pemanduan) }}</h4>
+            <h4 class="metric-value"><?php echo e(number_format($produksi_pemanduan)); ?></h4>
             <p class="mb-0 text-muted small">GT / Grk</p>
         </div>
     </div>
@@ -387,7 +387,7 @@
     <div class="col-md-3">
         <div class="stat-card p-3 card-accent--teal">
             <div class="kpi-title">Pendapatan</div>
-            <h4 class="metric-value">Rp {{ number_format($pendapatan, 0, ',', '.') }}</h4>
+            <h4 class="metric-value">Rp <?php echo e(number_format($pendapatan, 0, ',', '.')); ?></h4>
             <p class="mb-0 text-muted small">Total Pendapatan</p>
         </div>
     </div>
@@ -399,7 +399,7 @@
         <h6>Perbandingan Realisasi vs Anggaran</h6>
     </div>
 
-    @php
+    <?php
         // Use values from controller (trafik_rkap_realisasi table)
         $real_call = $comparisonRealCall ?? 0;
         $real_gt = $comparisonRealGt ?? 0;
@@ -430,17 +430,17 @@
         
         $icon_call = $indicator($real_call, $budget_call);
         $icon_gt = $indicator($real_gt, $budget_gt);
-    @endphp
+    ?>
 
     <div class="col-md-3">
         <div class="stat-card p-3">
             <div class="d-flex justify-content-between align-items-center">
-                <div><strong>Call</strong> {!! $icon_call !!}</div>
-                <small>{{ $pct_call }}%</small>
+                <div><strong>Call</strong> <?php echo $icon_call; ?></div>
+                <small><?php echo e($pct_call); ?>%</small>
             </div>
-            <div class="mb-2"><small class="text-muted">Realisasi: {{ number_format($real_call) }} — Anggaran: {{ number_format($budget_call) }}</small></div>
+            <div class="mb-2"><small class="text-muted">Realisasi: <?php echo e(number_format($real_call)); ?> — Anggaran: <?php echo e(number_format($budget_call)); ?></small></div>
             <div class="progress" style="height:10px">
-                <div class="progress-bar bg-primary" role="progressbar" style="width: {{ min(100,$pct_call) }}%;" aria-valuenow="{{ $pct_call }}" aria-valuemin="0" aria-valuemax="100"></div>
+                <div class="progress-bar bg-primary" role="progressbar" style="width: <?php echo e(min(100,$pct_call)); ?>%;" aria-valuenow="<?php echo e($pct_call); ?>" aria-valuemin="0" aria-valuemax="100"></div>
             </div>
         </div>
     </div>
@@ -448,12 +448,12 @@
     <div class="col-md-3">
         <div class="stat-card p-3">
             <div class="d-flex justify-content-between align-items-center">
-                <div><strong>GT</strong> {!! $icon_gt !!}</div>
-                <small>{{ $pct_gt }}%</small>
+                <div><strong>GT</strong> <?php echo $icon_gt; ?></div>
+                <small><?php echo e($pct_gt); ?>%</small>
             </div>
-            <div class="mb-2"><small class="text-muted">Realisasi: {{ number_format($real_gt) }} — Anggaran: {{ number_format($budget_gt) }}</small></div>
+            <div class="mb-2"><small class="text-muted">Realisasi: <?php echo e(number_format($real_gt)); ?> — Anggaran: <?php echo e(number_format($budget_gt)); ?></small></div>
             <div class="progress" style="height:10px">
-                <div class="progress-bar bg-info" role="progressbar" style="width: {{ min(100,$pct_gt) }}%;" aria-valuenow="{{ $pct_gt }}" aria-valuemin="0" aria-valuemax="100"></div>
+                <div class="progress-bar bg-info" role="progressbar" style="width: <?php echo e(min(100,$pct_gt)); ?>%;" aria-valuenow="<?php echo e($pct_gt); ?>" aria-valuemin="0" aria-valuemax="100"></div>
             </div>
         </div>
     </div>
@@ -461,12 +461,12 @@
     <div class="col-md-3">
         <div class="stat-card p-3">
             <div class="d-flex justify-content-between align-items-center">
-                <div><strong>Produksi Pemanduan</strong> {!! $icon_pemanduan !!}</div>
-                <small>{{ $pct_pemanduan }}%</small>
+                <div><strong>Produksi Pemanduan</strong> <?php echo $icon_pemanduan; ?></div>
+                <small><?php echo e($pct_pemanduan); ?>%</small>
             </div>
-            <div class="mb-2"><small class="text-muted">Realisasi: {{ number_format($real_pemanduan) }} — Anggaran: {{ number_format($budget_pemanduan) }}</small></div>
+            <div class="mb-2"><small class="text-muted">Realisasi: <?php echo e(number_format($real_pemanduan)); ?> — Anggaran: <?php echo e(number_format($budget_pemanduan)); ?></small></div>
             <div class="progress" style="height:10px">
-                <div class="progress-bar bg-success" role="progressbar" style="width: {{ min(100,$pct_pemanduan) }}%;" aria-valuenow="{{ $pct_pemanduan }}" aria-valuemin="0" aria-valuemax="100"></div>
+                <div class="progress-bar bg-success" role="progressbar" style="width: <?php echo e(min(100,$pct_pemanduan)); ?>%;" aria-valuenow="<?php echo e($pct_pemanduan); ?>" aria-valuemin="0" aria-valuemax="100"></div>
             </div>
         </div>
     </div>
@@ -474,12 +474,12 @@
     <div class="col-md-3">
         <div class="stat-card p-3">
             <div class="d-flex justify-content-between align-items-center">
-                <div><strong>Produksi Penundaan</strong> {!! $icon_penundaan !!}</div>
-                <small>{{ $pct_penundaan }}%</small>
+                <div><strong>Produksi Penundaan</strong> <?php echo $icon_penundaan; ?></div>
+                <small><?php echo e($pct_penundaan); ?>%</small>
             </div>
-            <div class="mb-2"><small class="text-muted">Realisasi: {{ number_format($real_penundaan) }} — Anggaran: {{ number_format($budget_penundaan) }}</small></div>
+            <div class="mb-2"><small class="text-muted">Realisasi: <?php echo e(number_format($real_penundaan)); ?> — Anggaran: <?php echo e(number_format($budget_penundaan)); ?></small></div>
             <div class="progress" style="height:10px">
-                <div class="progress-bar bg-warning" role="progressbar" style="width: {{ min(100,$pct_penundaan) }}%;" aria-valuenow="{{ $pct_penundaan }}" aria-valuemin="0" aria-valuemax="100"></div>
+                <div class="progress-bar bg-warning" role="progressbar" style="width: <?php echo e(min(100,$pct_penundaan)); ?>%;" aria-valuenow="<?php echo e($pct_penundaan); ?>" aria-valuemin="0" aria-valuemax="100"></div>
             </div>
         </div>
     </div>
@@ -519,13 +519,13 @@
         <div class="stat-card p-3">
             <h6 class="mb-3">
                 <i class="bi bi-geo-alt-fill"></i> Breakdown Per Wilayah
-                @if($isYTD)
+                <?php if($isYTD): ?>
                     <small class="text-info d-block mt-1" style="font-size: 0.75rem;">
-                        <i class="bi bi-calendar-range"></i> Data Year-to-Date (Kumulatif Jan - {{ $periodeParts[0] }}/{{ $periodeParts[1] }})
+                        <i class="bi bi-calendar-range"></i> Data Year-to-Date (Kumulatif Jan - <?php echo e($periodeParts[0]); ?>/<?php echo e($periodeParts[1]); ?>)
                     </small>
-                @endif
+                <?php endif; ?>
             </h6>
-            @if(!empty($trafikData) && count($trafikData) > 0)
+            <?php if(!empty($trafikData) && count($trafikData) > 0): ?>
                 <div class="table-responsive">
                     <table class="table table-hover table-bordered mb-0 breakdown-table">
                         <thead>
@@ -534,29 +534,29 @@
                                 <th rowspan="2" class="align-middle text-center" style="background-color: #f3f4f6; font-weight: 600; width: 80px;">Satuan</th>
                                 <th class="text-center header-last-year">
                                     Realisasi Tahun Lalu
-                                    @if($isYTD)
+                                    <?php if($isYTD): ?>
                                         <br><small class="text-muted">(YTD)</small>
-                                    @endif
+                                    <?php endif; ?>
                                 </th>
                                 <th class="text-center header-budget">
                                     Anggaran
-                                    @if($isYTD)
+                                    <?php if($isYTD): ?>
                                         <br><small class="text-muted">(YTD)</small>
-                                    @endif
+                                    <?php endif; ?>
                                 </th>
                                 <th class="text-center header-realisasi">
                                     Realisasi
-                                    @if($isYTD)
+                                    <?php if($isYTD): ?>
                                         <br><small class="text-muted">(YTD)</small>
-                                    @endif
+                                    <?php endif; ?>
                                 </th>
                                 <th class="text-center header-trend">Trend (Realisasi vs Anggaran)</th>
                                 <th class="text-center header-yoy">YoY Growth</th>
                             </tr>
                         </thead>
                         <tbody>
-                            @foreach($trafikData as $wilayah => $wilData)
-                                @php
+                            <?php $__currentLoopData = $trafikData; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $wilayah => $wilData): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
+                                <?php
                                     $realCall = $wilData['realisasi_call'] ?? 0;
                                     $realGt = $wilData['realisasi_gt'] ?? 0;
                                     $budgetCall = $wilData['anggaran_call'] ?? 0;
@@ -583,31 +583,31 @@
                                     $yoyGtClass = $yoyGt >= 0 ? 'text-success' : 'text-danger';
                                     $yoyCallIcon = $yoyCall > 0 ? '▲' : ($yoyCall < 0 ? '▼' : '−');
                                     $yoyGtIcon = $yoyGt > 0 ? '▲' : ($yoyGt < 0 ? '▼' : '−');
-                                @endphp
+                                ?>
                                 <tr>
-                                    <td rowspan="2" class="align-middle wilayah-cell">{{ strtoupper($wilayah) }}</td>
+                                    <td rowspan="2" class="align-middle wilayah-cell"><?php echo e(strtoupper($wilayah)); ?></td>
                                     <td class="text-center" style="background-color: #f9fafb; font-weight: 500;">Call</td>
-                                    <td class="text-end col-last-year">@if($lastYearCall > 0) {{ number_format($lastYearCall) }} @else <span class="text-muted">-</span> @endif</td>
-                                    <td class="text-end col-budget">{{ number_format($budgetCall) }}</td>
-                                    <td class="text-end col-realisasi" style="font-weight: 600;">{{ number_format($realCall) }}</td>
-                                    <td class="text-end {{ $callClass }}" style="font-weight: 600;"><span style="font-size: 0.85rem;">{{ $callIcon }}</span> {{ $trendCall >= 0 ? '+' : '' }}{{ number_format($trendCall) }}<div class="small" style="font-weight: 400;">({{ $trendCallPct >= 0 ? '+' : '' }}{{ $trendCallPct }}%)</div></td>
-                                    <td class="text-end {{ $yoyCallClass }} col-yoy" style="font-weight: 600;">@if($lastYearCall > 0)<span style="font-size: 0.85rem;">{{ $yoyCallIcon }}</span> {{ $yoyCall >= 0 ? '+' : '' }}{{ number_format($yoyCall) }}<div class="small" style="font-weight: 400;">({{ $yoyCallPct >= 0 ? '+' : '' }}{{ $yoyCallPct }}%)</div>@else<span class="text-muted">N/A</span>@endif</td>
+                                    <td class="text-end col-last-year"><?php if($lastYearCall > 0): ?> <?php echo e(number_format($lastYearCall)); ?> <?php else: ?> <span class="text-muted">-</span> <?php endif; ?></td>
+                                    <td class="text-end col-budget"><?php echo e(number_format($budgetCall)); ?></td>
+                                    <td class="text-end col-realisasi" style="font-weight: 600;"><?php echo e(number_format($realCall)); ?></td>
+                                    <td class="text-end <?php echo e($callClass); ?>" style="font-weight: 600;"><span style="font-size: 0.85rem;"><?php echo e($callIcon); ?></span> <?php echo e($trendCall >= 0 ? '+' : ''); ?><?php echo e(number_format($trendCall)); ?><div class="small" style="font-weight: 400;">(<?php echo e($trendCallPct >= 0 ? '+' : ''); ?><?php echo e($trendCallPct); ?>%)</div></td>
+                                    <td class="text-end <?php echo e($yoyCallClass); ?> col-yoy" style="font-weight: 600;"><?php if($lastYearCall > 0): ?><span style="font-size: 0.85rem;"><?php echo e($yoyCallIcon); ?></span> <?php echo e($yoyCall >= 0 ? '+' : ''); ?><?php echo e(number_format($yoyCall)); ?><div class="small" style="font-weight: 400;">(<?php echo e($yoyCallPct >= 0 ? '+' : ''); ?><?php echo e($yoyCallPct); ?>%)</div><?php else: ?><span class="text-muted">N/A</span><?php endif; ?></td>
                                 </tr>
                                 <tr>
                                     <td class="text-center" style="background-color: #f9fafb; font-weight: 500;">GT</td>
-                                    <td class="text-end col-last-year">@if($lastYearGt > 0) {{ number_format($lastYearGt) }} @else <span class="text-muted">-</span> @endif</td>
-                                    <td class="text-end col-budget">{{ number_format($budgetGt) }}</td>
-                                    <td class="text-end col-realisasi" style="font-weight: 600;">{{ number_format($realGt) }}</td>
-                                    <td class="text-end {{ $gtClass }}" style="font-weight: 600;"><span style="font-size: 0.85rem;">{{ $gtIcon }}</span> {{ $trendGt >= 0 ? '+' : '' }}{{ number_format($trendGt) }}<div class="small" style="font-weight: 400;">({{ $trendGtPct >= 0 ? '+' : '' }}{{ $trendGtPct }}%)</div></td>
-                                    <td class="text-end {{ $yoyGtClass }} col-yoy" style="font-weight: 600;">@if($lastYearGt > 0)<span style="font-size: 0.85rem;">{{ $yoyGtIcon }}</span> {{ $yoyGt >= 0 ? '+' : '' }}{{ number_format($yoyGt) }}<div class="small" style="font-weight: 400;">({{ $yoyGtPct >= 0 ? '+' : '' }}{{ $yoyGtPct }}%)</div>@else<span class="text-muted">N/A</span>@endif</td>
+                                    <td class="text-end col-last-year"><?php if($lastYearGt > 0): ?> <?php echo e(number_format($lastYearGt)); ?> <?php else: ?> <span class="text-muted">-</span> <?php endif; ?></td>
+                                    <td class="text-end col-budget"><?php echo e(number_format($budgetGt)); ?></td>
+                                    <td class="text-end col-realisasi" style="font-weight: 600;"><?php echo e(number_format($realGt)); ?></td>
+                                    <td class="text-end <?php echo e($gtClass); ?>" style="font-weight: 600;"><span style="font-size: 0.85rem;"><?php echo e($gtIcon); ?></span> <?php echo e($trendGt >= 0 ? '+' : ''); ?><?php echo e(number_format($trendGt)); ?><div class="small" style="font-weight: 400;">(<?php echo e($trendGtPct >= 0 ? '+' : ''); ?><?php echo e($trendGtPct); ?>%)</div></td>
+                                    <td class="text-end <?php echo e($yoyGtClass); ?> col-yoy" style="font-weight: 600;"><?php if($lastYearGt > 0): ?><span style="font-size: 0.85rem;"><?php echo e($yoyGtIcon); ?></span> <?php echo e($yoyGt >= 0 ? '+' : ''); ?><?php echo e(number_format($yoyGt)); ?><div class="small" style="font-weight: 400;">(<?php echo e($yoyGtPct >= 0 ? '+' : ''); ?><?php echo e($yoyGtPct); ?>%)</div><?php else: ?><span class="text-muted">N/A</span><?php endif; ?></td>
                                 </tr>
-                            @endforeach
+                            <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>
                         </tbody>
                     </table>
                 </div>
-            @else
+            <?php else: ?>
                 <div class="alert alert-info mb-0"><i class="bi bi-info-circle"></i> Tidak ada data trafik untuk ditampilkan.</div>
-            @endif
+            <?php endif; ?>
         </div>
     </div>
 
@@ -615,13 +615,13 @@
         <div class="stat-card p-3">
             <h6 class="mb-3">
                 <i class="bi bi-table"></i> Data Produksi Pemanduan dan Penundaan
-                @if($isYTD)
+                <?php if($isYTD): ?>
                     <small class="text-info d-block mt-1" style="font-size: 0.75rem;">
-                        <i class="bi bi-calendar-range"></i> Data Year-to-Date (Kumulatif Jan - {{ $periodeParts[0] }}/{{ $periodeParts[1] }})
+                        <i class="bi bi-calendar-range"></i> Data Year-to-Date (Kumulatif Jan - <?php echo e($periodeParts[0]); ?>/<?php echo e($periodeParts[1]); ?>)
                     </small>
-                @endif
+                <?php endif; ?>
             </h6>
-            @if(!empty($rkapData) && count($rkapData) > 0)
+            <?php if(!empty($rkapData) && count($rkapData) > 0): ?>
                 <div class="table-responsive">
                     <table class="table table-hover table-bordered mb-0 breakdown-table">
                         <thead>
@@ -631,34 +631,34 @@
                                 <th rowspan="2" class="align-middle text-center" style="background-color: #f3f4f6; font-weight: 600; width: 100px;">Satuan</th>
                                 <th class="text-center header-last-year">
                                     Realisasi Tahun Lalu
-                                    @if($isYTD)
+                                    <?php if($isYTD): ?>
                                         <br><small class="text-muted">(YTD)</small>
-                                    @endif
+                                    <?php endif; ?>
                                 </th>
                                 <th class="text-center header-budget">
                                     Anggaran
-                                    @if($isYTD)
+                                    <?php if($isYTD): ?>
                                         <br><small class="text-muted">(YTD)</small>
-                                    @endif
+                                    <?php endif; ?>
                                 </th>
                                 <th class="text-center header-realisasi">
                                     Realisasi
-                                    @if($isYTD)
+                                    <?php if($isYTD): ?>
                                         <br><small class="text-muted">(YTD)</small>
-                                    @endif
+                                    <?php endif; ?>
                                 </th>
                                 <th class="text-center header-trend">Trend (Realisasi vs Anggaran)</th>
                                 <th class="text-center header-yoy">YoY Growth</th>
                             </tr>
                         </thead>
                         <tbody>
-                            @foreach($rkapData as $wilayah => $layananData)
-                                @php
+                            <?php $__currentLoopData = $rkapData; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $wilayah => $layananData): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
+                                <?php
                                     $layananList = array_keys($layananData);
                                     $layananCount = count($layananList);
-                                @endphp
-                                @foreach($layananList as $index => $layanan)
-                                    @php
+                                ?>
+                                <?php $__currentLoopData = $layananList; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $index => $layanan): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
+                                    <?php
                                         $data = $layananData[$layanan];
                                         $realisasi = $data['realisasi'] ?? 0;
                                         $anggaran = $data['anggaran'] ?? 0;
@@ -676,27 +676,27 @@
 
                                         $yoyClass = $yoy >= 0 ? 'text-success' : 'text-danger';
                                         $yoyIcon = $yoy > 0 ? '▲' : ($yoy < 0 ? '▼' : '−');
-                                    @endphp
+                                    ?>
                                     <tr>
-                                        @if($index == 0)
-                                            <td rowspan="{{ $layananCount }}" class="align-middle wilayah-cell">{{ strtoupper($wilayah) }}</td>
-                                        @endif
-                                        <td class="text-center" style="background-color: #f9fafb; font-weight: 500;">{{ strtoupper($layanan) }}</td>
-                                        <td class="text-center" style="background-color: #f9fafb; font-weight: 500; color: #666;">{{ $satuan }}</td>
-                                        <td class="text-end col-last-year">@if($lastYear > 0) {{ number_format($lastYear) }} @else <span class="text-muted">-</span> @endif</td>
-                                        <td class="text-end col-budget">{{ number_format($anggaran) }}</td>
-                                        <td class="text-end col-realisasi" style="font-weight: 600;">{{ number_format($realisasi) }}</td>
-                                        <td class="text-end {{ $trendClass }}" style="font-weight: 600;"><span style="font-size: 0.85rem;">{{ $trendIcon }}</span> {{ $trend >= 0 ? '+' : '' }}{{ number_format($trend) }}<div class="small" style="font-weight: 400;">({{ $trendPct >= 0 ? '+' : '' }}{{ $trendPct }}%)</div></td>
-                                        <td class="text-end {{ $yoyClass }} col-yoy" style="font-weight: 600;">@if($lastYear > 0)<span style="font-size: 0.85rem;">{{ $yoyIcon }}</span> {{ $yoy >= 0 ? '+' : '' }}{{ number_format($yoy) }}<div class="small" style="font-weight: 400;">({{ $yoyPct >= 0 ? '+' : '' }}{{ $yoyPct }}%)</div>@else<span class="text-muted">N/A</span>@endif</td>
+                                        <?php if($index == 0): ?>
+                                            <td rowspan="<?php echo e($layananCount); ?>" class="align-middle wilayah-cell"><?php echo e(strtoupper($wilayah)); ?></td>
+                                        <?php endif; ?>
+                                        <td class="text-center" style="background-color: #f9fafb; font-weight: 500;"><?php echo e(strtoupper($layanan)); ?></td>
+                                        <td class="text-center" style="background-color: #f9fafb; font-weight: 500; color: #666;"><?php echo e($satuan); ?></td>
+                                        <td class="text-end col-last-year"><?php if($lastYear > 0): ?> <?php echo e(number_format($lastYear)); ?> <?php else: ?> <span class="text-muted">-</span> <?php endif; ?></td>
+                                        <td class="text-end col-budget"><?php echo e(number_format($anggaran)); ?></td>
+                                        <td class="text-end col-realisasi" style="font-weight: 600;"><?php echo e(number_format($realisasi)); ?></td>
+                                        <td class="text-end <?php echo e($trendClass); ?>" style="font-weight: 600;"><span style="font-size: 0.85rem;"><?php echo e($trendIcon); ?></span> <?php echo e($trend >= 0 ? '+' : ''); ?><?php echo e(number_format($trend)); ?><div class="small" style="font-weight: 400;">(<?php echo e($trendPct >= 0 ? '+' : ''); ?><?php echo e($trendPct); ?>%)</div></td>
+                                        <td class="text-end <?php echo e($yoyClass); ?> col-yoy" style="font-weight: 600;"><?php if($lastYear > 0): ?><span style="font-size: 0.85rem;"><?php echo e($yoyIcon); ?></span> <?php echo e($yoy >= 0 ? '+' : ''); ?><?php echo e(number_format($yoy)); ?><div class="small" style="font-weight: 400;">(<?php echo e($yoyPct >= 0 ? '+' : ''); ?><?php echo e($yoyPct); ?>%)</div><?php else: ?><span class="text-muted">N/A</span><?php endif; ?></td>
                                     </tr>
-                                @endforeach
-                            @endforeach
+                                <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>
+                            <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>
                         </tbody>
                     </table>
                 </div>
-            @else
+            <?php else: ?>
                 <div class="alert alert-info mb-0"><i class="bi bi-info-circle"></i> Tidak ada data satuan/layanan untuk ditampilkan.</div>
-            @endif
+            <?php endif; ?>
         </div>
     </div>
 </div>
@@ -707,11 +707,11 @@
         <div class="stat-card p-3">
             <h6>
                 <i class="bi bi-bar-chart-fill"></i> Perbandingan Call (Realisasi vs Anggaran)
-                @if($isYTD)
+                <?php if($isYTD): ?>
                     <small class="text-info d-block mt-1" style="font-size: 0.75rem;">
-                        <i class="bi bi-calendar-range"></i> Data Year-to-Date (Jan - {{ $periodeParts[0] }}/{{ $periodeParts[1] }})
+                        <i class="bi bi-calendar-range"></i> Data Year-to-Date (Jan - <?php echo e($periodeParts[0]); ?>/<?php echo e($periodeParts[1]); ?>)
                     </small>
-                @endif
+                <?php endif; ?>
             </h6>
             <div id="wilayahBarChart"></div>
         </div>
@@ -720,11 +720,11 @@
         <div class="stat-card p-3">
             <h6>
                 <i class="bi bi-bar-chart-fill"></i> Perbandingan Produksi per Wilayah (Realisasi vs Anggaran)
-                @if($isYTD)
+                <?php if($isYTD): ?>
                     <small class="text-info d-block mt-1" style="font-size: 0.75rem;">
-                        <i class="bi bi-calendar-range"></i> Data Year-to-Date (Jan - {{ $periodeParts[0] }}/{{ $periodeParts[1] }})
+                        <i class="bi bi-calendar-range"></i> Data Year-to-Date (Jan - <?php echo e($periodeParts[0]); ?>/<?php echo e($periodeParts[1]); ?>)
                     </small>
-                @endif
+                <?php endif; ?>
             </h6>
             <div id="produksiBarChart"></div>
         </div>
@@ -734,7 +734,7 @@
 </div>
 
 <script>
-@php
+<?php
     // Prepare data for wilayah bar chart
     $wilayah_labels = [];
     $wilayah_call_real = [];
@@ -796,15 +796,15 @@
         $produksi_pemanduan_real = [120000000, 140000000, 135000000, 155000000];
         $produksi_pemanduan_budget = [125000000, 145000000, 130000000, 150000000];
     }
-@endphp
+?>
 
 document.addEventListener('DOMContentLoaded', function(){
     // Call & GT Chart
-    const wilayahLabels = @json($wilayah_labels);
-    const callReal = @json($wilayah_call_real);
-    const callBudget = @json($wilayah_call_budget);
-    const gtReal = @json($wilayah_gt_real);
-    const gtBudget = @json($wilayah_gt_budget);
+    const wilayahLabels = <?php echo json_encode($wilayah_labels, 15, 512) ?>;
+    const callReal = <?php echo json_encode($wilayah_call_real, 15, 512) ?>;
+    const callBudget = <?php echo json_encode($wilayah_call_budget, 15, 512) ?>;
+    const gtReal = <?php echo json_encode($wilayah_gt_real, 15, 512) ?>;
+    const gtBudget = <?php echo json_encode($wilayah_gt_budget, 15, 512) ?>;
 
     // Compute Call variance array (Realisasi - Anggaran)
     const callVariance = callReal.map((v, i) => (v || 0) - (callBudget[i] || 0));
@@ -860,11 +860,11 @@ document.addEventListener('DOMContentLoaded', function(){
     new ApexCharts(document.querySelector('#wilayahBarChart'), varianceOptions).render();
 
     // Production Chart
-    const produksiLabels = @json($produksi_labels);
-    const penundaanReal = @json($produksi_penundaan_real);
-    const penundaanBudget = @json($produksi_penundaan_budget);
-    const pemanduanReal = @json($produksi_pemanduan_real);
-    const pemanduanBudget = @json($produksi_pemanduan_budget);
+    const produksiLabels = <?php echo json_encode($produksi_labels, 15, 512) ?>;
+    const penundaanReal = <?php echo json_encode($produksi_penundaan_real, 15, 512) ?>;
+    const penundaanBudget = <?php echo json_encode($produksi_penundaan_budget, 15, 512) ?>;
+    const pemanduanReal = <?php echo json_encode($produksi_pemanduan_real, 15, 512) ?>;
+    const pemanduanBudget = <?php echo json_encode($produksi_pemanduan_budget, 15, 512) ?>;
 
     const produksiBarOptions = {
         chart: { 
@@ -1019,3 +1019,4 @@ document.addEventListener('DOMContentLoaded', function(){
 
 </body>
 </html>
+<?php /**PATH D:\project ai\lhgk\resources\views/trafik_simple.blade.php ENDPATH**/ ?>
