@@ -127,20 +127,28 @@ class SarprasController extends Controller
 
         $regionalGroups = $this->getRegionalGroups();
 
-        $allBranches = Lhgk::select('NM_BRANCH')
-            ->whereNotNull('NM_BRANCH')
-            ->where('NM_BRANCH', '!=', '')
-            ->groupBy('NM_BRANCH')
-            ->orderBy('NM_BRANCH')
-            ->pluck('NM_BRANCH')
-            ->toArray();
+        try {
+            $allBranches = Lhgk::select('NM_BRANCH')
+                ->whereNotNull('NM_BRANCH')
+                ->where('NM_BRANCH', '!=', '')
+                ->groupBy('NM_BRANCH')
+                ->orderBy('NM_BRANCH')
+                ->pluck('NM_BRANCH')
+                ->toArray();
+        } catch (\Exception $e) {
+            $allBranches = [];
+        }
 
-        $periods = Lhgk::select('PERIODE')
-            ->whereNotNull('PERIODE')
-            ->where('PERIODE', '!=', '')
-            ->groupBy('PERIODE')
-            ->orderByRaw("STR_TO_DATE(CONCAT('01-', PERIODE), '%d-%m-%Y') DESC")
-            ->pluck('PERIODE');
+        try {
+            $periods = Lhgk::select('PERIODE')
+                ->whereNotNull('PERIODE')
+                ->where('PERIODE', '!=', '')
+                ->groupBy('PERIODE')
+                ->orderByRaw("STR_TO_DATE(CONCAT('01-', PERIODE), '%d-%m-%Y') DESC")
+                ->pluck('PERIODE');
+        } catch (\Exception $e) {
+            $periods = collect();
+        }
 
         $mstRows = collect();
         $mstColumns = [];
