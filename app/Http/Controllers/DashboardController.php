@@ -15,21 +15,51 @@ class DashboardController extends Controller
         $selectedBranch = $request->get('cabang', 'all');
 
         $regionalGroups = $this->getRegionalGroups();
+        // initialize variables to ensure view always receives defined values
+        $statistics = collect();
+        $chartData = collect();
+        $topPilot = null;
+        $shipStatsByGT = collect();
+        $realisasiPandu = (object)['web' => 0, 'mobile' => 0, 'partial' => 0];
+        $realisasiTunda = (object)['web' => 0, 'mobile' => 0, 'partial' => 0];
+        $totalTundaDistinct = 0;
+        $totalOverall = [
+            'total_nota' => 0,
+            'total_pandu' => 0,
+            'total_pendapatan_pandu' => 0,
+            'total_pendapatan_tunda' => 0,
+            'total_transaksi' => 0,
+            'transaksi_wt_di_atas_30' => 0,
+            'rata_rata_wt' => 0,
+            'max_wt' => 0,
+            'nota_batal' => 0,
+            'menunggu_nota' => 0,
+            'belum_verifikasi' => 0,
+            'kecepatan_terbit_nota' => 0
+        ];
 
-        $allBranches = Lhgk::select('NM_BRANCH')
-            ->whereNotNull('NM_BRANCH')
-            ->where('NM_BRANCH', '!=', '')
-            ->groupBy('NM_BRANCH')
-            ->orderBy('NM_BRANCH')
-            ->pluck('NM_BRANCH')
-            ->toArray();
+        try {
+            $allBranches = Lhgk::select('NM_BRANCH')
+                ->whereNotNull('NM_BRANCH')
+                ->where('NM_BRANCH', '!=', '')
+                ->groupBy('NM_BRANCH')
+                ->orderBy('NM_BRANCH')
+                ->pluck('NM_BRANCH')
+                ->toArray();
+        } catch (\Exception $e) {
+            $allBranches = [];
+        }
 
-        $periods = Lhgk::select('PERIODE')
-            ->whereNotNull('PERIODE')
-            ->where('PERIODE', '!=', '')
-            ->groupBy('PERIODE')
-            ->orderByRaw("STR_TO_DATE(CONCAT('01-', PERIODE), '%d-%m-%Y') DESC")
-            ->pluck('PERIODE');
+        try {
+            $periods = Lhgk::select('PERIODE')
+                ->whereNotNull('PERIODE')
+                ->where('PERIODE', '!=', '')
+                ->groupBy('PERIODE')
+                ->orderByRaw("STR_TO_DATE(CONCAT('01-', PERIODE), '%d-%m-%Y') DESC")
+                ->pluck('PERIODE');
+        } catch (\Exception $e) {
+            $periods = collect();
+        }
 
         // Initialize statistics - show individual pilot cards like in production
         $statistics = collect();
