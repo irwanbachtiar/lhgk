@@ -35,7 +35,7 @@
         <div class="row">
             <div class="col-12">
                 <div class="card stat-card p-4">
-                    <h4>Halaman Sarpras</h4>
+                    <h4>Halaman Sarpras xxxxx </h4>
                     <p class="text-muted">Halaman ini menggunakan style yang sama seperti halaman lain di dashboard. Tambahkan konten sarpras di sini.</p>
 
                     <div class="mt-3">
