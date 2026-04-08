@@ -18,13 +18,13 @@
         <div class="container-fluid">
             <span class="navbar-brand mb-0 h1"><i class="bi bi-gear-fill"></i> Sarpras</span>
             <div>
-                <a href="{{ route('dashboard') }}" class="btn btn-light btn-sm me-2">
+                <a href="<?php echo e(route('dashboard')); ?>" class="btn btn-light btn-sm me-2">
                     <i class="bi bi-speedometer2"></i> Dashboard
                 </a>
-                <a href="{{ route('dashboard.operasional') }}" class="btn btn-light btn-sm me-2">
+                <a href="<?php echo e(route('dashboard.operasional')); ?>" class="btn btn-light btn-sm me-2">
                     <i class="bi bi-kanban-fill"></i> Operasional
                 </a>
-                <a href="{{ route('monitoring.nota') }}" class="btn btn-light btn-sm">
+                <a href="<?php echo e(route('monitoring.nota')); ?>" class="btn btn-light btn-sm">
                     <i class="bi bi-file-earmark-text"></i> Monitoring Nota
                 </a>
             </div>
@@ -39,7 +39,7 @@
                     <p class="text-muted">Halaman ini menggunakan style yang sama seperti halaman lain di dashboard. Tambahkan konten sarpras di sini.</p>
 
                     <div class="mt-3">
-                        <form method="GET" action="{{ route('sarpras') }}" class="row g-2 align-items-center">
+                        <form method="GET" action="<?php echo e(route('sarpras')); ?>" class="row g-2 align-items-center">
                             <div class="col-md-4">
                                 <label class="form-label">Cabang</label>
                                 <select name="cabang" class="form-select" disabled>
@@ -60,13 +60,13 @@
 
                     <hr>
                     <div>
-                        @if(!empty($mstError))
-                            <div class="alert alert-danger">{{ $mstError }}</div>
-                        @else
-                            @if(isset($onlyPanduEndorsement) && $onlyPanduEndorsement)
-                                <div class="alert alert-success">Memeriksa kolom <strong>MASA BERLAKU ENDORSERMENT PANDU</strong>: <strong>{{ $preferredDateCol }}</strong></div>
-                            @endif
-                            @if(isset($mstRows) && $mstRows->count() > 0)
+                        <?php if(!empty($mstError)): ?>
+                            <div class="alert alert-danger"><?php echo e($mstError); ?></div>
+                        <?php else: ?>
+                            <?php if(isset($onlyPanduEndorsement) && $onlyPanduEndorsement): ?>
+                                <div class="alert alert-success">Memeriksa kolom <strong>MASA BERLAKU ENDORSERMENT PANDU</strong>: <strong><?php echo e($preferredDateCol); ?></strong></div>
+                            <?php endif; ?>
+                            <?php if(isset($mstRows) && $mstRows->count() > 0): ?>
                                 <div class="table-responsive mt-3">
                                     <table class="table table-sm table-striped">
                                         <thead>
@@ -78,29 +78,29 @@
                                             </tr>
                                         </thead>
                                         <tbody>
-                                            @foreach($mstRows as $row)
+                                            <?php $__currentLoopData = $mstRows; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $row): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
                                                 <tr>
-                                                    <td>{{ $row->name }}</td>
-                                                    <td>{{ $row->branch ?? '-' }}</td>
-                                                    <td>{{ $row->next_expiry ?? '-' }}</td>
+                                                    <td><?php echo e($row->name); ?></td>
+                                                    <td><?php echo e($row->branch ?? '-'); ?></td>
+                                                    <td><?php echo e($row->next_expiry ?? '-'); ?></td>
                                                     <td>
-                                                        @if(is_null($row->days_remaining))
+                                                        <?php if(is_null($row->days_remaining)): ?>
                                                             -
-                                                        @elseif($row->days_remaining < 0)
-                                                            <span class="text-danger">Expired {{ abs($row->days_remaining) }} hari lalu</span>
-                                                        @else
-                                                            {{ $row->days_remaining }} hari
-                                                        @endif
+                                                        <?php elseif($row->days_remaining < 0): ?>
+                                                            <span class="text-danger">Expired <?php echo e(abs($row->days_remaining)); ?> hari lalu</span>
+                                                        <?php else: ?>
+                                                            <?php echo e($row->days_remaining); ?> hari
+                                                        <?php endif; ?>
                                                     </td>
                                                 </tr>
-                                            @endforeach
+                                            <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>
                                         </tbody>
                                     </table>
                                 </div>
-                            @else
+                            <?php else: ?>
                                 <div class="alert alert-info">Tidak ada data mst_pandu yang akan expired dalam 3 bulan ke depan.</div>
-                            @endif
-                        @endif
+                            <?php endif; ?>
+                        <?php endif; ?>
                     </div>
                 </div>
             </div>
@@ -108,3 +108,4 @@
     </div>
 </body>
 </html>
+<?php /**PATH D:\project ai\lhgk\resources\views/sarpras.blade.php ENDPATH**/ ?>

@@ -198,6 +198,13 @@ class RegionalController extends Controller
             // Calculate DELEGATION specific totals (from WILAYAH branches only, exclude JAI)
             $delegationData = [];
             $delegations = ['PELINDO', 'SPJM', 'JAI'];
+
+            // Parse period for YTD calculation (format: MM-YYYY  e.g. "02-2026")
+            $periodeMonth = substr($selectedPeriode, 0, 2); // "02"
+            $periodeYear  = substr($selectedPeriode, 3);    // "2026"
+            $ytdStartLabel = '01-' . $periodeYear;          // "01-2026"
+
+            $delegationDataYtd = [];
             
             foreach ($delegations as $delegation) {
                 $delPandu = DB::connection('dashboard_phinnisi')->table('pandu_prod')
@@ -224,6 +231,36 @@ class RegionalController extends Controller
                     'pandu' => $delPandu ?? 0,
                     'tunda' => $delTunda ?? 0,
                     'transaksi' => $delTransaksi
+                ];
+
+                // YTD: sum from January to selected month in the same year
+                $ytdPandu = DB::connection('dashboard_phinnisi')->table('pandu_prod')
+                    ->whereIn('NAME_BRANCH', $wilayahBranches)
+                    ->where('DELEGATION', $delegation)
+                    ->whereRaw("DATE_FORMAT(STR_TO_DATE(INVOICE_DATE, '%d-%m-%Y'), '%Y') = ?", [$periodeYear])
+                    ->whereRaw("DATE_FORMAT(STR_TO_DATE(INVOICE_DATE, '%d-%m-%Y'), '%m') <= ?", [$periodeMonth])
+                    ->sum('REVENUE');
+
+                $ytdTunda = DB::connection('dashboard_phinnisi')->table('tunda_prod')
+                    ->whereIn('NAME_BRANCH', $wilayahBranches)
+                    ->where('DELEGATION', $delegation)
+                    ->whereRaw("DATE_FORMAT(STR_TO_DATE(INVOICE_DATE, '%d-%m-%Y'), '%Y') = ?", [$periodeYear])
+                    ->whereRaw("DATE_FORMAT(STR_TO_DATE(INVOICE_DATE, '%d-%m-%Y'), '%m') <= ?", [$periodeMonth])
+                    ->sum('REVENUE');
+
+                $ytdTransaksi = DB::connection('dashboard_phinnisi')->table('pandu_prod')
+                    ->select('BILLING')
+                    ->whereIn('NAME_BRANCH', $wilayahBranches)
+                    ->where('DELEGATION', $delegation)
+                    ->whereRaw("DATE_FORMAT(STR_TO_DATE(INVOICE_DATE, '%d-%m-%Y'), '%Y') = ?", [$periodeYear])
+                    ->whereRaw("DATE_FORMAT(STR_TO_DATE(INVOICE_DATE, '%d-%m-%Y'), '%m') <= ?", [$periodeMonth])
+                    ->distinct()
+                    ->count('BILLING');
+
+                $delegationDataYtd[$delegation] = [
+                    'pandu' => $ytdPandu ?? 0,
+                    'tunda' => $ytdTunda ?? 0,
+                    'transaksi' => $ytdTransaksi
                 ];
             }
             
@@ -253,6 +290,8 @@ class RegionalController extends Controller
             $jaiTotalTunda = 0;
             $jaiTotalTransaksi = 0;
             $delegationData = [];
+            $delegationDataYtd = [];
+            $ytdStartLabel = null;
         }
 
         return view('regional-revenue', compact(
@@ -266,7 +305,9 @@ class RegionalController extends Controller
             'jaiTotalPandu',
             'jaiTotalTunda',
             'jaiTotalTransaksi',
-            'delegationData'
+            'delegationData',
+            'delegationDataYtd',
+            'ytdStartLabel'
         ));
     }
     

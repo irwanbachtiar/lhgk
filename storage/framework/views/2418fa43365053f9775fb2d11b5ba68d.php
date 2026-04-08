@@ -111,22 +111,22 @@
         <div class="container-fluid">
             <span class="navbar-brand mb-0 h1"><i class="bi bi-geo-alt"></i> Pendapatan Per Wilayah</span>
             <div>
-                <a href="{{ route('dashboard.operasional') }}" class="btn btn-light btn-sm me-2">
+                <a href="<?php echo e(route('dashboard.operasional')); ?>" class="btn btn-light btn-sm me-2">
                     <i class="bi bi-kanban-fill"></i> Dashboard Operasional
                 </a>
-                <a href="{{ route('dashboard') }}" class="btn btn-light btn-sm me-2">
+                <a href="<?php echo e(route('dashboard')); ?>" class="btn btn-light btn-sm me-2">
                     <i class="bi bi-graph-up-arrow"></i> Dashboard LHGK
                 </a>
-                <a href="{{ route('regional.detail') }}" class="btn btn-outline-light btn-sm me-2">
+                <a href="<?php echo e(route('regional.detail')); ?>" class="btn btn-outline-light btn-sm me-2">
                     <i class="bi bi-table"></i> Detail Per Cabang
                 </a>
-                <a href="{{ route('anper') }}" class="btn btn-light btn-sm me-2">
+                <a href="<?php echo e(route('anper')); ?>" class="btn btn-light btn-sm me-2">
                     <i class="bi bi-building-fill-gear"></i> Pendapatan Anper
                 </a>
-                <a href="{{ route('monitoring.nota') }}" class="btn btn-light btn-sm me-2">
+                <a href="<?php echo e(route('monitoring.nota')); ?>" class="btn btn-light btn-sm me-2">
                     <i class="bi bi-file-earmark-text"></i> Monitoring Nota
                 </a>
-                <a href="{{ route('analisis.kelelahan') }}" class="btn btn-light btn-sm">
+                <a href="<?php echo e(route('analisis.kelelahan')); ?>" class="btn btn-light btn-sm">
                     <i class="bi bi-activity"></i> Analisis Kelelahan
                 </a>
             </div>
@@ -136,54 +136,55 @@
     <div class="container-fluid">
         <!-- Filter Section -->
         <div class="filter-section">
-            <form method="GET" action="{{ route('regional.revenue') }}" class="row align-items-center">
+            <form method="GET" action="<?php echo e(route('regional.revenue')); ?>" class="row align-items-center">
                 <div class="col-md-2">
                     <label class="form-label"><i class="bi bi-funnel"></i> Filter Periode:</label>
                 </div>
                 <div class="col-md-4">
                     <div class="d-flex">
                         <select name="periode" class="form-select filter-input">
-                            <option value="all" {{ $selectedPeriode == 'all' ? 'selected' : '' }}>Pilih Periode</option>
-                            @foreach($periods as $period)
-                                <option value="{{ $period }}" {{ $selectedPeriode == $period ? 'selected' : '' }}>
-                                    {{ $period }}
+                            <option value="all" <?php echo e($selectedPeriode == 'all' ? 'selected' : ''); ?>>Pilih Periode</option>
+                            <?php $__currentLoopData = $periods; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $period): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
+                                <option value="<?php echo e($period); ?>" <?php echo e($selectedPeriode == $period ? 'selected' : ''); ?>>
+                                    <?php echo e($period); ?>
+
                                 </option>
-                            @endforeach
+                            <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>
                         </select>
                         <button type="button" class="btn btn-primary ms-2" onclick="document.getElementById('globalLoading').style.display='flex'; this.closest('form').submit();">Apply</button>
                     </div>
                 </div>
                 <div class="col-md-3">
-                    @if($selectedPeriode != 'all')
-                        <a href="{{ route('regional.revenue') }}" class="btn btn-outline-secondary">
+                    <?php if($selectedPeriode != 'all'): ?>
+                        <a href="<?php echo e(route('regional.revenue')); ?>" class="btn btn-outline-secondary">
                             <i class="bi bi-x-circle"></i> Reset Filter
                         </a>
-                    @endif
+                    <?php endif; ?>
                 </div>
             </form>
         </div>
 
-        @if($selectedPeriode == 'all')
+        <?php if($selectedPeriode == 'all'): ?>
             <div class="alert alert-info text-center">
                 <i class="bi bi-info-circle fs-1"></i>
                 <h5 class="mt-3">Silakan pilih periode untuk melihat data pendapatan per wilayah</h5>
                 <p class="mb-0">Data akan dikelompokkan berdasarkan 4 wilayah regional.</p>
             </div>
-        @else
+        <?php else: ?>
             <!-- Summary Cards -->
             <div class="row mb-4">
                 <div class="col-12 mb-2">
                     <h5 class="text-muted"><i class="bi bi-bar-chart"></i> Summary Pelindo dan SPJM</h5>
                 </div>
-                @php
+                <?php
                     // Use controller-provided totals for WILAYAH only (excluding JAI)
                     $totalTunda = $totalTundaRevenue ?? 0;
                     $totalAll = $totalPandu + $totalTunda;
-                @endphp
+                ?>
                 <div class="col-md-3">
                     <div class="card stat-card">
                         <div class="card-body text-center">
-                            <h3 class="text-primary">{{ number_format($totalTransaksi ?? 0) }}</h3>
+                            <h3 class="text-primary"><?php echo e(number_format($totalTransaksi ?? 0)); ?></h3>
                             <p class="mb-0"><i class="bi bi-file-earmark-text"></i> Total Transaksi</p>
                         </div>
                     </div>
@@ -191,7 +192,7 @@
                 <div class="col-md-3">
                     <div class="card stat-card">
                         <div class="card-body text-center">
-                            <h3 class="text-success">Rp {{ number_format($totalPandu, 0, ',', '.') }}</h3>
+                            <h3 class="text-success">Rp <?php echo e(number_format($totalPandu, 0, ',', '.')); ?></h3>
                             <p class="mb-0"><i class="bi bi-cash-coin"></i> Total Pandu</p>
                         </div>
                     </div>
@@ -199,7 +200,7 @@
                 <div class="col-md-3">
                     <div class="card stat-card">
                         <div class="card-body text-center">
-                            <h3 class="text-info">Rp {{ number_format($totalTunda, 0, ',', '.') }}</h3>
+                            <h3 class="text-info">Rp <?php echo e(number_format($totalTunda, 0, ',', '.')); ?></h3>
                             <p class="mb-0"><i class="bi bi-cash-stack"></i> Total Tunda</p>
                         </div>
                     </div>
@@ -207,7 +208,7 @@
                 <div class="col-md-3">
                     <div class="card stat-card">
                         <div class="card-body text-center">
-                            <h3 class="text-warning">Rp {{ number_format($totalAll, 0, ',', '.') }}</h3>
+                            <h3 class="text-warning">Rp <?php echo e(number_format($totalAll, 0, ',', '.')); ?></h3>
                             <p class="mb-0"><i class="bi bi-graph-up"></i> Total Pendapatan</p>
                         </div>
                     </div>
@@ -219,13 +220,13 @@
                 <div class="col-12 mb-2">
                     <h5 class="text-muted"><i class="bi bi-building"></i> Summary JAI</h5>
                 </div>
-                @php
+                <?php
                     $jaiTotalAll = ($jaiTotalPandu ?? 0) + ($jaiTotalTunda ?? 0);
-                @endphp
+                ?>
                 <div class="col-md-3">
                     <div class="card stat-card" style="border: 2px solid #f59e0b;">
                         <div class="card-body text-center">
-                            <h3 class="text-primary">{{ number_format($jaiTotalTransaksi ?? 0) }}</h3>
+                            <h3 class="text-primary"><?php echo e(number_format($jaiTotalTransaksi ?? 0)); ?></h3>
                             <p class="mb-0"><i class="bi bi-file-earmark-text"></i> Total Transaksi JAI</p>
                         </div>
                     </div>
@@ -233,7 +234,7 @@
                 <div class="col-md-3">
                     <div class="card stat-card" style="border: 2px solid #f59e0b;">
                         <div class="card-body text-center">
-                            <h3 class="text-success">Rp {{ number_format($jaiTotalPandu ?? 0, 0, ',', '.') }}</h3>
+                            <h3 class="text-success">Rp <?php echo e(number_format($jaiTotalPandu ?? 0, 0, ',', '.')); ?></h3>
                             <p class="mb-0"><i class="bi bi-cash-coin"></i> Total Pandu JAI</p>
                         </div>
                     </div>
@@ -241,7 +242,7 @@
                 <div class="col-md-3">
                     <div class="card stat-card" style="border: 2px solid #f59e0b;">
                         <div class="card-body text-center">
-                            <h3 class="text-info">Rp {{ number_format($jaiTotalTunda ?? 0, 0, ',', '.') }}</h3>
+                            <h3 class="text-info">Rp <?php echo e(number_format($jaiTotalTunda ?? 0, 0, ',', '.')); ?></h3>
                             <p class="mb-0"><i class="bi bi-cash-stack"></i> Total Tunda JAI</p>
                         </div>
                     </div>
@@ -249,7 +250,7 @@
                 <div class="col-md-3">
                     <div class="card stat-card" style="border: 2px solid #f59e0b;">
                         <div class="card-body text-center">
-                            <h3 class="text-warning">Rp {{ number_format($jaiTotalAll, 0, ',', '.') }}</h3>
+                            <h3 class="text-warning">Rp <?php echo e(number_format($jaiTotalAll, 0, ',', '.')); ?></h3>
                             <p class="mb-0"><i class="bi bi-graph-up"></i> Total Pendapatan JAI</p>
                         </div>
                     </div>
@@ -257,13 +258,13 @@
             </div>
 
             <!-- Delegation Summary Cards -->
-            @if(!empty($delegationData))
+            <?php if(!empty($delegationData)): ?>
             <div class="row mb-4">
                 <div class="col-12 mb-2">
                     <h5 class="text-muted"><i class="bi bi-diagram-3"></i> Summary Per Pelimpahan (Wilayah 1-4)</h5>
                 </div>
-                @foreach(['PELINDO', 'SPJM'] as $delegation)
-                    @php
+                <?php $__currentLoopData = ['PELINDO', 'SPJM']; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $delegation): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
+                    <?php
                         $delData    = $delegationData[$delegation]    ?? ['pandu' => 0, 'tunda' => 0, 'transaksi' => 0];
                         $delYtd     = $delegationDataYtd[$delegation] ?? ['pandu' => 0, 'tunda' => 0, 'transaksi' => 0];
                         $delTotalAll    = $delData['pandu'] + $delData['tunda'];
@@ -272,71 +273,72 @@
                             'PELINDO' => '#667eea',
                             'SPJM' => '#43e97b'
                         ];
-                    @endphp
+                    ?>
                     <div class="col-md-6">
-                        <div class="card stat-card" style="border: 2px solid {{ $borderColors[$delegation] }};">
-                            <div class="card-header text-white" style="background: linear-gradient(135deg, {{ $borderColors[$delegation] }}, {{ $borderColors[$delegation] }}dd);">
-                                <h6 class="mb-0"><i class="bi bi-building"></i> {{ $delegation }}</h6>
+                        <div class="card stat-card" style="border: 2px solid <?php echo e($borderColors[$delegation]); ?>;">
+                            <div class="card-header text-white" style="background: linear-gradient(135deg, <?php echo e($borderColors[$delegation]); ?>, <?php echo e($borderColors[$delegation]); ?>dd);">
+                                <h6 class="mb-0"><i class="bi bi-building"></i> <?php echo e($delegation); ?></h6>
                             </div>
                             <div class="card-body">
-                                {{-- Current period --}}
+                                
                                 <p class="text-muted mb-1" style="font-size:0.75rem; font-weight:600; text-transform:uppercase; letter-spacing:.05em;">
-                                    <i class="bi bi-calendar3"></i> Bulan {{ $selectedPeriode }}
+                                    <i class="bi bi-calendar3"></i> Bulan <?php echo e($selectedPeriode); ?>
+
                                 </p>
                                 <div class="row text-center">
                                     <div class="col-6 mb-2">
                                         <small class="text-muted">Transaksi</small>
-                                        <h6 class="text-primary mb-0">{{ number_format($delData['transaksi']) }}</h6>
+                                        <h6 class="text-primary mb-0"><?php echo e(number_format($delData['transaksi'])); ?></h6>
                                     </div>
                                     <div class="col-6 mb-2">
                                         <small class="text-muted">Total</small>
-                                        <h6 class="text-warning mb-0">Rp {{ number_format($delTotalAll, 0, ',', '.') }}</h6>
+                                        <h6 class="text-warning mb-0">Rp <?php echo e(number_format($delTotalAll, 0, ',', '.')); ?></h6>
                                     </div>
                                 </div>
                                 <div class="row text-center">
                                     <div class="col-6">
                                         <small class="text-muted">Pandu</small>
-                                        <p class="mb-0 text-success"><strong>Rp {{ number_format($delData['pandu'], 0, ',', '.') }}</strong></p>
+                                        <p class="mb-0 text-success"><strong>Rp <?php echo e(number_format($delData['pandu'], 0, ',', '.')); ?></strong></p>
                                     </div>
                                     <div class="col-6">
                                         <small class="text-muted">Tunda</small>
-                                        <p class="mb-0 text-info"><strong>Rp {{ number_format($delData['tunda'], 0, ',', '.') }}</strong></p>
+                                        <p class="mb-0 text-info"><strong>Rp <?php echo e(number_format($delData['tunda'], 0, ',', '.')); ?></strong></p>
                                     </div>
                                 </div>
 
-                                {{-- YTD --}}
-                                @if($ytdStartLabel && $ytdStartLabel !== $selectedPeriode)
+                                
+                                <?php if($ytdStartLabel && $ytdStartLabel !== $selectedPeriode): ?>
                                 <hr class="my-2">
                                 <p class="text-muted mb-1" style="font-size:0.75rem; font-weight:600; text-transform:uppercase; letter-spacing:.05em;">
-                                    <i class="bi bi-calendar-range"></i> s.d. {{ $selectedPeriode }} ({{ $ytdStartLabel }} &ndash; {{ $selectedPeriode }})
+                                    <i class="bi bi-calendar-range"></i> s.d. <?php echo e($selectedPeriode); ?> (<?php echo e($ytdStartLabel); ?> &ndash; <?php echo e($selectedPeriode); ?>)
                                 </p>
                                 <div class="row text-center">
                                     <div class="col-6 mb-2">
                                         <small class="text-muted">Transaksi</small>
-                                        <h6 class="text-primary mb-0">{{ number_format($delYtd['transaksi']) }}</h6>
+                                        <h6 class="text-primary mb-0"><?php echo e(number_format($delYtd['transaksi'])); ?></h6>
                                     </div>
                                     <div class="col-6 mb-2">
                                         <small class="text-muted">Total</small>
-                                        <h6 class="text-warning mb-0">Rp {{ number_format($delYtdTotalAll, 0, ',', '.') }}</h6>
+                                        <h6 class="text-warning mb-0">Rp <?php echo e(number_format($delYtdTotalAll, 0, ',', '.')); ?></h6>
                                     </div>
                                 </div>
                                 <div class="row text-center">
                                     <div class="col-6">
                                         <small class="text-muted">Pandu</small>
-                                        <p class="mb-0 text-success"><strong>Rp {{ number_format($delYtd['pandu'], 0, ',', '.') }}</strong></p>
+                                        <p class="mb-0 text-success"><strong>Rp <?php echo e(number_format($delYtd['pandu'], 0, ',', '.')); ?></strong></p>
                                     </div>
                                     <div class="col-6">
                                         <small class="text-muted">Tunda</small>
-                                        <p class="mb-0 text-info"><strong>Rp {{ number_format($delYtd['tunda'], 0, ',', '.') }}</strong></p>
+                                        <p class="mb-0 text-info"><strong>Rp <?php echo e(number_format($delYtd['tunda'], 0, ',', '.')); ?></strong></p>
                                     </div>
                                 </div>
-                                @endif
+                                <?php endif; ?>
                             </div>
                         </div>
                     </div>
-                @endforeach
+                <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>
             </div>
-            @endif
+            <?php endif; ?>
 
             <!-- Charts Section -->
             <div class="row mb-4">
@@ -365,7 +367,7 @@
             <!-- Button to Detail Page -->
             <div class="row mb-4">
                 <div class="col-12 text-center">
-                    <a href="{{ route('regional.detail', ['periode' => $selectedPeriode]) }}" class="btn btn-lg btn-primary">
+                    <a href="<?php echo e(route('regional.detail', ['periode' => $selectedPeriode])); ?>" class="btn btn-lg btn-primary">
                         <i class="bi bi-table"></i> Lihat Detail Pendapatan Per Cabang
                     </a>
                     <p class="text-muted mt-2 mb-0">Klik tombol di atas untuk melihat breakdown detail pendapatan setiap cabang per wilayah</p>
@@ -374,8 +376,8 @@
 
             <!-- Regional Details -->
             <div class="row">
-                @foreach($regionalData as $wilayah => $data)
-                    @php
+                <?php $__currentLoopData = $regionalData; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $wilayah => $data): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
+                    <?php
                         $wilayahParts = explode(' ', $wilayah);
                         if ($wilayah == 'JAI') {
                             $cardClass = 'jai';
@@ -383,16 +385,17 @@
                             $wilayahNumber = $wilayahParts[1] ?? '';
                             $cardClass = 'wilayah-' . $wilayahNumber;
                         }
-                    @endphp
+                    ?>
                     <div class="col-md-6 mb-4">
-                        <div class="card stat-card {{ $cardClass }}">
+                        <div class="card stat-card <?php echo e($cardClass); ?>">
                             <div class="card-header">
                                     <div class="d-flex justify-content-between align-items-center">
-                                        <h5 class="mb-0"><i class="bi bi-geo-alt-fill"></i> {{ $wilayah }}</h5>
+                                        <h5 class="mb-0"><i class="bi bi-geo-alt-fill"></i> <?php echo e($wilayah); ?></h5>
                                         <div class="text-end">
                                             <small class="text-muted d-block">Total Pendapatan</small>
                                             <strong>
-                                                Rp {{ number_format($data['total_revenue'] ?? ($data['pandu_revenue'] + $data['tunda_revenue']), 0, ',', '.') }}
+                                                Rp <?php echo e(number_format($data['total_revenue'] ?? ($data['pandu_revenue'] + $data['tunda_revenue']), 0, ',', '.')); ?>
+
                                             </strong>
                                         </div>
                                     </div>
@@ -402,56 +405,56 @@
                                     <div class="col-4">
                                         <div class="mb-3">
                                             <small class="text-muted">Pendapatan Pandu</small>
-                                            <h4 class="text-success">Rp {{ number_format($data['pandu_revenue'], 0, ',', '.') }}</h4>
+                                            <h4 class="text-success">Rp <?php echo e(number_format($data['pandu_revenue'], 0, ',', '.')); ?></h4>
                                         </div>
                                         <div>
                                             <small class="text-muted">Persentase Pandu</small>
-                                            @php
+                                            <?php
                                                 $totalPanduAll = array_sum(array_column($regionalData, 'pandu_revenue'));
                                                 $percentage = $totalPanduAll > 0 ? ($data['pandu_revenue'] / $totalPanduAll * 100) : 0;
-                                            @endphp
-                                            <h5 class="text-warning">{{ number_format($percentage, 1) }}%</h5>
+                                            ?>
+                                            <h5 class="text-warning"><?php echo e(number_format($percentage, 1)); ?>%</h5>
                                         </div>
                                     </div>
                                     <div class="col-4">
                                         <div class="mb-3">
                                             <small class="text-muted">Pendapatan Tunda</small>
-                                            <h4 class="text-info">Rp {{ number_format($data['tunda_revenue'], 0, ',', '.') }}</h4>
+                                            <h4 class="text-info">Rp <?php echo e(number_format($data['tunda_revenue'], 0, ',', '.')); ?></h4>
                                         </div>
                                         <div>
                                             <small class="text-muted">Persentase Tunda</small>
-                                            @php
+                                            <?php
                                                 $totalTundaAll = array_sum(array_column($regionalData, 'tunda_revenue'));
                                                 $percentageTunda = $totalTundaAll > 0 ? ($data['tunda_revenue'] / $totalTundaAll * 100) : 0;
-                                            @endphp
-                                            <h5 class="text-warning">{{ number_format($percentageTunda, 1) }}%</h5>
+                                            ?>
+                                            <h5 class="text-warning"><?php echo e(number_format($percentageTunda, 1)); ?>%</h5>
                                         </div>
                                     </div>
                                     <div class="col-4">
                                         <div class="mb-3">
                                             <small class="text-muted">Total Transaksi</small>
-                                            <h4 class="text-primary">{{ number_format($data['total_transaksi']) }}</h4>
+                                            <h4 class="text-primary"><?php echo e(number_format($data['total_transaksi'])); ?></h4>
                                         </div>
                                         <div>
                                             <small class="text-muted">Jumlah Cabang</small>
-                                            <h5 class="text-secondary">{{ count($regionalGroups[$wilayah]) }} cabang</h5>
+                                            <h5 class="text-secondary"><?php echo e(count($regionalGroups[$wilayah])); ?> cabang</h5>
                                         </div>
                                     </div>
                                 </div>
                             </div>
                         </div>
                     </div>
-                @endforeach
+                <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>
             </div>
-        @endif
+        <?php endif; ?>
     </div>
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     <script>
-        @if($selectedPeriode != 'all')
+        <?php if($selectedPeriode != 'all'): ?>
         // Regional Chart - Bar Chart
-        const regionalData = @json($regionalData);
-        const totalTundaRevenue = {{ $totalTundaRevenue ?? 0 }};
+        const regionalData = <?php echo json_encode($regionalData, 15, 512) ?>;
+        const totalTundaRevenue = <?php echo e($totalTundaRevenue ?? 0); ?>;
         const wilayahLabels = Object.keys(regionalData);
         const panduData = wilayahLabels.map(w => regionalData[w].pandu_revenue);
         // Tunda ditampilkan sebagai nilai total per wilayah
@@ -619,7 +622,7 @@
                 }
             }]
         });
-        @endif
+        <?php endif; ?>
         
         // Global Loading Functions
         function showGlobalLoading(message = 'Memproses data...') {
@@ -661,3 +664,4 @@
     </script>
 </body>
 </html>
+<?php /**PATH D:\project ai\lhgk\resources\views/regional-revenue.blade.php ENDPATH**/ ?>
