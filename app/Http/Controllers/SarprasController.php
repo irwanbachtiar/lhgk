@@ -145,6 +145,8 @@ class SarprasController extends Controller
         $mstRows = collect();
         $mstColumns = [];
         $mstError = null;
+        $onlyPanduEndorsement = false;
+        $preferredDateCol = null;
 
         try {
             $schema = DB::connection('dashboard_phinnisi')->getSchemaBuilder();
