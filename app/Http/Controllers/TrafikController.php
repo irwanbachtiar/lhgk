@@ -649,7 +649,8 @@ class TrafikController extends Controller
             $rkapTable = 'prod_rkap_realisasi';
             
             $grouped = $conn->table($rkapTable)
-                ->select('wilayah', 'jenis', 'layanan', 'satuan',
+                ->select('wilayah', 'jenis', 'layanan',
+                         DB::raw('MIN(`satuan`) as satuan'),
                          DB::raw('SUM(`nilai`) as total_nilai'))
                 ->when($selectedWilayah != 'all', function($q) use ($selectedWilayah) {
                     return $q->where('wilayah', $selectedWilayah);
@@ -676,7 +677,7 @@ class TrafikController extends Controller
                         return $q->where('periode', $selectedPeriode);
                     }
                 })
-                ->groupBy('wilayah', 'jenis', 'layanan', 'satuan')
+                ->groupBy('wilayah', 'jenis', 'layanan')
                 ->get();
 
             foreach ($grouped as $row) {
@@ -721,7 +722,7 @@ class TrafikController extends Controller
                     $lastYear = $year - 1;
                     
                     $lastYearQuery = $conn->table($rkapTable)
-                        ->select('wilayah', 'layanan', 'satuan',
+                        ->select('wilayah', 'layanan',
                                  DB::raw('SUM(`nilai`) as total_nilai'))
                         ->where('jenis', 'REALISASI')
                         ->when($selectedWilayah != 'all', function($q) use ($selectedWilayah) {
@@ -741,7 +742,7 @@ class TrafikController extends Controller
                         $lastYearQuery->where('periode', $lastYearPeriode);
                     }
                     
-                    $lastYearData = $lastYearQuery->groupBy('wilayah', 'layanan', 'satuan')->get();
+                    $lastYearData = $lastYearQuery->groupBy('wilayah', 'layanan')->get();
 
                     foreach ($lastYearData as $row) {
                         $wil = $row->wilayah ?? 'unknown';
