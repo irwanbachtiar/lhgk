@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="id">
 <head>
     <meta charset="UTF-8">
@@ -601,6 +601,725 @@
         </div>
         @endif
 
+        <!-- Departure Invoice Delay Section -->
+        @if($selectedPeriode != 'all' && $selectedBranch != 'all' && $departureDelayCount > 0)
+        <div class="row mb-4">
+            <div class="col-12">
+                <div class="card stat-card">
+                    @if(!$showDeparture)
+                    <div class="card-body text-center py-4">
+                        <i class="bi bi-exclamation-triangle text-warning" style="font-size: 3rem;"></i>
+                        <h5 class="mt-3">Data Keterlambatan Invoice Departure</h5>
+                        <p class="text-muted">
+                            Ditemukan <strong class="text-danger">{{ number_format($departureDelayCount) }} transaksi</strong> 
+                            dengan keterlambatan invoice > 2 hari
+                        </p>
+                        <a href="{{ route('dashboard', ['periode' => $selectedPeriode, 'cabang' => $selectedBranch, 'show_departure' => 1]) }}#departure-section" 
+                           class="btn btn-warning">
+                            <i class="bi bi-eye"></i> Tampilkan Data Departure
+                        </a>
+                    </div>
+                    @else
+                    <div class="card-header" style="background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%); color: white;" id="departure-section">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <h5 class="mb-0">
+                                <i class="bi bi-exclamation-triangle-fill"></i> 
+                                Data Departure - Keterlambatan Invoice (> 2 Hari)
+                            </h5>
+                            <div>
+                                <a href="{{ route('export.departure.delay', ['periode' => $selectedPeriode, 'cabang' => $selectedBranch]) }}" 
+                                   class="btn btn-light btn-sm me-2">
+                                    <i class="bi bi-file-earmark-excel"></i> Download Excel
+                                </a>
+                                <a href="{{ route('dashboard', ['periode' => $selectedPeriode, 'cabang' => $selectedBranch]) }}" 
+                                   class="btn btn-light btn-sm">
+                                    <i class="bi bi-x-circle"></i> Sembunyikan
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="card-body">
+                        <div class="alert alert-info mb-3">
+                            <i class="bi bi-info-circle-fill"></i>
+                            <strong>{{ number_format($departureDelayCount) }} transaksi</strong> memiliki selisih antara tanggal selesai pelaksanaan dan invoice lebih dari 2 hari.
+                            <div class="mt-2">
+                                <small class="text-muted">Data diurutkan berdasarkan selisih hari terbesar</small>
+                            </div>
+                        </div>
+                        
+                        @if($departureDelayData && $departureDelayData->count() > 0)
+                        <div class="table-responsive">
+                            <table class="table table-hover table-striped">
+                                <thead class="table-dark">
+                                    <tr>
+                                        <th>No</th>
+                                        <th>No. UKK</th>
+                                        <th>Nama Kapal</th>
+                                        <th>Nama Pandu</th>
+                                        <th>Cabang</th>
+                                        <th>Gerakan</th>
+                                        <th>Selesai Pelaksanaan</th>
+                                        <th>Tanggal Invoice</th>
+                                        <th class="text-center">Selisih (hari)</th>
+                                        <th class="text-end">Pendapatan Pandu</th>
+                                        <th class="text-end">Pendapatan Tunda</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    @foreach($departureDelayData as $index => $data)
+                                    <tr>
+                                        <td>{{ $departureDelayData->firstItem() + $index }}</td>
+                                        <td><span class="badge bg-secondary">{{ $data->NO_UKK }}</span></td>
+                                        <td><strong>{{ $data->NM_KAPAL }}</strong></td>
+                                        <td>{{ $data->NM_PERS_PANDU }}</td>
+                                        <td>{{ $data->NM_BRANCH }}</td>
+                                        <td>
+                                            <span class="badge bg-danger">
+                                                <i class="bi bi-arrow-up-circle"></i> {{ strtoupper($data->GERAKAN) }}
+                                            </span>
+                                        </td>
+                                        <td>{{ $data->SELESAI_PELAKSANAAN }}</td>
+                                        <td>{{ $data->INVOICE_DATE }}</td>
+                                        <td class="text-center">
+                                            <span class="badge bg-danger fs-6">
+                                                {{ $data->selisih_hari }} hari
+                                            </span>
+                                        </td>
+                                        <td class="text-end">Rp {{ number_format($data->PENDAPATAN_PANDU, 0, ',', '.') }}</td>
+                                        <td class="text-end">Rp {{ number_format($data->PENDAPATAN_TUNDA, 0, ',', '.') }}</td>
+                                    </tr>
+                                    @endforeach
+                                </tbody>
+                            </table>
+                        </div>
+                        
+                        <!-- Pagination -->
+                        @if($departureDelayData->hasPages())
+                        <div class="d-flex justify-content-between align-items-center mt-3">
+                            <div class="text-muted">
+                                Menampilkan {{ $departureDelayData->firstItem() }} - {{ $departureDelayData->lastItem() }} dari {{ $departureDelayData->total() }} data
+                            </div>
+                            <div>
+                                {{ $departureDelayData->links('pagination::bootstrap-5') }}
+                            </div>
+                        </div>
+                        @endif
+                        @else
+                        <div class="alert alert-secondary">
+                            <i class="bi bi-info-circle"></i> Tidak ada data untuk ditampilkan
+                        </div>
+                        @endif
+                    </div>
+                    @endif
+                </div>
+            </div>
+        </div>
+        @endif
+
+        <!-- PKK Manual Section -->
+        @if($selectedPeriode != 'all' && $selectedBranch != 'all')
+        <div class="row mb-4">
+            <div class="col-12">
+                <div class="card stat-card">
+                    @if($pkkManualCount == 0)
+                    <div class="card-body text-center py-4">
+                        <i class="bi bi-check-circle text-success" style="font-size: 3rem;"></i>
+                        <h5 class="mt-3">PKK Manual</h5>
+                        <p class="text-muted">
+                            <strong class="text-success">Tidak ada</strong> transaksi dengan PKK Inaportnet yang diinput manual.
+                            Semua nomor PKK sudah sesuai format.
+                        </p>
+                    </div>
+                    @elseif(!$showPkkManual)
+                    <div class="card-body text-center py-4">
+                        <i class="bi bi-exclamation-triangle text-warning" style="font-size: 3rem;"></i>
+                        <h5 class="mt-3">PKK Manual</h5>
+                        <p class="text-muted">
+                            Ditemukan <strong class="text-warning">{{ number_format($pkkManualCount) }} transaksi</strong>
+                            dengan nomor PKK Inaportnet yang diinput secara manual (bukan format PKK)
+                        </p>
+                        <a href="{{ route('dashboard', ['periode' => $selectedPeriode, 'cabang' => $selectedBranch, 'show_pkk_manual' => 1]) }}#pkk-manual-section"
+                           class="btn btn-warning">
+                            <i class="bi bi-eye"></i> Tampilkan Data PKK Manual
+                        </a>
+                    </div>
+                    @else
+                    <div class="card-header" style="background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%); color: white;" id="pkk-manual-section">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <h5 class="mb-0">
+                                <i class="bi bi-card-checklist"></i>
+                                PKK Manual - No. PKK Inaportnet Bukan Format PKK
+                            </h5>
+                            <div>
+                                <a href="{{ route('dashboard', ['periode' => $selectedPeriode, 'cabang' => $selectedBranch]) }}"
+                                   class="btn btn-light btn-sm">
+                                    <i class="bi bi-x-circle"></i> Sembunyikan
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="card-body">
+                        <div class="alert alert-warning mb-3">
+                            <i class="bi bi-info-circle-fill"></i>
+                            <strong>{{ number_format($pkkManualCount) }} transaksi</strong> memiliki nilai kolom <code>NO_PKK_INAPORTNET</code> yang tidak dimulai dengan format <strong>PKK</strong> (kemungkinan diinput manual).
+                        </div>
+
+                        @if($pkkManualData && $pkkManualData->count() > 0)
+                        <div class="table-responsive">
+                            <table class="table table-hover table-striped">
+                                <thead class="table-dark">
+                                    <tr>
+                                        <th>No</th>
+                                        <th>No. UKK</th>
+                                        <th>Nama Kapal</th>
+                                        <th>Nama Pandu</th>
+                                        <th>Cabang</th>
+                                        <th>Gerakan</th>
+                                        <th>Mulai Pelaksanaan</th>
+                                        <th>Selesai Pelaksanaan</th>
+                                        <th>No. PKK Inaportnet</th>
+                                        <th class="text-end">Pendapatan Pandu</th>
+                                        <th class="text-end">Pendapatan Tunda</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    @foreach($pkkManualData as $index => $data)
+                                    <tr>
+                                        <td>{{ $pkkManualData->firstItem() + $index }}</td>
+                                        <td><span class="badge bg-secondary">{{ $data->NO_UKK }}</span></td>
+                                        <td><strong>{{ $data->NM_KAPAL }}</strong></td>
+                                        <td>{{ $data->NM_PERS_PANDU }}</td>
+                                        <td>{{ $data->NM_BRANCH }}</td>
+                                        <td>
+                                            <span class="badge {{ strtoupper($data->GERAKAN) == 'DEPARTURE' ? 'bg-danger' : 'bg-primary' }}">
+                                                {{ strtoupper($data->GERAKAN) }}
+                                            </span>
+                                        </td>
+                                        <td>{{ $data->MULAI_PELAKSANAAN }}</td>
+                                        <td>{{ $data->SELESAI_PELAKSANAAN }}</td>
+                                        <td>
+                                            <span class="badge bg-warning text-dark">{{ $data->NO_PKK_INAPORTNET }}</span>
+                                        </td>
+                                        <td class="text-end">Rp {{ number_format($data->PENDAPATAN_PANDU, 0, ',', '.') }}</td>
+                                        <td class="text-end">Rp {{ number_format($data->PENDAPATAN_TUNDA, 0, ',', '.') }}</td>
+                                    </tr>
+                                    @endforeach
+                                </tbody>
+                            </table>
+                        </div>
+
+                        <!-- Pagination -->
+                        @if($pkkManualData->hasPages())
+                        <div class="d-flex justify-content-between align-items-center mt-3">
+                            <div class="text-muted">
+                                Menampilkan {{ $pkkManualData->firstItem() }} - {{ $pkkManualData->lastItem() }} dari {{ $pkkManualData->total() }} data
+                            </div>
+                            <div>
+                                {{ $pkkManualData->links('pagination::bootstrap-5') }}
+                            </div>
+                        </div>
+                        @endif
+                        @else
+                        <div class="alert alert-secondary">
+                            <i class="bi bi-info-circle"></i> Tidak ada data untuk ditampilkan
+                        </div>
+                        @endif
+                    </div>
+                    @endif
+                </div>
+            </div>
+        </div>
+        @endif
+
+        <!-- Status Nota Section -->
+        @if($selectedPeriode != 'all' && $selectedBranch != 'all' && $statusNotaCount > 0)
+        <div class="row mb-4">
+            <div class="col-12">
+                <div class="card stat-card">
+                    @if(!$showStatusNota)
+                    <div class="card-body text-center py-4">
+                        <i class="bi bi-clipboard-check text-info" style="font-size: 3rem;"></i>
+                        <h5 class="mt-3">Data Status Nota</h5>
+                        <p class="text-muted">
+                            Ditemukan <strong class="text-info">{{ number_format($statusNotaCount) }} transaksi</strong> 
+                            dengan status "menunggu nota" atau "belum verifikasi"
+                        </p>
+                        <a href="{{ route('dashboard', ['periode' => $selectedPeriode, 'cabang' => $selectedBranch, 'show_status_nota' => 1]) }}#status-nota-section" 
+                           class="btn btn-info">
+                            <i class="bi bi-eye"></i> Tampilkan Data Status Nota
+                        </a>
+                    </div>
+                    @else
+                    <div class="card-header" style="background: linear-gradient(135deg, #06b6d4 0%, #0891b2 100%); color: white;" id="status-nota-section">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <h5 class="mb-0">
+                                <i class="bi bi-clipboard-check"></i> 
+                                Data Status Nota (Menunggu Nota / Belum Verifikasi)
+                            </h5>
+                            <div>
+                                <a href="{{ route('export.status.nota', ['periode' => $selectedPeriode, 'cabang' => $selectedBranch, 'filter_status_nota' => $filterStatusNota]) }}" 
+                                   class="btn btn-light btn-sm me-2">
+                                    <i class="bi bi-file-earmark-excel"></i> Download Excel
+                                </a>
+                                <a href="{{ route('dashboard', ['periode' => $selectedPeriode, 'cabang' => $selectedBranch]) }}" 
+                                   class="btn btn-light btn-sm">
+                                    <i class="bi bi-x-circle"></i> Sembunyikan
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="card-body">
+                        <!-- Filter Status Nota -->
+                        <div class="row mb-3">
+                            <div class="col-md-4">
+                                <form method="GET" action="{{ route('dashboard') }}" id="filterStatusNotaForm">
+                                    <input type="hidden" name="periode" value="{{ $selectedPeriode }}">
+                                    <input type="hidden" name="cabang" value="{{ $selectedBranch }}">
+                                    <input type="hidden" name="show_status_nota" value="1">
+                                    <div class="input-group">
+                                        <label class="input-group-text bg-info text-white"><i class="bi bi-funnel-fill"></i></label>
+                                        <select name="filter_status_nota" class="form-select filter-input">
+                                            <option value="all" {{ $filterStatusNota == 'all' ? 'selected' : '' }}>Semua Status</option>
+                                            <option value="menunggu nota" {{ $filterStatusNota == 'menunggu nota' ? 'selected' : '' }}>Menunggu Nota</option>
+                                            <option value="belum verifikasi" {{ $filterStatusNota == 'belum verifikasi' ? 'selected' : '' }}>Belum Verifikasi</option>
+                                        </select>
+                                        <button type="button" class="btn btn-primary" onclick="document.getElementById('globalLoading').style.display='flex'; this.closest('form').submit();">Apply</button>
+                                    </div>
+                                </form>
+                            </div>
+                        </div>
+                        
+                        <div class="alert alert-info mb-3">
+                            <i class="bi bi-info-circle-fill"></i>
+                            <strong>{{ number_format($statusNotaCount) }} transaksi</strong> 
+                            @if($filterStatusNota == 'all')
+                                memiliki status nota "menunggu nota" atau "belum verifikasi".
+                            @else
+                                dengan status "{{ $filterStatusNota }}".
+                            @endif
+                            <div class="mt-2">
+                                <small class="text-muted">Data diurutkan berdasarkan mulai pelaksanaan terbaru</small>
+                            </div>
+                        </div>
+                        
+                        @if($statusNotaData && $statusNotaData->count() > 0)
+                        <div class="table-responsive">
+                            <table class="table table-hover table-striped">
+                                <thead class="table-dark">
+                                    <tr>
+                                        <th style="width:48px">No</th>
+                                        <th style="width:140px">No. UKK</th>
+                                        <th style="width:260px">Nama Kapal</th>
+                                        <th style="width:120px">Pelayaran</th>
+                                        <th style="width:180px">Nama Pandu</th>
+                                        <th style="width:160px">Mulai Pelaksanaan</th>
+                                        <th style="width:160px">Selesai Pelaksanaan</th>
+                                        <th style="width:110px" class="text-center">Selisih (hari)</th>
+                                        <th class="text-end" style="width:140px">Pendapatan Pandu</th>
+                                        <th class="text-end" style="width:140px">Pendapatan Tunda</th>
+                                        <th class="text-center" style="width:120px">Status Nota</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    @foreach($statusNotaData as $index => $data)
+                                    <tr>
+                                        <td>{{ $statusNotaData->firstItem() + $index }}</td>
+                                        <td><span class="ukk-badge">{{ $data->NO_UKK }}</span></td>
+                                        <td class="nm-kapal"><strong title="{{ $data->NM_KAPAL }}">{{ Str::limit($data->NM_KAPAL, 40) }}</strong></td>
+                                        <td>{{ $data->PELAYARAN ?? '-' }}</td>
+                                        <td>{{ $data->NM_PERS_PANDU }}</td>
+                                        <td class="text-nowrap small">{{ $data->MULAI_PELAKSANAAN }}</td>
+                                        <td class="text-nowrap small">{{ $data->SELESAI_PELAKSANAAN }}</td>
+                                        @php $s = $data->SELISIH_HARI; @endphp
+                                        <td class="text-center">
+                                            @if($s === null || $s === '')
+                                                -
+                                            @else
+                                                <span class="badge selisih-badge {{ $s < 0 ? 'bg-danger' : ($s == 0 ? 'bg-secondary' : 'bg-success') }}">{{ $s }}</span>
+                                            @endif
+                                        </td>
+                                        <td class="text-end">Rp {{ number_format($data->PENDAPATAN_PANDU, 0, ',', '.') }}</td>
+                                        <td class="text-end">Rp {{ number_format($data->PENDAPATAN_TUNDA, 0, ',', '.') }}</td>
+                                        <td class="text-center">
+                                            <span class="badge {{ $data->STATUS_NOTA == 'menunggu nota' ? 'bg-warning' : 'bg-info' }} text-dark">
+                                                {{ strtoupper($data->STATUS_NOTA) }}
+                                            </span>
+                                        </td>
+                                    </tr>
+                                    @endforeach
+                                </tbody>
+                            </table>
+                        </div>
+                        
+                        <!-- Pagination -->
+                        @if($statusNotaData->hasPages())
+                        <div class="d-flex justify-content-between align-items-center mt-3">
+                            <div class="text-muted">
+                                Menampilkan {{ $statusNotaData->firstItem() }} - {{ $statusNotaData->lastItem() }} dari {{ $statusNotaData->total() }} data
+                            </div>
+                            <div>
+                                {{ $statusNotaData->links('pagination::bootstrap-5') }}
+                            </div>
+                        </div>
+                        @endif
+                        @else
+                        <div class="alert alert-secondary">
+                            <i class="bi bi-info-circle"></i> Tidak ada data untuk ditampilkan
+                        </div>
+                        @endif
+                    </div>
+                    @endif
+                </div>
+            </div>
+        </div>
+        @endif
+
+        <!-- PPKB/Realisasi Backdate Section -->
+        @if($selectedPeriode != 'all' && $selectedBranch != 'all' && $backdateCount > 0)
+        <div class="row mb-4">
+            <div class="col-12">
+                <div class="card stat-card">
+                    @if(!$showBackdate)
+                    <div class="card-body text-center py-4">
+                        <i class="bi bi-calendar-x text-danger" style="font-size: 3rem;"></i>
+                        <h5 class="mt-3">PPKB / Realisasi Backdate</h5>
+                        <p class="text-muted">
+                            Ditemukan <strong class="text-danger">{{ number_format($backdateCount) }} transaksi</strong>
+                            dengan tanggal mulai pelaksanaan lebih awal dari tanggal PPKB Submit (backdate)
+                        </p>
+                        <a href="{{ route('dashboard', ['periode' => $selectedPeriode, 'cabang' => $selectedBranch, 'show_backdate' => 1]) }}#backdate-section"
+                           class="btn btn-danger">
+                            <i class="bi bi-eye"></i> Tampilkan Data Backdate
+                        </a>
+                    </div>
+                    @else
+                    <div class="card-header" style="background: linear-gradient(135deg, #dc2626 0%, #991b1b 100%); color: white;" id="backdate-section">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <h5 class="mb-0">
+                                <i class="bi bi-calendar-x"></i>
+                                PPKB / Realisasi Backdate
+                            </h5>
+                            <div>
+                                <a href="{{ route('export.backdate', ['periode' => $selectedPeriode, 'cabang' => $selectedBranch]) }}"
+                                   class="btn btn-light btn-sm me-2">
+                                    <i class="bi bi-file-earmark-excel"></i> Download Excel
+                                </a>
+                                <a href="{{ route('dashboard', ['periode' => $selectedPeriode, 'cabang' => $selectedBranch]) }}"
+                                   class="btn btn-light btn-sm">
+                                    <i class="bi bi-x-circle"></i> Sembunyikan
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="card-body">
+                        <div class="alert alert-danger mb-3">
+                            <i class="bi bi-exclamation-triangle-fill"></i>
+                            <strong>{{ number_format($backdateCount) }} transaksi</strong> terdeteksi sebagai backdate —
+                            tanggal <strong>Mulai Pelaksanaan</strong> lebih awal dari tanggal <strong>PPKB Submit</strong>.
+                            <div class="mt-2">
+                                <small class="text-muted">Data diurutkan berdasarkan mulai pelaksanaan terbaru</small>
+                            </div>
+                        </div>
+
+                        @if($backdateData && $backdateData->count() > 0)
+                        <div class="table-responsive">
+                            <table class="table table-hover table-striped table-sm">
+                                <thead class="table-dark">
+                                    <tr>
+                                        <th style="width:48px">No</th>
+                                        <th style="width:130px">PPKB Code</th>
+                                        <th style="width:150px">PPKB Submit</th>
+                                        <th style="width:120px">No. UKK</th>
+                                        <th style="width:140px">No. Bkt Pandu</th>
+                                        <th style="width:160px">Tgl Jam Tiba</th>
+                                        <th style="width:220px">Nama Kapal</th>
+                                        <th style="width:140px">Jenis Kapal</th>
+                                        <th style="width:100px">Tgl Tiba</th>
+                                        <th style="width:80px">Jam Tiba</th>
+                                        <th style="width:100px">Tgl PMT</th>
+                                        <th style="width:80px">Jam PMT</th>
+                                        <th style="width:155px">Mulai Pelaksanaan</th>
+                                        <th style="width:155px">Selesai Pelaksanaan</th>
+                                        <th style="width:150px">Created By</th>
+                                        <th style="width:150px">Pilot Deploy By</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    @foreach($backdateData as $index => $row)
+                                    <tr>
+                                        <td>{{ $backdateData->firstItem() + $index }}</td>
+                                        <td class="text-nowrap small">{{ $row->PPKB_CODE ?? '-' }}</td>
+                                        <td class="text-nowrap small text-danger fw-semibold">{{ $row->PPKB_SUBMIT ?? '-' }}</td>
+                                        <td><span class="ukk-badge">{{ $row->NO_UKK ?? '-' }}</span></td>
+                                        <td class="text-nowrap small">{{ $row->NO_BKT_PANDU ?? '-' }}</td>
+                                        <td class="text-nowrap small">{{ $row->TGL_JAM_TIBA ?? '-' }}</td>
+                                        <td class="nm-kapal"><strong title="{{ $row->NM_KAPAL }}">{{ Str::limit($row->NM_KAPAL, 35) }}</strong></td>
+                                        <td class="text-nowrap small">{{ $row->JN_KAPAL ?? '-' }}</td>
+                                        <td class="text-nowrap small">{{ $row->TGL_TIBA ?? '-' }}</td>
+                                        <td class="text-nowrap small">{{ $row->JAM_TIBA ?? '-' }}</td>
+                                        <td class="text-nowrap small">{{ $row->TGL_PMT ?? '-' }}</td>
+                                        <td class="text-nowrap small">{{ $row->JAM_PMT ?? '-' }}</td>
+                                        <td class="text-nowrap small text-success fw-semibold">{{ $row->MULAI_PELAKSANAAN ?? '-' }}</td>
+                                        <td class="text-nowrap small">{{ $row->SELESAI_PELAKSANAAN ?? '-' }}</td>
+                                        <td class="text-nowrap small">{{ $row->CREATED_BY ?? '-' }}</td>
+                                        <td class="text-nowrap small">{{ $row->PILOT_DEPLOY_BY ?? '-' }}</td>
+                                    </tr>
+                                    @endforeach
+                                </tbody>
+                            </table>
+                        </div>
+
+                        <!-- Pagination -->
+                        @if($backdateData->hasPages())
+                        <div class="d-flex justify-content-between align-items-center mt-3">
+                            <div class="text-muted">
+                                Menampilkan {{ $backdateData->firstItem() }} - {{ $backdateData->lastItem() }} dari {{ $backdateData->total() }} data
+                            </div>
+                            <div>
+                                {{ $backdateData->links('pagination::bootstrap-5') }}
+                            </div>
+                        </div>
+                        @endif
+                        @else
+                        <div class="alert alert-secondary">
+                            <i class="bi bi-info-circle"></i> Tidak ada data untuk ditampilkan
+                        </div>
+                        @endif
+                    </div>
+                    @endif
+                </div>
+            </div>
+        </div>
+        @endif
+
+        <!-- Realisasi Web Section -->
+        @if($selectedPeriode != 'all' && $selectedBranch != 'all' && $realisasiWebCount > 0)
+        <div class="row mb-4">
+            <div class="col-12">
+                <div class="card stat-card">
+                    @if(!$showRealisasiWeb)
+                    <div class="card-body text-center py-4">
+                        <i class="bi bi-globe2 text-primary" style="font-size: 3rem;"></i>
+                        <h5 class="mt-3">Realisasi Web</h5>
+                        <p class="text-muted">
+                            Ditemukan <strong class="text-primary">{{ number_format($realisasiWebCount) }} transaksi</strong>
+                            dengan realisasi pilot via <strong>WEB</strong>
+                        </p>
+                        <a href="{{ route('dashboard', ['periode' => $selectedPeriode, 'cabang' => $selectedBranch, 'show_realisasi_web' => 1]) }}#realisasi-web-section"
+                           class="btn btn-primary">
+                            <i class="bi bi-eye"></i> Tampilkan Data Realisasi Web
+                        </a>
+                    </div>
+                    @else
+                    <div class="card-header" style="background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%); color: white;" id="realisasi-web-section">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <h5 class="mb-0">
+                                <i class="bi bi-globe2"></i>
+                                Realisasi Web (REALISAS_PILOT_VIA = WEB)
+                            </h5>
+                            <div>
+                                <a href="{{ route('export.realisasi.web', ['periode' => $selectedPeriode, 'cabang' => $selectedBranch]) }}"
+                                   class="btn btn-light btn-sm me-2">
+                                    <i class="bi bi-file-earmark-excel"></i> Download Excel
+                                </a>
+                                <a href="{{ route('dashboard', ['periode' => $selectedPeriode, 'cabang' => $selectedBranch]) }}"
+                                   class="btn btn-light btn-sm">
+                                    <i class="bi bi-x-circle"></i> Sembunyikan
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="card-body">
+                        <div class="alert alert-primary mb-3">
+                            <i class="bi bi-info-circle-fill"></i>
+                            <strong>{{ number_format($realisasiWebCount) }} transaksi</strong> menggunakan realisasi pilot via <strong>WEB</strong>.
+                            <div class="mt-2">
+                                <small class="text-muted">Data diurutkan berdasarkan PPKB Code</small>
+                            </div>
+                        </div>
+
+                        @if($realisasiWebData && $realisasiWebData->count() > 0)
+                        <div class="table-responsive">
+                            <table class="table table-hover table-striped table-sm">
+                                <thead class="table-dark">
+                                    <tr>
+                                        <th style="width:48px">No</th>
+                                        <th style="width:130px">PPKB Code</th>
+                                        <th style="width:120px">No. UKK</th>
+                                        <th style="width:150px">No. Bukti Pandu</th>
+                                        <th style="width:220px">Nama Kapal</th>
+                                        <th style="width:180px">Nama Pandu</th>
+                                        <th style="width:180px">Pandu Dari</th>
+                                        <th style="width:180px">Pandu Ke</th>
+                                        <th class="text-center" style="width:130px">Realisasi Via</th>
+                                        <th style="width:150px">Created By</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    @foreach($realisasiWebData as $index => $row)
+                                    <tr>
+                                        <td>{{ $realisasiWebData->firstItem() + $index }}</td>
+                                        <td class="text-nowrap small">{{ $row->PPKB_CODE ?? '-' }}</td>
+                                        <td><span class="ukk-badge">{{ $row->NO_UKK ?? '-' }}</span></td>
+                                        <td class="text-nowrap small">{{ $row->NO_BKT_PANDU ?? '-' }}</td>
+                                        <td class="nm-kapal"><strong title="{{ $row->NM_KAPAL }}">{{ Str::limit($row->NM_KAPAL, 35) }}</strong></td>
+                                        <td class="text-nowrap small">{{ $row->NM_PERS_PANDU ?? '-' }}</td>
+                                        <td class="text-nowrap small">{{ $row->PANDU_DARI ?? '-' }}</td>
+                                        <td class="text-nowrap small">{{ $row->PANDU_KE ?? '-' }}</td>
+                                        <td class="text-center">
+                                            <span class="badge bg-primary">{{ strtoupper($row->REALISAS_PILOT_VIA ?? '-') }}</span>
+                                        </td>
+                                        <td class="text-nowrap small">{{ $row->CREATED_BY ?? '-' }}</td>
+                                    </tr>
+                                    @endforeach
+                                </tbody>
+                            </table>
+                        </div>
+
+                        <!-- Pagination -->
+                        @if($realisasiWebData->hasPages())
+                        <div class="d-flex justify-content-between align-items-center mt-3">
+                            <div class="text-muted">
+                                Menampilkan {{ $realisasiWebData->firstItem() }} - {{ $realisasiWebData->lastItem() }} dari {{ $realisasiWebData->total() }} data
+                            </div>
+                            <div>
+                                {{ $realisasiWebData->links('pagination::bootstrap-5') }}
+                            </div>
+                        </div>
+                        @endif
+                        @else
+                        <div class="alert alert-secondary">
+                            <i class="bi bi-info-circle"></i> Tidak ada data untuk ditampilkan
+                        </div>
+                        @endif
+                    </div>
+                    @endif
+                </div>
+            </div>
+        </div>
+        @endif
+
+        <!-- Waiting Time Section -->
+        @if($selectedPeriode != 'all' && $selectedBranch != 'all' && $waitingTimeCount > 0)
+        <div class="row mb-4">
+            <div class="col-12">
+                <div class="card stat-card">
+                    @if(!$showWaitingTime)
+                    <div class="card-body text-center py-4">
+                        <i class="bi bi-clock-history" style="font-size: 3rem; color: #764ba2;"></i>
+                        <h5 class="mt-3">Data Waiting Time</h5>
+                        <p class="text-muted">
+                            Ditemukan <strong style="color: #764ba2;">{{ number_format($waitingTimeCount) }} transaksi</strong> 
+                            dengan Waiting Time (WT) di atas 00:30
+                        </p>
+                        <a href="{{ route('dashboard', ['periode' => $selectedPeriode, 'cabang' => $selectedBranch, 'show_waiting_time' => 1]) }}#waiting-time-section" 
+                           class="btn" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white;">
+                            <i class="bi bi-eye"></i> Tampilkan Data Waiting Time
+                        </a>
+                    </div>
+                    @else
+                    <div class="card-header" style="background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%); color: white;" id="waiting-time-section">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <h5 class="mb-0">
+                                <i class="bi bi-clock-history"></i> 
+                                Data Waiting Time (WT > 00:30)
+                            </h5>
+                            <div>
+                                <a href="{{ route('export.waiting.time', ['periode' => $selectedPeriode, 'cabang' => $selectedBranch]) }}" 
+                                   class="btn btn-light btn-sm me-2">
+                                    <i class="bi bi-file-earmark-excel"></i> Download Excel
+                                </a>
+                                <a href="{{ route('dashboard', ['periode' => $selectedPeriode, 'cabang' => $selectedBranch]) }}" 
+                                   class="btn btn-light btn-sm">
+                                    <i class="bi bi-x-circle"></i> Sembunyikan
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="card-body">
+                        <div class="alert alert-warning mb-3">
+                            <i class="bi bi-info-circle-fill"></i>
+                            <strong>{{ number_format($waitingTimeCount) }} transaksi</strong> memiliki Waiting Time (WT) lebih dari 00:30 (30 menit).
+                            <div class="mt-2">
+                                <small class="text-muted">Data diurutkan berdasarkan WT terbesar</small>
+                            </div>
+                        </div>
+                        
+                        @if($waitingTimeData && $waitingTimeData->count() > 0)
+                        <div class="table-responsive">
+                            <table class="table table-hover table-striped table-sm">
+                                <thead class="table-dark">
+                                    <tr>
+                                        <th>No</th>
+                                        <th>PPKB Code</th>
+                                        <th>No. UKK</th>
+                                        <th>No. Bukti Pandu</th>
+                                        <th>Nama Kapal</th>
+                                        <th>Nama Pandu</th>
+                                        <th>Tgl Tiba</th>
+                                        <th>Jam Tiba</th>
+                                        <th>Tgl PMT</th>
+                                        <th>Jam PMT</th>
+                                        <th>PNK</th>
+                                        <th>KB</th>
+                                        <th>Mulai Pelaksanaan</th>
+                                        <th>Selesai Pelaksanaan</th>
+                                        <th class="text-center">WT</th>
+                                        <th>Pandu Dari</th>
+                                        <th>Pandu Ke</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    @foreach($waitingTimeData as $index => $data)
+                                    <tr>
+                                        <td>{{ $waitingTimeData->firstItem() + $index }}</td>
+                                        <td><span class="badge bg-secondary">{{ $data->PPKB_CODE ?? '-' }}</span></td>
+                                        <td><span class="badge bg-info">{{ $data->NO_UKK ?? '-' }}</span></td>
+                                        <td>{{ $data->NO_BKT_PANDU ?? '-' }}</td>
+                                        <td><strong>{{ $data->NM_KAPAL ?? '-' }}</strong></td>
+                                        <td>{{ $data->NM_PERS_PANDU ?? '-' }}</td>
+                                        <td>{{ $data->TGL_TIBA ?? '-' }}</td>
+                                        <td>{{ $data->JAM_TIBA ?? '-' }}</td>
+                                        <td>{{ $data->TGL_PMT ?? '-' }}</td>
+                                        <td>{{ $data->JAM_PMT ?? '-' }}</td>
+                                        <td>{{ $data->PNK ?? '-' }}</td>
+                                        <td>{{ $data->KB ?? '-' }}</td>
+                                        <td>{{ $data->MULAI_PELAKSANAAN ?? '-' }}</td>
+                                        <td>{{ $data->SELESAI_PELAKSANAAN ?? '-' }}</td>
+                                        <td class="text-center">
+                                            <span class="badge bg-warning text-dark">{{ $data->WT ?? '-' }}</span>
+                                        </td>
+                                        <td>{{ $data->PANDU_DARI ?? '-' }}</td>
+                                        <td>{{ $data->PANDU_KE ?? '-' }}</td>
+                                    </tr>
+                                    @endforeach
+                                </tbody>
+                            </table>
+                        </div>
+                        
+                        <!-- Pagination -->
+                        @if($waitingTimeData->hasPages())
+                        <div class="d-flex justify-content-between align-items-center mt-3">
+                            <div class="text-muted">
+                                Menampilkan {{ $waitingTimeData->firstItem() }} - {{ $waitingTimeData->lastItem() }} dari {{ $waitingTimeData->total() }} data
+                            </div>
+                            <div>
+                                {{ $waitingTimeData->links('pagination::bootstrap-5') }}
+                            </div>
+                        </div>
+                        @endif
+                        @else
+                        <div class="alert alert-secondary">
+                            <i class="bi bi-info-circle"></i> Tidak ada data untuk ditampilkan
+                        </div>
+                        @endif
+                    </div>
+                    @endif
+                </div>
+            </div>
+        </div>
+        @endif
+
         <!-- Ship Statistics by GT Range and Flag -->
         @if(($selectedPeriode != 'all' || $selectedBranch != 'all') && $shipStatsByGT->count() > 0)
         <div class="row mb-4">
@@ -799,386 +1518,6 @@
             </div>
         </div>
         @endif
-
-        <!-- Departure Invoice Delay Section -->
-        @if($selectedPeriode != 'all' && $selectedBranch != 'all' && $departureDelayCount > 0)
-        <div class="row mb-4">
-            <div class="col-12">
-                <div class="card stat-card">
-                    @if(!$showDeparture)
-                    <div class="card-body text-center py-4">
-                        <i class="bi bi-exclamation-triangle text-warning" style="font-size: 3rem;"></i>
-                        <h5 class="mt-3">Data Keterlambatan Invoice Departure</h5>
-                        <p class="text-muted">
-                            Ditemukan <strong class="text-danger">{{ number_format($departureDelayCount) }} transaksi</strong> 
-                            dengan keterlambatan invoice > 2 hari
-                        </p>
-                        <a href="{{ route('dashboard', ['periode' => $selectedPeriode, 'cabang' => $selectedBranch, 'show_departure' => 1]) }}#departure-section" 
-                           class="btn btn-warning">
-                            <i class="bi bi-eye"></i> Tampilkan Data Departure
-                        </a>
-                    </div>
-                    @else
-                    <div class="card-header" style="background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%); color: white;" id="departure-section">
-                        <div class="d-flex justify-content-between align-items-center">
-                            <h5 class="mb-0">
-                                <i class="bi bi-exclamation-triangle-fill"></i> 
-                                Data Departure - Keterlambatan Invoice (> 2 Hari)
-                            </h5>
-                            <div>
-                                <a href="{{ route('export.departure.delay', ['periode' => $selectedPeriode, 'cabang' => $selectedBranch]) }}" 
-                                   class="btn btn-light btn-sm me-2">
-                                    <i class="bi bi-file-earmark-excel"></i> Download Excel
-                                </a>
-                                <a href="{{ route('dashboard', ['periode' => $selectedPeriode, 'cabang' => $selectedBranch]) }}" 
-                                   class="btn btn-light btn-sm">
-                                    <i class="bi bi-x-circle"></i> Sembunyikan
-                                </a>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="card-body">
-                        <div class="alert alert-info mb-3">
-                            <i class="bi bi-info-circle-fill"></i>
-                            <strong>{{ number_format($departureDelayCount) }} transaksi</strong> memiliki selisih antara tanggal selesai pelaksanaan dan invoice lebih dari 2 hari.
-                            <div class="mt-2">
-                                <small class="text-muted">Data diurutkan berdasarkan selisih hari terbesar</small>
-                            </div>
-                        </div>
-                        
-                        @if($departureDelayData && $departureDelayData->count() > 0)
-                        <div class="table-responsive">
-                            <table class="table table-hover table-striped">
-                                <thead class="table-dark">
-                                    <tr>
-                                        <th>No</th>
-                                        <th>No. UKK</th>
-                                        <th>Nama Kapal</th>
-                                        <th>Nama Pandu</th>
-                                        <th>Cabang</th>
-                                        <th>Gerakan</th>
-                                        <th>Selesai Pelaksanaan</th>
-                                        <th>Tanggal Invoice</th>
-                                        <th class="text-center">Selisih (hari)</th>
-                                        <th class="text-end">Pendapatan Pandu</th>
-                                        <th class="text-end">Pendapatan Tunda</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    @foreach($departureDelayData as $index => $data)
-                                    <tr>
-                                        <td>{{ $departureDelayData->firstItem() + $index }}</td>
-                                        <td><span class="badge bg-secondary">{{ $data->NO_UKK }}</span></td>
-                                        <td><strong>{{ $data->NM_KAPAL }}</strong></td>
-                                        <td>{{ $data->NM_PERS_PANDU }}</td>
-                                        <td>{{ $data->NM_BRANCH }}</td>
-                                        <td>
-                                            <span class="badge bg-danger">
-                                                <i class="bi bi-arrow-up-circle"></i> {{ strtoupper($data->GERAKAN) }}
-                                            </span>
-                                        </td>
-                                        <td>{{ $data->SELESAI_PELAKSANAAN }}</td>
-                                        <td>{{ $data->INVOICE_DATE }}</td>
-                                        <td class="text-center">
-                                            <span class="badge bg-danger fs-6">
-                                                {{ $data->selisih_hari }} hari
-                                            </span>
-                                        </td>
-                                        <td class="text-end">Rp {{ number_format($data->PENDAPATAN_PANDU, 0, ',', '.') }}</td>
-                                        <td class="text-end">Rp {{ number_format($data->PENDAPATAN_TUNDA, 0, ',', '.') }}</td>
-                                    </tr>
-                                    @endforeach
-                                </tbody>
-                            </table>
-                        </div>
-                        
-                        <!-- Pagination -->
-                        @if($departureDelayData->hasPages())
-                        <div class="d-flex justify-content-between align-items-center mt-3">
-                            <div class="text-muted">
-                                Menampilkan {{ $departureDelayData->firstItem() }} - {{ $departureDelayData->lastItem() }} dari {{ $departureDelayData->total() }} data
-                            </div>
-                            <div>
-                                {{ $departureDelayData->links('pagination::bootstrap-5') }}
-                            </div>
-                        </div>
-                        @endif
-                        @else
-                        <div class="alert alert-secondary">
-                            <i class="bi bi-info-circle"></i> Tidak ada data untuk ditampilkan
-                        </div>
-                        @endif
-                    </div>
-                    @endif
-                </div>
-            </div>
-        </div>
-        @endif
-
-        <!-- Status Nota Section -->
-        @if($selectedPeriode != 'all' && $selectedBranch != 'all' && $statusNotaCount > 0)
-        <div class="row mb-4">
-            <div class="col-12">
-                <div class="card stat-card">
-                    @if(!$showStatusNota)
-                    <div class="card-body text-center py-4">
-                        <i class="bi bi-clipboard-check text-info" style="font-size: 3rem;"></i>
-                        <h5 class="mt-3">Data Status Nota</h5>
-                        <p class="text-muted">
-                            Ditemukan <strong class="text-info">{{ number_format($statusNotaCount) }} transaksi</strong> 
-                            dengan status "menunggu nota" atau "belum verifikasi"
-                        </p>
-                        <a href="{{ route('dashboard', ['periode' => $selectedPeriode, 'cabang' => $selectedBranch, 'show_status_nota' => 1]) }}#status-nota-section" 
-                           class="btn btn-info">
-                            <i class="bi bi-eye"></i> Tampilkan Data Status Nota
-                        </a>
-                    </div>
-                    @else
-                    <div class="card-header" style="background: linear-gradient(135deg, #06b6d4 0%, #0891b2 100%); color: white;" id="status-nota-section">
-                        <div class="d-flex justify-content-between align-items-center">
-                            <h5 class="mb-0">
-                                <i class="bi bi-clipboard-check"></i> 
-                                Data Status Nota (Menunggu Nota / Belum Verifikasi)
-                            </h5>
-                            <div>
-                                <a href="{{ route('export.status.nota', ['periode' => $selectedPeriode, 'cabang' => $selectedBranch, 'filter_status_nota' => $filterStatusNota]) }}" 
-                                   class="btn btn-light btn-sm me-2">
-                                    <i class="bi bi-file-earmark-excel"></i> Download Excel
-                                </a>
-                                <a href="{{ route('dashboard', ['periode' => $selectedPeriode, 'cabang' => $selectedBranch]) }}" 
-                                   class="btn btn-light btn-sm">
-                                    <i class="bi bi-x-circle"></i> Sembunyikan
-                                </a>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="card-body">
-                        <!-- Filter Status Nota -->
-                        <div class="row mb-3">
-                            <div class="col-md-4">
-                                <form method="GET" action="{{ route('dashboard') }}" id="filterStatusNotaForm">
-                                    <input type="hidden" name="periode" value="{{ $selectedPeriode }}">
-                                    <input type="hidden" name="cabang" value="{{ $selectedBranch }}">
-                                    <input type="hidden" name="show_status_nota" value="1">
-                                    <div class="input-group">
-                                        <label class="input-group-text bg-info text-white"><i class="bi bi-funnel-fill"></i></label>
-                                        <select name="filter_status_nota" class="form-select filter-input">
-                                            <option value="all" {{ $filterStatusNota == 'all' ? 'selected' : '' }}>Semua Status</option>
-                                            <option value="menunggu nota" {{ $filterStatusNota == 'menunggu nota' ? 'selected' : '' }}>Menunggu Nota</option>
-                                            <option value="belum verifikasi" {{ $filterStatusNota == 'belum verifikasi' ? 'selected' : '' }}>Belum Verifikasi</option>
-                                        </select>
-                                        <button type="button" class="btn btn-primary" onclick="document.getElementById('globalLoading').style.display='flex'; this.closest('form').submit();">Apply</button>
-                                    </div>
-                                </form>
-                            </div>
-                        </div>
-                        
-                        <div class="alert alert-info mb-3">
-                            <i class="bi bi-info-circle-fill"></i>
-                            <strong>{{ number_format($statusNotaCount) }} transaksi</strong> 
-                            @if($filterStatusNota == 'all')
-                                memiliki status nota "menunggu nota" atau "belum verifikasi".
-                            @else
-                                dengan status "{{ $filterStatusNota }}".
-                            @endif
-                            <div class="mt-2">
-                                <small class="text-muted">Data diurutkan berdasarkan mulai pelaksanaan terbaru</small>
-                            </div>
-                        </div>
-                        
-                        @if($statusNotaData && $statusNotaData->count() > 0)
-                        <div class="table-responsive">
-                            <table class="table table-hover table-striped">
-                                <thead class="table-dark">
-                                    <tr>
-                                        <th style="width:48px">No</th>
-                                        <th style="width:140px">No. UKK</th>
-                                        <th style="width:260px">Nama Kapal</th>
-                                        <th style="width:120px">Pelayaran</th>
-                                        <th style="width:180px">Nama Pandu</th>
-                                        <th style="width:160px">Mulai Pelaksanaan</th>
-                                        <th style="width:160px">Selesai Pelaksanaan</th>
-                                        <th style="width:110px" class="text-center">Selisih (hari)</th>
-                                        <th class="text-end" style="width:140px">Pendapatan Pandu</th>
-                                        <th class="text-end" style="width:140px">Pendapatan Tunda</th>
-                                        <th class="text-center" style="width:120px">Status Nota</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    @foreach($statusNotaData as $index => $data)
-                                    <tr>
-                                        <td>{{ $statusNotaData->firstItem() + $index }}</td>
-                                        <td><span class="ukk-badge">{{ $data->NO_UKK }}</span></td>
-                                        <td class="nm-kapal"><strong title="{{ $data->NM_KAPAL }}">{{ Str::limit($data->NM_KAPAL, 40) }}</strong></td>
-                                        <td>{{ $data->PELAYARAN ?? '-' }}</td>
-                                        <td>{{ $data->NM_PERS_PANDU }}</td>
-                                        <td class="text-nowrap small">{{ $data->MULAI_PELAKSANAAN }}</td>
-                                        <td class="text-nowrap small">{{ $data->SELESAI_PELAKSANAAN }}</td>
-                                        @php $s = $data->SELISIH_HARI; @endphp
-                                        <td class="text-center">
-                                            @if($s === null || $s === '')
-                                                -
-                                            @else
-                                                <span class="badge selisih-badge {{ $s < 0 ? 'bg-danger' : ($s == 0 ? 'bg-secondary' : 'bg-success') }}">{{ $s }}</span>
-                                            @endif
-                                        </td>
-                                        <td class="text-end">Rp {{ number_format($data->PENDAPATAN_PANDU, 0, ',', '.') }}</td>
-                                        <td class="text-end">Rp {{ number_format($data->PENDAPATAN_TUNDA, 0, ',', '.') }}</td>
-                                        <td class="text-center">
-                                            <span class="badge {{ $data->STATUS_NOTA == 'menunggu nota' ? 'bg-warning' : 'bg-info' }} text-dark">
-                                                {{ strtoupper($data->STATUS_NOTA) }}
-                                            </span>
-                                        </td>
-                                    </tr>
-                                    @endforeach
-                                </tbody>
-                            </table>
-                        </div>
-                        
-                        <!-- Pagination -->
-                        @if($statusNotaData->hasPages())
-                        <div class="d-flex justify-content-between align-items-center mt-3">
-                            <div class="text-muted">
-                                Menampilkan {{ $statusNotaData->firstItem() }} - {{ $statusNotaData->lastItem() }} dari {{ $statusNotaData->total() }} data
-                            </div>
-                            <div>
-                                {{ $statusNotaData->links('pagination::bootstrap-5') }}
-                            </div>
-                        </div>
-                        @endif
-                        @else
-                        <div class="alert alert-secondary">
-                            <i class="bi bi-info-circle"></i> Tidak ada data untuk ditampilkan
-                        </div>
-                        @endif
-                    </div>
-                    @endif
-                </div>
-            </div>
-        </div>
-        @endif
-
-        <!-- Waiting Time Section -->
-        @if($selectedPeriode != 'all' && $selectedBranch != 'all' && $waitingTimeCount > 0)
-        <div class="row mb-4">
-            <div class="col-12">
-                <div class="card stat-card">
-                    @if(!$showWaitingTime)
-                    <div class="card-body text-center py-4">
-                        <i class="bi bi-clock-history" style="font-size: 3rem; color: #764ba2;"></i>
-                        <h5 class="mt-3">Data Waiting Time</h5>
-                        <p class="text-muted">
-                            Ditemukan <strong style="color: #764ba2;">{{ number_format($waitingTimeCount) }} transaksi</strong> 
-                            dengan Waiting Time (WT) di atas 00:30
-                        </p>
-                        <a href="{{ route('dashboard', ['periode' => $selectedPeriode, 'cabang' => $selectedBranch, 'show_waiting_time' => 1]) }}#waiting-time-section" 
-                           class="btn" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white;">
-                            <i class="bi bi-eye"></i> Tampilkan Data Waiting Time
-                        </a>
-                    </div>
-                    @else
-                    <div class="card-header" style="background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%); color: white;" id="waiting-time-section">
-                        <div class="d-flex justify-content-between align-items-center">
-                            <h5 class="mb-0">
-                                <i class="bi bi-clock-history"></i> 
-                                Data Waiting Time (WT > 00:30)
-                            </h5>
-                            <div>
-                                <a href="{{ route('export.waiting.time', ['periode' => $selectedPeriode, 'cabang' => $selectedBranch]) }}" 
-                                   class="btn btn-light btn-sm me-2">
-                                    <i class="bi bi-file-earmark-excel"></i> Download Excel
-                                </a>
-                                <a href="{{ route('dashboard', ['periode' => $selectedPeriode, 'cabang' => $selectedBranch]) }}" 
-                                   class="btn btn-light btn-sm">
-                                    <i class="bi bi-x-circle"></i> Sembunyikan
-                                </a>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="card-body">
-                        <div class="alert alert-warning mb-3">
-                            <i class="bi bi-info-circle-fill"></i>
-                            <strong>{{ number_format($waitingTimeCount) }} transaksi</strong> memiliki Waiting Time (WT) lebih dari 00:30 (30 menit).
-                            <div class="mt-2">
-                                <small class="text-muted">Data diurutkan berdasarkan WT terbesar</small>
-                            </div>
-                        </div>
-                        
-                        @if($waitingTimeData && $waitingTimeData->count() > 0)
-                        <div class="table-responsive">
-                            <table class="table table-hover table-striped table-sm">
-                                <thead class="table-dark">
-                                    <tr>
-                                        <th>No</th>
-                                        <th>PPKB Code</th>
-                                        <th>No. UKK</th>
-                                        <th>No. Bukti Pandu</th>
-                                        <th>Nama Kapal</th>
-                                        <th>Nama Pandu</th>
-                                        <th>Tgl Tiba</th>
-                                        <th>Jam Tiba</th>
-                                        <th>Tgl PMT</th>
-                                        <th>Jam PMT</th>
-                                        <th>PNK</th>
-                                        <th>KB</th>
-                                        <th>Mulai Pelaksanaan</th>
-                                        <th>Selesai Pelaksanaan</th>
-                                        <th class="text-center">WT</th>
-                                        <th>Pandu Dari</th>
-                                        <th>Pandu Ke</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    @foreach($waitingTimeData as $index => $data)
-                                    <tr>
-                                        <td>{{ $waitingTimeData->firstItem() + $index }}</td>
-                                        <td><span class="badge bg-secondary">{{ $data->PPKB_CODE ?? '-' }}</span></td>
-                                        <td><span class="badge bg-info">{{ $data->NO_UKK ?? '-' }}</span></td>
-                                        <td>{{ $data->NO_BKT_PANDU ?? '-' }}</td>
-                                        <td><strong>{{ $data->NM_KAPAL ?? '-' }}</strong></td>
-                                        <td>{{ $data->NM_PERS_PANDU ?? '-' }}</td>
-                                        <td>{{ $data->TGL_TIBA ?? '-' }}</td>
-                                        <td>{{ $data->JAM_TIBA ?? '-' }}</td>
-                                        <td>{{ $data->TGL_PMT ?? '-' }}</td>
-                                        <td>{{ $data->JAM_PMT ?? '-' }}</td>
-                                        <td>{{ $data->PNK ?? '-' }}</td>
-                                        <td>{{ $data->KB ?? '-' }}</td>
-                                        <td>{{ $data->MULAI_PELAKSANAAN ?? '-' }}</td>
-                                        <td>{{ $data->SELESAI_PELAKSANAAN ?? '-' }}</td>
-                                        <td class="text-center">
-                                            <span class="badge bg-warning text-dark">{{ $data->WT ?? '-' }}</span>
-                                        </td>
-                                        <td>{{ $data->PANDU_DARI ?? '-' }}</td>
-                                        <td>{{ $data->PANDU_KE ?? '-' }}</td>
-                                    </tr>
-                                    @endforeach
-                                </tbody>
-                            </table>
-                        </div>
-                        
-                        <!-- Pagination -->
-                        @if($waitingTimeData->hasPages())
-                        <div class="d-flex justify-content-between align-items-center mt-3">
-                            <div class="text-muted">
-                                Menampilkan {{ $waitingTimeData->firstItem() }} - {{ $waitingTimeData->lastItem() }} dari {{ $waitingTimeData->total() }} data
-                            </div>
-                            <div>
-                                {{ $waitingTimeData->links('pagination::bootstrap-5') }}
-                            </div>
-                        </div>
-                        @endif
-                        @else
-                        <div class="alert alert-secondary">
-                            <i class="bi bi-info-circle"></i> Tidak ada data untuk ditampilkan
-                        </div>
-                        @endif
-                    </div>
-                    @endif
-                </div>
-            </div>
-        </div>
-        @endif
-
         <!-- Pilot Cards -->
         @if($selectedPeriode != 'all' && $selectedBranch != 'all')
         <div class="row">
