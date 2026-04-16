@@ -446,8 +446,8 @@ class DashboardController extends Controller
                     ->appends(request()->query());
             }
 
-            // Anomali: untuk NO_UKK yang sama, jika hanya tepat 1 baris yang memiliki
-            // nilai MULAI_TUNDA di antara semua baris ARRIVE/DEPARTURE/SHIFTING.
+            // Anomali: untuk NO_UKK yang sama (lebih dari 1 baris), jika hanya tepat 1 baris
+            // yang memiliki nilai MULAI_TUNDA. Jika hanya ada 1 baris total = normal.
             $anomaliSql = "
                 NO_UKK IN (
                     SELECT NO_UKK
@@ -457,7 +457,8 @@ class DashboardController extends Controller
                     AND   GERAKAN  IN ('ARRIVE', 'DEPARTURE', 'SHIFTING')
                     GROUP BY NO_UKK
                     HAVING
-                        SUM(CASE WHEN MULAI_TUNDA IS NOT NULL AND MULAI_TUNDA != '' THEN 1 ELSE 0 END) = 1
+                        COUNT(*) > 1
+                        AND SUM(CASE WHEN MULAI_TUNDA IS NOT NULL AND MULAI_TUNDA != '' THEN 1 ELSE 0 END) = 1
                 )
             ";
             $anomaliCount = Lhgk::whereRaw($anomaliSql, [$selectedPeriode, $selectedBranch])
@@ -1610,7 +1611,8 @@ class DashboardController extends Controller
                 AND   GERAKAN  IN ('ARRIVE', 'DEPARTURE', 'SHIFTING')
                 GROUP BY NO_UKK
                 HAVING
-                    SUM(CASE WHEN MULAI_TUNDA IS NOT NULL AND MULAI_TUNDA != '' THEN 1 ELSE 0 END) = 1
+                    COUNT(*) > 1
+                    AND SUM(CASE WHEN MULAI_TUNDA IS NOT NULL AND MULAI_TUNDA != '' THEN 1 ELSE 0 END) = 1
             )
         ";
 

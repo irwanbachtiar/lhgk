@@ -1331,7 +1331,7 @@
                         <h5 class="mt-3">Data Anomali</h5>
                         <p class="text-muted">
                             Ditemukan <strong style="color: #dc3545;">{{ number_format($anomaliCount) }} record</strong>
-                            dengan kondisi anomali (ARRIVE dan DEPARTURE tidak sinkron pada kolom MULAI_TUNDA)
+                            dengan kondisi anomali
                         </p>
                         <a href="{{ route('dashboard', ['periode' => $selectedPeriode, 'cabang' => $selectedBranch, 'show_anomali' => 1]) }}#anomali-section"
                            class="btn" style="background: linear-gradient(135deg, #dc3545 0%, #b02a37 100%); color: white;">
