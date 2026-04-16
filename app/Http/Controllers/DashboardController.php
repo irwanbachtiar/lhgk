@@ -502,13 +502,16 @@ class DashboardController extends Controller
                         'NO_UKK',
                         'NO_BKT_PANDU',
                         'NM_KAPAL',
+                        'KP_GRT',
+                        'KP_LOA',
                         'NM_PERS_PANDU',
                         'MULAI_PELAKSANAAN',
                         'PANDU_DARI',
                         'PANDU_KE',
                         'GERAKAN',
                         'NO_PKK_INAPORTNET',
-                        'MULAI_TUNDA'
+                        'MULAI_TUNDA',
+                        'PENDAPATAN_TUNDA'
                     )
                     ->whereRaw($anomaliSql, [$selectedPeriode, $selectedBranch])
                     ->whereIn('GERAKAN', ['ARRIVE', 'DEPARTURE', 'SHIFTING'])
@@ -1621,13 +1624,16 @@ class DashboardController extends Controller
                 'NO_UKK',
                 'NO_BKT_PANDU',
                 'NM_KAPAL',
+                'KP_GRT',
+                'KP_LOA',
                 'NM_PERS_PANDU',
                 'MULAI_PELAKSANAAN',
                 'PANDU_DARI',
                 'PANDU_KE',
                 'GERAKAN',
                 'NO_PKK_INAPORTNET',
-                'MULAI_TUNDA'
+                'MULAI_TUNDA',
+                'PENDAPATAN_TUNDA'
             )
             ->whereRaw($anomaliSql, [$selectedPeriode, $selectedBranch])
             ->whereIn('GERAKAN', ['ARRIVE', 'DEPARTURE', 'SHIFTING'])
@@ -1664,13 +1670,16 @@ class DashboardController extends Controller
                 'No. UKK',
                 'No. Bukti Pandu',
                 'Nama Kapal',
+                'GT',
+                'LOA',
                 'Nama Pandu',
                 'Mulai Pelaksanaan',
                 'Pandu Dari',
                 'Pandu Ke',
                 'Gerakan',
                 'No. PKK Inaportnet',
-                'Mulai Tunda'
+                'Mulai Tunda',
+                'Pendapatan Tunda'
             ]);
 
             // Data
@@ -1682,6 +1691,8 @@ class DashboardController extends Controller
                     $data->NO_UKK ?? '-',
                     $data->NO_BKT_PANDU ?? '-',
                     $data->NM_KAPAL ?? '-',
+                    $data->KP_GRT ?? '-',
+                    $data->KP_LOA ?? '-',
                     $data->NM_PERS_PANDU ?? '-',
                     $data->MULAI_PELAKSANAAN ?? '-',
                     $data->PANDU_DARI ?? '-',
@@ -1689,6 +1700,7 @@ class DashboardController extends Controller
                     $data->GERAKAN ?? '-',
                     $data->NO_PKK_INAPORTNET ?? '-',
                     $data->MULAI_TUNDA ?? '-',
+                    $data->PENDAPATAN_TUNDA ?? '-',
                 ]);
             }
 

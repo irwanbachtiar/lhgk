@@ -1388,6 +1388,8 @@
                                         <th>No. UKK</th>
                                         <th>No. Bukti Pandu</th>
                                         <th>Nama Kapal</th>
+                                        <th class="text-end">GT</th>
+                                        <th class="text-end">LOA</th>
                                         <th>Nama Pandu</th>
                                         <th>Mulai Pelaksanaan</th>
                                         <th>Pandu Dari</th>
@@ -1395,6 +1397,7 @@
                                         <th>Gerakan</th>
                                         <th>No. PKK Inaportnet</th>
                                         <th>Mulai Tunda</th>
+                                        <th class="text-end">Pendapatan Tunda</th>
                                     </tr>
                                 </thead>
                                 <tbody>
@@ -1405,6 +1408,8 @@
                                         <td><span class="badge bg-info"><?php echo e($data->NO_UKK ?? '-'); ?></span></td>
                                         <td><?php echo e($data->NO_BKT_PANDU ?? '-'); ?></td>
                                         <td><strong><?php echo e($data->NM_KAPAL ?? '-'); ?></strong></td>
+                                        <td class="text-end"><?php echo e($data->KP_GRT ? number_format($data->KP_GRT, 0, ',', '.') : '-'); ?></td>
+                                        <td class="text-end"><?php echo e($data->KP_LOA ? number_format($data->KP_LOA, 2, ',', '.') : '-'); ?></td>
                                         <td><?php echo e($data->NM_PERS_PANDU ?? '-'); ?></td>
                                         <td><?php echo e($data->MULAI_PELAKSANAAN ?? '-'); ?></td>
                                         <td><?php echo e($data->PANDU_DARI ?? '-'); ?></td>
@@ -1426,6 +1431,7 @@
                                                 <span class="badge bg-danger">-</span>
                                             <?php endif; ?>
                                         </td>
+                                        <td class="text-end"><?php echo e($data->PENDAPATAN_TUNDA ? 'Rp ' . number_format($data->PENDAPATAN_TUNDA, 0, ',', '.') : '-'); ?></td>
                                     </tr>
                                     <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>
                                 </tbody>
