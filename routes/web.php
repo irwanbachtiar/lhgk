@@ -21,6 +21,7 @@ Route::post('/upload-csv', [DashboardController::class, 'uploadCsv'])->name('upl
 Route::get('/export-departure-delay', [DashboardController::class, 'exportDepartureDelay'])->name('export.departure.delay');
 Route::get('/export-status-nota', [DashboardController::class, 'exportStatusNota'])->name('export.status.nota');
 Route::get('/export-waiting-time', [DashboardController::class, 'exportWaitingTime'])->name('export.waiting.time');
+Route::get('/export-anomali', [DashboardController::class, 'exportAnomali'])->name('export.anomali');
 Route::get('/export-backdate', [DashboardController::class, 'exportBackdate'])->name('export.backdate');
 Route::get('/export-realisasi-web', [DashboardController::class, 'exportRealisasiWeb'])->name('export.realisasi.web');
 

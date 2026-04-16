@@ -268,6 +268,7 @@ class DashboardController extends Controller
             $showPkkManual = $request->get('show_pkk_manual', 0);
             $showBackdate = $request->get('show_backdate', 0);
             $showRealisasiWeb = $request->get('show_realisasi_web', 0);
+            $showAnomali = $request->get('show_anomali', 0);
             $filterStatusNota = $request->get('filter_status_nota', 'all');
             
             // Count queries for section visibility
@@ -445,6 +446,26 @@ class DashboardController extends Controller
                     ->appends(request()->query());
             }
 
+            // Anomali: untuk NO_UKK yang sama, jika hanya tepat 1 baris yang memiliki
+            // nilai MULAI_TUNDA di antara semua baris ARRIVE/DEPARTURE/SHIFTING.
+            $anomaliSql = "
+                NO_UKK IN (
+                    SELECT NO_UKK
+                    FROM lhgk
+                    WHERE PERIODE   = ?
+                    AND   NM_BRANCH = ?
+                    AND   GERAKAN  IN ('ARRIVE', 'DEPARTURE', 'SHIFTING')
+                    GROUP BY NO_UKK
+                    HAVING
+                        SUM(CASE WHEN MULAI_TUNDA IS NOT NULL AND MULAI_TUNDA != '' THEN 1 ELSE 0 END) = 1
+                )
+            ";
+            $anomaliCount = Lhgk::whereRaw($anomaliSql, [$selectedPeriode, $selectedBranch])
+                ->whereIn('GERAKAN', ['ARRIVE', 'DEPARTURE', 'SHIFTING'])
+                ->where('PERIODE', $selectedPeriode)
+                ->where('NM_BRANCH', $selectedBranch)
+                ->count();
+
             $waitingTimeData = null;
             if ($showWaitingTime && $waitingTimeCount > 0) {                $waitingTimeData = Lhgk::select(
                         'PPKB_CODE',
@@ -470,6 +491,31 @@ class DashboardController extends Controller
                     ->where('NM_BRANCH', $selectedBranch)
                     ->orderByRaw('(CAST(SUBSTRING_INDEX(WT, " : ", 1) AS UNSIGNED) + CAST(SUBSTRING_INDEX(WT, " : ", -1) AS UNSIGNED) / 60.0) DESC')
                     ->paginate(10)
+                    ->appends(request()->query());
+            }
+
+            $anomaliData = null;
+            if ($showAnomali && $anomaliCount > 0) {
+                $anomaliData = Lhgk::select(
+                        'PPKB_CODE',
+                        'NO_UKK',
+                        'NO_BKT_PANDU',
+                        'NM_KAPAL',
+                        'NM_PERS_PANDU',
+                        'MULAI_PELAKSANAAN',
+                        'PANDU_DARI',
+                        'PANDU_KE',
+                        'GERAKAN',
+                        'NO_PKK_INAPORTNET',
+                        'MULAI_TUNDA'
+                    )
+                    ->whereRaw($anomaliSql, [$selectedPeriode, $selectedBranch])
+                    ->whereIn('GERAKAN', ['ARRIVE', 'DEPARTURE', 'SHIFTING'])
+                    ->where('PERIODE', $selectedPeriode)
+                    ->where('NM_BRANCH', $selectedBranch)
+                    ->orderBy('NO_UKK')
+                    ->orderBy('MULAI_PELAKSANAAN')
+                    ->paginate(15)
                     ->appends(request()->query());
             }
 
@@ -513,10 +559,13 @@ class DashboardController extends Controller
             $showRealisasiWeb = false;
             $realisasiWebCount = 0;
             $realisasiWebData = null;
+            $showAnomali = false;
+            $anomaliCount = 0;
+            $anomaliData = null;
         }
 
         // Show main dashboard view with filters, but without data until filters are selected
-        return view('dashboard', compact('statistics', 'chartData', 'totalOverall', 'periods', 'selectedPeriode', 'regionalGroups', 'allBranches', 'selectedBranch', 'topPilot', 'shipStatsByGT', 'showDeparture', 'departureDelayCount', 'departureDelayData', 'showStatusNota', 'statusNotaCount', 'statusNotaData', 'filterStatusNota', 'showWaitingTime', 'waitingTimeCount', 'waitingTimeData', 'showPkkManual', 'pkkManualCount', 'pkkManualData', 'showBackdate', 'backdateCount', 'backdateData', 'showRealisasiWeb', 'realisasiWebCount', 'realisasiWebData', 'realisasiPandu', 'realisasiTunda', 'totalTundaDistinct'));
+        return view('dashboard', compact('statistics', 'chartData', 'totalOverall', 'periods', 'selectedPeriode', 'regionalGroups', 'allBranches', 'selectedBranch', 'topPilot', 'shipStatsByGT', 'showDeparture', 'departureDelayCount', 'departureDelayData', 'showStatusNota', 'statusNotaCount', 'statusNotaData', 'filterStatusNota', 'showWaitingTime', 'waitingTimeCount', 'waitingTimeData', 'showPkkManual', 'pkkManualCount', 'pkkManualData', 'showBackdate', 'backdateCount', 'backdateData', 'showRealisasiWeb', 'realisasiWebCount', 'realisasiWebData', 'realisasiPandu', 'realisasiTunda', 'totalTundaDistinct', 'showAnomali', 'anomaliCount', 'anomaliData'));
     }
 
     private function getRegionalGroups()
@@ -1535,6 +1584,120 @@ class DashboardController extends Controller
                 '',
                 'RATA-RATA WT:',
                 number_format($waitingTimeData->avg('wt_decimal'), 2) . ' jam'
+            ]);
+
+            fclose($file);
+        };
+
+        return response()->stream($callback, 200, $headers);
+    }
+
+    public function exportAnomali(Request $request)
+    {
+        $selectedPeriode = $request->get('periode');
+        $selectedBranch  = $request->get('cabang');
+
+        if (!$selectedPeriode || !$selectedBranch) {
+            return redirect()->back()->with('error', 'Pilih periode dan cabang terlebih dahulu');
+        }
+
+        $anomaliSql = "
+            NO_UKK IN (
+                SELECT NO_UKK
+                FROM lhgk
+                WHERE PERIODE   = ?
+                AND   NM_BRANCH = ?
+                AND   GERAKAN  IN ('ARRIVE', 'DEPARTURE', 'SHIFTING')
+                GROUP BY NO_UKK
+                HAVING
+                    SUM(CASE WHEN MULAI_TUNDA IS NOT NULL AND MULAI_TUNDA != '' THEN 1 ELSE 0 END) = 1
+            )
+        ";
+
+        $anomaliData = Lhgk::select(
+                'PPKB_CODE',
+                'NO_UKK',
+                'NO_BKT_PANDU',
+                'NM_KAPAL',
+                'NM_PERS_PANDU',
+                'MULAI_PELAKSANAAN',
+                'PANDU_DARI',
+                'PANDU_KE',
+                'GERAKAN',
+                'NO_PKK_INAPORTNET',
+                'MULAI_TUNDA'
+            )
+            ->whereRaw($anomaliSql, [$selectedPeriode, $selectedBranch])
+            ->whereIn('GERAKAN', ['ARRIVE', 'DEPARTURE', 'SHIFTING'])
+            ->where('PERIODE', $selectedPeriode)
+            ->where('NM_BRANCH', $selectedBranch)
+            ->orderBy('NO_UKK')
+            ->orderBy('MULAI_PELAKSANAAN')
+            ->get();
+
+        if ($anomaliData->isEmpty()) {
+            return redirect()->back()->with('error', 'Tidak ada data anomali untuk periode dan cabang yang dipilih');
+        }
+
+        $filename = 'Anomali_' . str_replace(' ', '_', $selectedBranch) . '_' . str_replace('-', '', $selectedPeriode) . '_' . date('YmdHis') . '.csv';
+
+        $headers = [
+            'Content-Type' => 'text/csv; charset=UTF-8',
+            'Content-Disposition' => 'attachment; filename="' . $filename . '"',
+            'Pragma' => 'no-cache',
+            'Cache-Control' => 'must-revalidate, post-check=0, pre-check=0',
+            'Expires' => '0'
+        ];
+
+        $callback = function() use ($anomaliData, $selectedPeriode, $selectedBranch) {
+            $file = fopen('php://output', 'w');
+
+            // Add BOM for UTF-8
+            fprintf($file, chr(0xEF).chr(0xBB).chr(0xBF));
+
+            // Header
+            fputcsv($file, [
+                'No',
+                'PPKB Code',
+                'No. UKK',
+                'No. Bukti Pandu',
+                'Nama Kapal',
+                'Nama Pandu',
+                'Mulai Pelaksanaan',
+                'Pandu Dari',
+                'Pandu Ke',
+                'Gerakan',
+                'No. PKK Inaportnet',
+                'Mulai Tunda'
+            ]);
+
+            // Data
+            $no = 1;
+            foreach ($anomaliData as $data) {
+                fputcsv($file, [
+                    $no++,
+                    $data->PPKB_CODE ?? '-',
+                    $data->NO_UKK ?? '-',
+                    $data->NO_BKT_PANDU ?? '-',
+                    $data->NM_KAPAL ?? '-',
+                    $data->NM_PERS_PANDU ?? '-',
+                    $data->MULAI_PELAKSANAAN ?? '-',
+                    $data->PANDU_DARI ?? '-',
+                    $data->PANDU_KE ?? '-',
+                    $data->GERAKAN ?? '-',
+                    $data->NO_PKK_INAPORTNET ?? '-',
+                    $data->MULAI_TUNDA ?? '-',
+                ]);
+            }
+
+            // Summary
+            fputcsv($file, []);
+            fputcsv($file, [
+                '',
+                '',
+                '',
+                'TOTAL RECORD:',
+                count($anomaliData),
             ]);
 
             fclose($file);
