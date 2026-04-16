@@ -179,12 +179,19 @@
                     // Use controller-provided totals for WILAYAH only (excluding JAI)
                     $totalTunda = $totalTundaRevenue ?? 0;
                     $totalAll = $totalPandu + $totalTunda;
+                    $ytdTotalAll = ($ytdTotalPandu ?? 0) + ($ytdTotalTundaRevenue ?? 0);
                 @endphp
                 <div class="col-md-3">
                     <div class="card stat-card">
                         <div class="card-body text-center">
                             <h3 class="text-primary">{{ number_format($totalTransaksi ?? 0) }}</h3>
                             <p class="mb-0"><i class="bi bi-file-earmark-text"></i> Total Transaksi</p>
+                            @if($selectedPeriode != 'all')
+                            <div class="border-top mt-2 pt-2">
+                                <small class="text-muted"><i class="bi bi-calendar-range"></i> YTD Jan-{{ $selectedPeriode }}</small>
+                                <p class="mb-0 fw-bold text-primary">{{ number_format($ytdTotalTransaksi ?? 0) }}</p>
+                            </div>
+                            @endif
                         </div>
                     </div>
                 </div>
@@ -193,6 +200,12 @@
                         <div class="card-body text-center">
                             <h3 class="text-success">Rp {{ number_format($totalPandu, 0, ',', '.') }}</h3>
                             <p class="mb-0"><i class="bi bi-cash-coin"></i> Total Pandu</p>
+                            @if($selectedPeriode != 'all')
+                            <div class="border-top mt-2 pt-2">
+                                <small class="text-muted"><i class="bi bi-calendar-range"></i> YTD Jan-{{ $selectedPeriode }}</small>
+                                <p class="mb-0 fw-bold text-success">Rp {{ number_format($ytdTotalPandu ?? 0, 0, ',', '.') }}</p>
+                            </div>
+                            @endif
                         </div>
                     </div>
                 </div>
@@ -201,6 +214,12 @@
                         <div class="card-body text-center">
                             <h3 class="text-info">Rp {{ number_format($totalTunda, 0, ',', '.') }}</h3>
                             <p class="mb-0"><i class="bi bi-cash-stack"></i> Total Tunda</p>
+                            @if($selectedPeriode != 'all')
+                            <div class="border-top mt-2 pt-2">
+                                <small class="text-muted"><i class="bi bi-calendar-range"></i> YTD Jan-{{ $selectedPeriode }}</small>
+                                <p class="mb-0 fw-bold text-info">Rp {{ number_format($ytdTotalTundaRevenue ?? 0, 0, ',', '.') }}</p>
+                            </div>
+                            @endif
                         </div>
                     </div>
                 </div>
@@ -209,6 +228,12 @@
                         <div class="card-body text-center">
                             <h3 class="text-warning">Rp {{ number_format($totalAll, 0, ',', '.') }}</h3>
                             <p class="mb-0"><i class="bi bi-graph-up"></i> Total Pendapatan</p>
+                            @if($selectedPeriode != 'all')
+                            <div class="border-top mt-2 pt-2">
+                                <small class="text-muted"><i class="bi bi-calendar-range"></i> YTD Jan-{{ $selectedPeriode }}</small>
+                                <p class="mb-0 fw-bold text-warning">Rp {{ number_format($ytdTotalAll, 0, ',', '.') }}</p>
+                            </div>
+                            @endif
                         </div>
                     </div>
                 </div>
@@ -221,12 +246,19 @@
                 </div>
                 @php
                     $jaiTotalAll = ($jaiTotalPandu ?? 0) + ($jaiTotalTunda ?? 0);
+                    $ytdJaiTotalAll = ($ytdJaiTotalPandu ?? 0) + ($ytdJaiTotalTunda ?? 0);
                 @endphp
                 <div class="col-md-3">
                     <div class="card stat-card" style="border: 2px solid #f59e0b;">
                         <div class="card-body text-center">
                             <h3 class="text-primary">{{ number_format($jaiTotalTransaksi ?? 0) }}</h3>
                             <p class="mb-0"><i class="bi bi-file-earmark-text"></i> Total Transaksi JAI</p>
+                            @if($selectedPeriode != 'all')
+                            <div class="border-top mt-2 pt-2">
+                                <small class="text-muted"><i class="bi bi-calendar-range"></i> YTD Jan-{{ $selectedPeriode }}</small>
+                                <p class="mb-0 fw-bold text-primary">{{ number_format($ytdJaiTotalTransaksi ?? 0) }}</p>
+                            </div>
+                            @endif
                         </div>
                     </div>
                 </div>
@@ -235,6 +267,12 @@
                         <div class="card-body text-center">
                             <h3 class="text-success">Rp {{ number_format($jaiTotalPandu ?? 0, 0, ',', '.') }}</h3>
                             <p class="mb-0"><i class="bi bi-cash-coin"></i> Total Pandu JAI</p>
+                            @if($selectedPeriode != 'all')
+                            <div class="border-top mt-2 pt-2">
+                                <small class="text-muted"><i class="bi bi-calendar-range"></i> YTD Jan-{{ $selectedPeriode }}</small>
+                                <p class="mb-0 fw-bold text-success">Rp {{ number_format($ytdJaiTotalPandu ?? 0, 0, ',', '.') }}</p>
+                            </div>
+                            @endif
                         </div>
                     </div>
                 </div>
@@ -243,6 +281,12 @@
                         <div class="card-body text-center">
                             <h3 class="text-info">Rp {{ number_format($jaiTotalTunda ?? 0, 0, ',', '.') }}</h3>
                             <p class="mb-0"><i class="bi bi-cash-stack"></i> Total Tunda JAI</p>
+                            @if($selectedPeriode != 'all')
+                            <div class="border-top mt-2 pt-2">
+                                <small class="text-muted"><i class="bi bi-calendar-range"></i> YTD Jan-{{ $selectedPeriode }}</small>
+                                <p class="mb-0 fw-bold text-info">Rp {{ number_format($ytdJaiTotalTunda ?? 0, 0, ',', '.') }}</p>
+                            </div>
+                            @endif
                         </div>
                     </div>
                 </div>
@@ -251,6 +295,12 @@
                         <div class="card-body text-center">
                             <h3 class="text-warning">Rp {{ number_format($jaiTotalAll, 0, ',', '.') }}</h3>
                             <p class="mb-0"><i class="bi bi-graph-up"></i> Total Pendapatan JAI</p>
+                            @if($selectedPeriode != 'all')
+                            <div class="border-top mt-2 pt-2">
+                                <small class="text-muted"><i class="bi bi-calendar-range"></i> YTD Jan-{{ $selectedPeriode }}</small>
+                                <p class="mb-0 fw-bold text-warning">Rp {{ number_format($ytdJaiTotalAll, 0, ',', '.') }}</p>
+                            </div>
+                            @endif
                         </div>
                     </div>
                 </div>
@@ -398,6 +448,9 @@
                                     </div>
                                 </div>
                             <div class="card-body">
+                                <p class="text-muted mb-1" style="font-size:0.75rem; font-weight:600; text-transform:uppercase; letter-spacing:.05em;">
+                                    <i class="bi bi-calendar3"></i> Bulan {{ $selectedPeriode }}
+                                </p>
                                 <div class="row">
                                     <div class="col-4">
                                         <div class="mb-3">
@@ -438,6 +491,28 @@
                                         </div>
                                     </div>
                                 </div>
+
+                                @if(!empty($data['ytd_pandu_revenue']) || !empty($data['ytd_tunda_revenue']))
+                                <hr class="my-2">
+                                <p class="text-muted mb-1" style="font-size:0.75rem; font-weight:600; text-transform:uppercase; letter-spacing:.05em;">
+                                    <i class="bi bi-calendar-range"></i> YTD Jan-{{ $selectedPeriode }}
+                                </p>
+                                <div class="row">
+                                    <div class="col-4">
+                                        <small class="text-muted">Pandu YTD</small>
+                                        <h5 class="text-success mb-0">Rp {{ number_format($data['ytd_pandu_revenue'] ?? 0, 0, ',', '.') }}</h5>
+                                    </div>
+                                    <div class="col-4">
+                                        <small class="text-muted">Tunda YTD</small>
+                                        <h5 class="text-info mb-0">Rp {{ number_format($data['ytd_tunda_revenue'] ?? 0, 0, ',', '.') }}</h5>
+                                    </div>
+                                    <div class="col-4">
+                                        <small class="text-muted">Total YTD</small>
+                                        <h5 class="text-warning mb-0">Rp {{ number_format($data['ytd_total_revenue'] ?? 0, 0, ',', '.') }}</h5>
+                                        <small class="text-muted">Transaksi: {{ number_format($data['ytd_total_transaksi'] ?? 0) }}</small>
+                                    </div>
+                                </div>
+                                @endif
                             </div>
                         </div>
                     </div>

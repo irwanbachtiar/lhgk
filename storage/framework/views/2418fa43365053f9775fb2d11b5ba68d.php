@@ -4,9 +4,9 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Pendapatan Per Wilayah</title>
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css" rel="stylesheet">
-    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-9ndCyUaIbzAi2FUVXJi0CjmCapSmO7SnpJef0486qhLnuZ2cdeRhO02iuK6FUUVM" crossorigin="anonymous">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css" rel="stylesheet" integrity="sha384-QuGBSgV5Im3DzL2z+8Ko9/hqNy/N0O7zwvXAtfd1MvPKWa/UbeLV65cfm4BV5Wgq" crossorigin="anonymous">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js" integrity="sha384-e6nUZLBkQ86NJ6TVVKAeSaK8jWa3NhkYWZFomE39AvDbQWeie9PlQqM3pmYW5d1g" crossorigin="anonymous"></script>
     <style>
         body {
             background-color: #f8f9fa;
@@ -180,12 +180,19 @@
                     // Use controller-provided totals for WILAYAH only (excluding JAI)
                     $totalTunda = $totalTundaRevenue ?? 0;
                     $totalAll = $totalPandu + $totalTunda;
+                    $ytdTotalAll = ($ytdTotalPandu ?? 0) + ($ytdTotalTundaRevenue ?? 0);
                 ?>
                 <div class="col-md-3">
                     <div class="card stat-card">
                         <div class="card-body text-center">
                             <h3 class="text-primary"><?php echo e(number_format($totalTransaksi ?? 0)); ?></h3>
                             <p class="mb-0"><i class="bi bi-file-earmark-text"></i> Total Transaksi</p>
+                            <?php if($selectedPeriode != 'all'): ?>
+                            <div class="border-top mt-2 pt-2">
+                                <small class="text-muted"><i class="bi bi-calendar-range"></i> YTD Jan-<?php echo e($selectedPeriode); ?></small>
+                                <p class="mb-0 fw-bold text-primary"><?php echo e(number_format($ytdTotalTransaksi ?? 0)); ?></p>
+                            </div>
+                            <?php endif; ?>
                         </div>
                     </div>
                 </div>
@@ -194,6 +201,12 @@
                         <div class="card-body text-center">
                             <h3 class="text-success">Rp <?php echo e(number_format($totalPandu, 0, ',', '.')); ?></h3>
                             <p class="mb-0"><i class="bi bi-cash-coin"></i> Total Pandu</p>
+                            <?php if($selectedPeriode != 'all'): ?>
+                            <div class="border-top mt-2 pt-2">
+                                <small class="text-muted"><i class="bi bi-calendar-range"></i> YTD Jan-<?php echo e($selectedPeriode); ?></small>
+                                <p class="mb-0 fw-bold text-success">Rp <?php echo e(number_format($ytdTotalPandu ?? 0, 0, ',', '.')); ?></p>
+                            </div>
+                            <?php endif; ?>
                         </div>
                     </div>
                 </div>
@@ -202,6 +215,12 @@
                         <div class="card-body text-center">
                             <h3 class="text-info">Rp <?php echo e(number_format($totalTunda, 0, ',', '.')); ?></h3>
                             <p class="mb-0"><i class="bi bi-cash-stack"></i> Total Tunda</p>
+                            <?php if($selectedPeriode != 'all'): ?>
+                            <div class="border-top mt-2 pt-2">
+                                <small class="text-muted"><i class="bi bi-calendar-range"></i> YTD Jan-<?php echo e($selectedPeriode); ?></small>
+                                <p class="mb-0 fw-bold text-info">Rp <?php echo e(number_format($ytdTotalTundaRevenue ?? 0, 0, ',', '.')); ?></p>
+                            </div>
+                            <?php endif; ?>
                         </div>
                     </div>
                 </div>
@@ -210,6 +229,12 @@
                         <div class="card-body text-center">
                             <h3 class="text-warning">Rp <?php echo e(number_format($totalAll, 0, ',', '.')); ?></h3>
                             <p class="mb-0"><i class="bi bi-graph-up"></i> Total Pendapatan</p>
+                            <?php if($selectedPeriode != 'all'): ?>
+                            <div class="border-top mt-2 pt-2">
+                                <small class="text-muted"><i class="bi bi-calendar-range"></i> YTD Jan-<?php echo e($selectedPeriode); ?></small>
+                                <p class="mb-0 fw-bold text-warning">Rp <?php echo e(number_format($ytdTotalAll, 0, ',', '.')); ?></p>
+                            </div>
+                            <?php endif; ?>
                         </div>
                     </div>
                 </div>
@@ -222,12 +247,19 @@
                 </div>
                 <?php
                     $jaiTotalAll = ($jaiTotalPandu ?? 0) + ($jaiTotalTunda ?? 0);
+                    $ytdJaiTotalAll = ($ytdJaiTotalPandu ?? 0) + ($ytdJaiTotalTunda ?? 0);
                 ?>
                 <div class="col-md-3">
                     <div class="card stat-card" style="border: 2px solid #f59e0b;">
                         <div class="card-body text-center">
                             <h3 class="text-primary"><?php echo e(number_format($jaiTotalTransaksi ?? 0)); ?></h3>
                             <p class="mb-0"><i class="bi bi-file-earmark-text"></i> Total Transaksi JAI</p>
+                            <?php if($selectedPeriode != 'all'): ?>
+                            <div class="border-top mt-2 pt-2">
+                                <small class="text-muted"><i class="bi bi-calendar-range"></i> YTD Jan-<?php echo e($selectedPeriode); ?></small>
+                                <p class="mb-0 fw-bold text-primary"><?php echo e(number_format($ytdJaiTotalTransaksi ?? 0)); ?></p>
+                            </div>
+                            <?php endif; ?>
                         </div>
                     </div>
                 </div>
@@ -236,6 +268,12 @@
                         <div class="card-body text-center">
                             <h3 class="text-success">Rp <?php echo e(number_format($jaiTotalPandu ?? 0, 0, ',', '.')); ?></h3>
                             <p class="mb-0"><i class="bi bi-cash-coin"></i> Total Pandu JAI</p>
+                            <?php if($selectedPeriode != 'all'): ?>
+                            <div class="border-top mt-2 pt-2">
+                                <small class="text-muted"><i class="bi bi-calendar-range"></i> YTD Jan-<?php echo e($selectedPeriode); ?></small>
+                                <p class="mb-0 fw-bold text-success">Rp <?php echo e(number_format($ytdJaiTotalPandu ?? 0, 0, ',', '.')); ?></p>
+                            </div>
+                            <?php endif; ?>
                         </div>
                     </div>
                 </div>
@@ -244,6 +282,12 @@
                         <div class="card-body text-center">
                             <h3 class="text-info">Rp <?php echo e(number_format($jaiTotalTunda ?? 0, 0, ',', '.')); ?></h3>
                             <p class="mb-0"><i class="bi bi-cash-stack"></i> Total Tunda JAI</p>
+                            <?php if($selectedPeriode != 'all'): ?>
+                            <div class="border-top mt-2 pt-2">
+                                <small class="text-muted"><i class="bi bi-calendar-range"></i> YTD Jan-<?php echo e($selectedPeriode); ?></small>
+                                <p class="mb-0 fw-bold text-info">Rp <?php echo e(number_format($ytdJaiTotalTunda ?? 0, 0, ',', '.')); ?></p>
+                            </div>
+                            <?php endif; ?>
                         </div>
                     </div>
                 </div>
@@ -252,6 +296,12 @@
                         <div class="card-body text-center">
                             <h3 class="text-warning">Rp <?php echo e(number_format($jaiTotalAll, 0, ',', '.')); ?></h3>
                             <p class="mb-0"><i class="bi bi-graph-up"></i> Total Pendapatan JAI</p>
+                            <?php if($selectedPeriode != 'all'): ?>
+                            <div class="border-top mt-2 pt-2">
+                                <small class="text-muted"><i class="bi bi-calendar-range"></i> YTD Jan-<?php echo e($selectedPeriode); ?></small>
+                                <p class="mb-0 fw-bold text-warning">Rp <?php echo e(number_format($ytdJaiTotalAll, 0, ',', '.')); ?></p>
+                            </div>
+                            <?php endif; ?>
                         </div>
                     </div>
                 </div>
@@ -401,6 +451,10 @@
                                     </div>
                                 </div>
                             <div class="card-body">
+                                <p class="text-muted mb-1" style="font-size:0.75rem; font-weight:600; text-transform:uppercase; letter-spacing:.05em;">
+                                    <i class="bi bi-calendar3"></i> Bulan <?php echo e($selectedPeriode); ?>
+
+                                </p>
                                 <div class="row">
                                     <div class="col-4">
                                         <div class="mb-3">
@@ -441,6 +495,29 @@
                                         </div>
                                     </div>
                                 </div>
+
+                                <?php if(!empty($data['ytd_pandu_revenue']) || !empty($data['ytd_tunda_revenue'])): ?>
+                                <hr class="my-2">
+                                <p class="text-muted mb-1" style="font-size:0.75rem; font-weight:600; text-transform:uppercase; letter-spacing:.05em;">
+                                    <i class="bi bi-calendar-range"></i> YTD Jan-<?php echo e($selectedPeriode); ?>
+
+                                </p>
+                                <div class="row">
+                                    <div class="col-4">
+                                        <small class="text-muted">Pandu YTD</small>
+                                        <h5 class="text-success mb-0">Rp <?php echo e(number_format($data['ytd_pandu_revenue'] ?? 0, 0, ',', '.')); ?></h5>
+                                    </div>
+                                    <div class="col-4">
+                                        <small class="text-muted">Tunda YTD</small>
+                                        <h5 class="text-info mb-0">Rp <?php echo e(number_format($data['ytd_tunda_revenue'] ?? 0, 0, ',', '.')); ?></h5>
+                                    </div>
+                                    <div class="col-4">
+                                        <small class="text-muted">Total YTD</small>
+                                        <h5 class="text-warning mb-0">Rp <?php echo e(number_format($data['ytd_total_revenue'] ?? 0, 0, ',', '.')); ?></h5>
+                                        <small class="text-muted">Transaksi: <?php echo e(number_format($data['ytd_total_transaksi'] ?? 0)); ?></small>
+                                    </div>
+                                </div>
+                                <?php endif; ?>
                             </div>
                         </div>
                     </div>
@@ -449,7 +526,7 @@
         <?php endif; ?>
     </div>
 
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js" integrity="sha384-geWF76RCwLtnZ8qwWowPQNguL3RmwHVBC9FhGdlKrxdiJJigb/j/68SIy3Te4Bkz" crossorigin="anonymous"></script>
     <script>
         <?php if($selectedPeriode != 'all'): ?>
         // Regional Chart - Bar Chart
