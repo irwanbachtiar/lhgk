@@ -160,89 +160,93 @@ class NotaController extends Controller
                 $query->where('NAME_BRANCH', $selectedBranch);
             }
 
-            // Statistics - only get totals, no need to paginate data
-            // Count distinct INVOICE
-            $totalNota = DB::connection('dashboard_phinnisi')->table('pandu_prod')
-                ->select('INVOICE')
-                ->where('INVOICE', 'NOT LIKE', '%INV%')
-                ->when($selectedPeriode != 'all', function($q) use ($selectedPeriode) {
-                    return $q->whereRaw('DATE_FORMAT(STR_TO_DATE(INVOICE_DATE, \'%d-%m-%Y\'), \'%m-%Y\') = ?', [$selectedPeriode]);
-                })
-                ->when($selectedBranch != 'all', function($q) use ($selectedBranch) {
-                    return $q->where('NAME_BRANCH', $selectedBranch);
-                })
-                ->distinct()
-                ->count('INVOICE');
-            
-            // Sum revenue directly from REVENUE column (all rows)
-            $totalPendapatanPandu = DB::connection('dashboard_phinnisi')->table('pandu_prod')
-                ->when($selectedPeriode != 'all', function($q) use ($selectedPeriode) {
-                    return $q->whereRaw('DATE_FORMAT(STR_TO_DATE(INVOICE_DATE, \'%d-%m-%Y\'), \'%m-%Y\') = ?', [$selectedPeriode]);
-                })
-                ->when($selectedBranch != 'all', function($q) use ($selectedBranch) {
-                    return $q->where('NAME_BRANCH', $selectedBranch);
-                })
-                ->sum('REVENUE');
-            
-            // Get total tunda revenue - sum directly from REVENUE column (all rows)
-            $totalPendapatanTunda = DB::connection('dashboard_phinnisi')->table('tunda_prod')
-                ->when($selectedPeriode != 'all', function($q) use ($selectedPeriode) {
-                    return $q->whereRaw('DATE_FORMAT(STR_TO_DATE(INVOICE_DATE, \'%d-%m-%Y\'), \'%m-%Y\') = ?', [$selectedPeriode]);
-                })
-                ->when($selectedBranch != 'all', function($q) use ($selectedBranch) {
-                    return $q->where('NAME_BRANCH', $selectedBranch);
-                })
-                ->sum('REVENUE');
-            
-            // Get cancelled invoices (Nota Batal) - BILLING starting with "HIS"
-            // Count distinct BILLING from pandu_prod only
-            $totalNotaBatal = DB::connection('dashboard_phinnisi')->table('pandu_prod')
-                ->where('BILLING', 'LIKE', 'HIS%')
-                ->when($selectedPeriode != 'all', function($q) use ($selectedPeriode) {
-                    return $q->whereRaw('DATE_FORMAT(STR_TO_DATE(INVOICE_DATE, \'%d-%m-%Y\'), \'%m-%Y\') = ?', [$selectedPeriode]);
-                })
-                ->when($selectedBranch != 'all', function($q) use ($selectedBranch) {
-                    return $q->where('NAME_BRANCH', $selectedBranch);
-                })
-                ->distinct()
-                ->count('BILLING');
-            
-            // Get total revenue from cancelled invoices (Pandu) - sum directly from REVENUE column
-            $totalPendapatanPanduBatal = DB::connection('dashboard_phinnisi')->table('pandu_prod')
-                ->where('BILLING', 'LIKE', 'HIS%')
-                ->when($selectedPeriode != 'all', function($q) use ($selectedPeriode) {
-                    return $q->whereRaw('DATE_FORMAT(STR_TO_DATE(INVOICE_DATE, \'%d-%m-%Y\'), \'%m-%Y\') = ?', [$selectedPeriode]);
-                })
-                ->when($selectedBranch != 'all', function($q) use ($selectedBranch) {
-                    return $q->where('NAME_BRANCH', $selectedBranch);
-                })
-                ->sum('REVENUE');
-            
-            // Get total revenue from cancelled invoices (Tunda)
-            $totalPendapatanTundaBatal = DB::connection('dashboard_phinnisi')->table('tunda_prod')
-                ->where('BILLING', 'LIKE', 'HIS%')
-                ->when($selectedPeriode != 'all', function($q) use ($selectedPeriode) {
-                    return $q->whereRaw('DATE_FORMAT(STR_TO_DATE(INVOICE_DATE, \'%d-%m-%Y\'), \'%m-%Y\') = ?', [$selectedPeriode]);
-                })
-                ->when($selectedBranch != 'all', function($q) use ($selectedBranch) {
-                    return $q->where('NAME_BRANCH', $selectedBranch);
-                })
-                ->sum('REVENUE');
-            
-            // Get revenue per pilot - sum directly from REVENUE column (all rows)
-            $revenuePerPandu = DB::connection('dashboard_phinnisi')->table('pandu_prod')
-                ->where('PILOT', '!=', '')
-                ->whereNotNull('PILOT')
-                ->when($selectedPeriode != 'all', function($q) use ($selectedPeriode) {
-                    return $q->whereRaw('DATE_FORMAT(STR_TO_DATE(INVOICE_DATE, \'%d-%m-%Y\'), \'%m-%Y\') = ?', [$selectedPeriode]);
-                })
-                ->when($selectedBranch != 'all', function($q) use ($selectedBranch) {
-                    return $q->where('NAME_BRANCH', $selectedBranch);
-                })
-                ->select('PILOT', DB::raw('SUM(REVENUE) as total_revenue'), DB::raw('COUNT(*) as total_transaksi'))
-                ->groupBy('PILOT')
-                ->orderByDesc('total_revenue')
-                ->get();
+            try {
+                // Statistics - only get totals, no need to paginate data
+                // Count distinct INVOICE
+                $totalNota = DB::connection('dashboard_phinnisi')->table('pandu_prod')
+                    ->select('INVOICE')
+                    ->where('INVOICE', 'NOT LIKE', '%INV%')
+                    ->when($selectedPeriode != 'all', function($q) use ($selectedPeriode) {
+                        return $q->whereRaw('DATE_FORMAT(STR_TO_DATE(INVOICE_DATE, \'%d-%m-%Y\'), \'%m-%Y\') = ?', [$selectedPeriode]);
+                    })
+                    ->when($selectedBranch != 'all', function($q) use ($selectedBranch) {
+                        return $q->where('NAME_BRANCH', $selectedBranch);
+                    })
+                    ->distinct()
+                    ->count('INVOICE');
+                
+                // Sum revenue directly from REVENUE column (all rows)
+                $totalPendapatanPandu = DB::connection('dashboard_phinnisi')->table('pandu_prod')
+                    ->when($selectedPeriode != 'all', function($q) use ($selectedPeriode) {
+                        return $q->whereRaw('DATE_FORMAT(STR_TO_DATE(INVOICE_DATE, \'%d-%m-%Y\'), \'%m-%Y\') = ?', [$selectedPeriode]);
+                    })
+                    ->when($selectedBranch != 'all', function($q) use ($selectedBranch) {
+                        return $q->where('NAME_BRANCH', $selectedBranch);
+                    })
+                    ->sum('REVENUE');
+                
+                // Get total tunda revenue - sum directly from REVENUE column (all rows)
+                $totalPendapatanTunda = DB::connection('dashboard_phinnisi')->table('tunda_prod')
+                    ->when($selectedPeriode != 'all', function($q) use ($selectedPeriode) {
+                        return $q->whereRaw('DATE_FORMAT(STR_TO_DATE(INVOICE_DATE, \'%d-%m-%Y\'), \'%m-%Y\') = ?', [$selectedPeriode]);
+                    })
+                    ->when($selectedBranch != 'all', function($q) use ($selectedBranch) {
+                        return $q->where('NAME_BRANCH', $selectedBranch);
+                    })
+                    ->sum('REVENUE');
+                
+                // Get cancelled invoices (Nota Batal) - BILLING starting with "HIS"
+                // Count distinct BILLING from pandu_prod only
+                $totalNotaBatal = DB::connection('dashboard_phinnisi')->table('pandu_prod')
+                    ->where('BILLING', 'LIKE', 'HIS%')
+                    ->when($selectedPeriode != 'all', function($q) use ($selectedPeriode) {
+                        return $q->whereRaw('DATE_FORMAT(STR_TO_DATE(INVOICE_DATE, \'%d-%m-%Y\'), \'%m-%Y\') = ?', [$selectedPeriode]);
+                    })
+                    ->when($selectedBranch != 'all', function($q) use ($selectedBranch) {
+                        return $q->where('NAME_BRANCH', $selectedBranch);
+                    })
+                    ->distinct()
+                    ->count('BILLING');
+                
+                // Get total revenue from cancelled invoices (Pandu) - sum directly from REVENUE column
+                $totalPendapatanPanduBatal = DB::connection('dashboard_phinnisi')->table('pandu_prod')
+                    ->where('BILLING', 'LIKE', 'HIS%')
+                    ->when($selectedPeriode != 'all', function($q) use ($selectedPeriode) {
+                        return $q->whereRaw('DATE_FORMAT(STR_TO_DATE(INVOICE_DATE, \'%d-%m-%Y\'), \'%m-%Y\') = ?', [$selectedPeriode]);
+                    })
+                    ->when($selectedBranch != 'all', function($q) use ($selectedBranch) {
+                        return $q->where('NAME_BRANCH', $selectedBranch);
+                    })
+                    ->sum('REVENUE');
+                
+                // Get total revenue from cancelled invoices (Tunda)
+                $totalPendapatanTundaBatal = DB::connection('dashboard_phinnisi')->table('tunda_prod')
+                    ->where('BILLING', 'LIKE', 'HIS%')
+                    ->when($selectedPeriode != 'all', function($q) use ($selectedPeriode) {
+                        return $q->whereRaw('DATE_FORMAT(STR_TO_DATE(INVOICE_DATE, \'%d-%m-%Y\'), \'%m-%Y\') = ?', [$selectedPeriode]);
+                    })
+                    ->when($selectedBranch != 'all', function($q) use ($selectedBranch) {
+                        return $q->where('NAME_BRANCH', $selectedBranch);
+                    })
+                    ->sum('REVENUE');
+                
+                // Get revenue per pilot - sum directly from REVENUE column (all rows)
+                $revenuePerPandu = DB::connection('dashboard_phinnisi')->table('pandu_prod')
+                    ->where('PILOT', '!=', '')
+                    ->whereNotNull('PILOT')
+                    ->when($selectedPeriode != 'all', function($q) use ($selectedPeriode) {
+                        return $q->whereRaw('DATE_FORMAT(STR_TO_DATE(INVOICE_DATE, \'%d-%m-%Y\'), \'%m-%Y\') = ?', [$selectedPeriode]);
+                    })
+                    ->when($selectedBranch != 'all', function($q) use ($selectedBranch) {
+                        return $q->where('NAME_BRANCH', $selectedBranch);
+                    })
+                    ->select('PILOT', DB::raw('SUM(REVENUE) as total_revenue'), DB::raw('COUNT(*) as total_transaksi'))
+                    ->groupBy('PILOT')
+                    ->orderByDesc('total_revenue')
+                    ->get();
+            } catch (\Exception $e) {
+                \Log::error('Error getting statistics: ' . $e->getMessage());
+            }
             
             // Get revenue per tunda - detect column name first
             try {
@@ -288,29 +292,33 @@ class NotaController extends Controller
             }
             
             // Get top 10 shipping agents (combined pandu + tunda revenue)
-            $topShippingAgents = DB::connection('dashboard_phinnisi')
-                ->table(DB::raw('(
-                    SELECT SHIPPING_AGENT, SUM(REVENUE) as total_revenue
-                    FROM dashboard_phinnisi.pandu_prod
-                    WHERE SHIPPING_AGENT IS NOT NULL AND SHIPPING_AGENT != ""
-                    ' . ($selectedPeriode != 'all' ? 'AND DATE_FORMAT(STR_TO_DATE(INVOICE_DATE, \'%d-%m-%Y\'), \'%m-%Y\') = "' . $selectedPeriode . '"' : '') . '
-                    ' . ($selectedBranch != 'all' ? 'AND NAME_BRANCH = "' . $selectedBranch . '"' : '') . '
-                    GROUP BY SHIPPING_AGENT
-                    
-                    UNION ALL
-                    
-                    SELECT SHIPPING_AGENT, SUM(REVENUE) as total_revenue
-                    FROM dashboard_phinnisi.tunda_prod
-                    WHERE SHIPPING_AGENT IS NOT NULL AND SHIPPING_AGENT != ""
-                    ' . ($selectedPeriode != 'all' ? 'AND DATE_FORMAT(STR_TO_DATE(INVOICE_DATE, \'%d-%m-%Y\'), \'%m-%Y\') = "' . $selectedPeriode . '"' : '') . '
-                    ' . ($selectedBranch != 'all' ? 'AND NAME_BRANCH = "' . $selectedBranch . '"' : '') . '
-                    GROUP BY SHIPPING_AGENT
-                ) as combined'))
-                ->select('SHIPPING_AGENT', DB::raw('SUM(total_revenue) as total_revenue'))
-                ->groupBy('SHIPPING_AGENT')
-                ->orderByDesc('total_revenue')
-                ->limit(10)
-                ->get();
+            try {
+                $topShippingAgents = DB::connection('dashboard_phinnisi')
+                    ->table(DB::raw('(
+                        SELECT SHIPPING_AGENT, SUM(REVENUE) as total_revenue
+                        FROM dashboard_phinnisi.pandu_prod
+                        WHERE SHIPPING_AGENT IS NOT NULL AND SHIPPING_AGENT != ""
+                        ' . ($selectedPeriode != 'all' ? 'AND DATE_FORMAT(STR_TO_DATE(INVOICE_DATE, \'%d-%m-%Y\'), \'%m-%Y\') = "' . $selectedPeriode . '"' : '') . '
+                        ' . ($selectedBranch != 'all' ? 'AND NAME_BRANCH = "' . $selectedBranch . '"' : '') . '
+                        GROUP BY SHIPPING_AGENT
+                        
+                        UNION ALL
+                        
+                        SELECT SHIPPING_AGENT, SUM(REVENUE) as total_revenue
+                        FROM dashboard_phinnisi.tunda_prod
+                        WHERE SHIPPING_AGENT IS NOT NULL AND SHIPPING_AGENT != ""
+                        ' . ($selectedPeriode != 'all' ? 'AND DATE_FORMAT(STR_TO_DATE(INVOICE_DATE, \'%d-%m-%Y\'), \'%m-%Y\') = "' . $selectedPeriode . '"' : '') . '
+                        ' . ($selectedBranch != 'all' ? 'AND NAME_BRANCH = "' . $selectedBranch . '"' : '') . '
+                        GROUP BY SHIPPING_AGENT
+                    ) as combined'))
+                    ->select('SHIPPING_AGENT', DB::raw('SUM(total_revenue) as total_revenue'))
+                    ->groupBy('SHIPPING_AGENT')
+                    ->orderByDesc('total_revenue')
+                    ->limit(10)
+                    ->get();
+            } catch (\Exception $e) {
+                $topShippingAgents = collect();
+            }
         } else {
             $topShippingAgents = collect();
         }
@@ -919,8 +927,13 @@ class NotaController extends Controller
             ->groupBy('BILLING', 'INVOICE', 'INVOICE_DATE', 'NO_PKK', 'VESSEL_NAME', 'SHIPPING_AGENT', 'FLAG', 'DELEGATION');
 
         // Combine results
-        $panduData = $panduQuery->get();
-        $tundaData = $tundaQuery->get();
+        try {
+            $panduData = $panduQuery->get();
+            $tundaData = $tundaQuery->get();
+        } catch (\Exception $e) {
+            $panduData = collect();
+            $tundaData = collect();
+        }
 
         // Merge by BILLING
         $merged = collect();
@@ -1009,8 +1022,13 @@ class NotaController extends Controller
             ->groupBy('BILLING', 'INVOICE', 'INVOICE_DATE', 'NO_PKK', 'VESSEL_NAME', 'SHIPPING_AGENT', 'FLAG', 'DELEGATION');
 
         // Combine results
-        $panduData = $panduQuery->get();
-        $tundaData = $tundaQuery->get();
+        try {
+            $panduData = $panduQuery->get();
+            $tundaData = $tundaQuery->get();
+        } catch (\Exception $e) {
+            $panduData = collect();
+            $tundaData = collect();
+        }
 
         // Merge by BILLING
         $merged = collect();

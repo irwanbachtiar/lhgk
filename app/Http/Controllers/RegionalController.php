@@ -142,214 +142,233 @@ class RegionalController extends Controller
 
         // Only load data if period is selected
         if ($selectedPeriode != 'all') {
-            // Get only WILAYAH branches (exclude JAI)
-            $wilayahBranches = collect($regionalGroups)
-                ->except('JAI')
-                ->flatten()
-                ->toArray();
-            
-            // Calculate totals for WILAYAH only (exclude JAI)
-            $totalPandu = DB::connection('dashboard_phinnisi')->table('pandu_prod')
-                ->whereIn('NAME_BRANCH', $wilayahBranches)
-                ->whereRaw('DATE_FORMAT(STR_TO_DATE(INVOICE_DATE, \'%d-%m-%Y\'), \'%m-%Y\') = ?', [$selectedPeriode])
-                ->sum('REVENUE');
-
-            $totalTundaRevenue = DB::connection('dashboard_phinnisi')->table('tunda_prod')
-                ->whereIn('NAME_BRANCH', $wilayahBranches)
-                ->whereRaw('DATE_FORMAT(STR_TO_DATE(INVOICE_DATE, \'%d-%m-%Y\'), \'%m-%Y\') = ?', [$selectedPeriode])
-                ->sum('REVENUE');
-            
-            // Calculate total transaksi for WILAYAH only (exclude JAI)
-            $totalTransaksi = DB::connection('dashboard_phinnisi')->table('pandu_prod')
-                ->select('BILLING')
-                ->whereIn('NAME_BRANCH', $wilayahBranches)
-                ->whereRaw('DATE_FORMAT(STR_TO_DATE(INVOICE_DATE, \'%d-%m-%Y\'), \'%m-%Y\') = ?', [$selectedPeriode])
-                ->distinct()
-                ->count('BILLING');
-            
-            // Parse period for YTD calculation (format: MM-YYYY  e.g. "03-2026")
-            $periodeMonth = substr($selectedPeriode, 0, 2); // "03"
-            $periodeYear  = substr($selectedPeriode, 3);    // "2026"
-            $ytdStartLabel = '01-' . $periodeYear;          // "01-2026"
-
-            // Bulk YTD queries per branch (2 queries for all wilayah+JAI)
-            $allBranches = collect($regionalGroups)->flatten()->toArray();
-
-            $ytdPanduPerBranch = DB::connection('dashboard_phinnisi')->table('pandu_prod')
-                ->selectRaw('NAME_BRANCH, SUM(REVENUE) as total_pandu, COUNT(DISTINCT BILLING) as total_transaksi')
-                ->whereIn('NAME_BRANCH', $allBranches)
-                ->whereRaw("DATE_FORMAT(STR_TO_DATE(INVOICE_DATE, '%d-%m-%Y'), '%Y') = ?", [$periodeYear])
-                ->whereRaw("DATE_FORMAT(STR_TO_DATE(INVOICE_DATE, '%d-%m-%Y'), '%m') <= ?", [$periodeMonth])
-                ->groupBy('NAME_BRANCH')
-                ->get()
-                ->keyBy('NAME_BRANCH');
-
-            $ytdTundaPerBranch = DB::connection('dashboard_phinnisi')->table('tunda_prod')
-                ->selectRaw('NAME_BRANCH, SUM(REVENUE) as total_tunda')
-                ->whereIn('NAME_BRANCH', $allBranches)
-                ->whereRaw("DATE_FORMAT(STR_TO_DATE(INVOICE_DATE, '%d-%m-%Y'), '%Y') = ?", [$periodeYear])
-                ->whereRaw("DATE_FORMAT(STR_TO_DATE(INVOICE_DATE, '%d-%m-%Y'), '%m') <= ?", [$periodeMonth])
-                ->groupBy('NAME_BRANCH')
-                ->get()
-                ->keyBy('NAME_BRANCH');
-
-            foreach ($regionalGroups as $wilayah => $branches) {
-                // Get pandu revenue - sum all revenue based on invoice date period
-                $panduRevenue = DB::connection('dashboard_phinnisi')->table('pandu_prod')
-                    ->whereIn('NAME_BRANCH', $branches)
+            try {
+                // Get only WILAYAH branches (exclude JAI)
+                $wilayahBranches = collect($regionalGroups)
+                    ->except('JAI')
+                    ->flatten()
+                    ->toArray();
+                
+                // Calculate totals for WILAYAH only (exclude JAI)
+                $totalPandu = DB::connection('dashboard_phinnisi')->table('pandu_prod')
+                    ->whereIn('NAME_BRANCH', $wilayahBranches)
                     ->whereRaw('DATE_FORMAT(STR_TO_DATE(INVOICE_DATE, \'%d-%m-%Y\'), \'%m-%Y\') = ?', [$selectedPeriode])
                     ->sum('REVENUE');
 
-                // Get tunda revenue per wilayah - sum REVENUE directly
-                $tundaRevenue = DB::connection('dashboard_phinnisi')->table('tunda_prod')
-                    ->whereIn('NAME_BRANCH', $branches)
+                $totalTundaRevenue = DB::connection('dashboard_phinnisi')->table('tunda_prod')
+                    ->whereIn('NAME_BRANCH', $wilayahBranches)
                     ->whereRaw('DATE_FORMAT(STR_TO_DATE(INVOICE_DATE, \'%d-%m-%Y\'), \'%m-%Y\') = ?', [$selectedPeriode])
                     ->sum('REVENUE');
-
-                // Get transaction count (distinct BILLING from pandu_prod)
-                $wilayahTransaksi = DB::connection('dashboard_phinnisi')->table('pandu_prod')
+                
+                // Calculate total transaksi for WILAYAH only (exclude JAI)
+                $totalTransaksi = DB::connection('dashboard_phinnisi')->table('pandu_prod')
                     ->select('BILLING')
-                    ->whereIn('NAME_BRANCH', $branches)
+                    ->whereIn('NAME_BRANCH', $wilayahBranches)
                     ->whereRaw('DATE_FORMAT(STR_TO_DATE(INVOICE_DATE, \'%d-%m-%Y\'), \'%m-%Y\') = ?', [$selectedPeriode])
                     ->distinct()
                     ->count('BILLING');
+                
+                // Parse period for YTD calculation (format: MM-YYYY  e.g. "03-2026")
+                $periodeMonth = substr($selectedPeriode, 0, 2); // "03"
+                $periodeYear  = substr($selectedPeriode, 3);    // "2026"
+                $ytdStartLabel = '01-' . $periodeYear;          // "01-2026"
 
-                $regionalData[$wilayah] = [
-                    'pandu_revenue' => $panduRevenue ?? 0,
-                    'tunda_revenue' => $tundaRevenue ?? 0,
-                    'total_revenue' => (($panduRevenue ?? 0) + ($tundaRevenue ?? 0)),
-                    'total_transaksi' => $wilayahTransaksi
-                ];
+                // Bulk YTD queries per branch (2 queries for all wilayah+JAI)
+                $allBranches = collect($regionalGroups)->flatten()->toArray();
 
-                // Aggregate YTD per wilayah from bulk branch-level results
-                $ytdPandu = 0; $ytdTunda = 0; $ytdTransaksi = 0;
-                foreach ($branches as $branch) {
-                    $ytdPandu     += (float)($ytdPanduPerBranch[$branch]->total_pandu ?? 0);
-                    $ytdTransaksi += (int)($ytdPanduPerBranch[$branch]->total_transaksi ?? 0);
-                    $ytdTunda     += (float)($ytdTundaPerBranch[$branch]->total_tunda ?? 0);
+                $ytdPanduPerBranch = DB::connection('dashboard_phinnisi')->table('pandu_prod')
+                    ->selectRaw('NAME_BRANCH, SUM(REVENUE) as total_pandu, COUNT(DISTINCT BILLING) as total_transaksi')
+                    ->whereIn('NAME_BRANCH', $allBranches)
+                    ->whereRaw("DATE_FORMAT(STR_TO_DATE(INVOICE_DATE, '%d-%m-%Y'), '%Y') = ?", [$periodeYear])
+                    ->whereRaw("DATE_FORMAT(STR_TO_DATE(INVOICE_DATE, '%d-%m-%Y'), '%m') <= ?", [$periodeMonth])
+                    ->groupBy('NAME_BRANCH')
+                    ->get()
+                    ->keyBy('NAME_BRANCH');
+
+                $ytdTundaPerBranch = DB::connection('dashboard_phinnisi')->table('tunda_prod')
+                    ->selectRaw('NAME_BRANCH, SUM(REVENUE) as total_tunda')
+                    ->whereIn('NAME_BRANCH', $allBranches)
+                    ->whereRaw("DATE_FORMAT(STR_TO_DATE(INVOICE_DATE, '%d-%m-%Y'), '%Y') = ?", [$periodeYear])
+                    ->whereRaw("DATE_FORMAT(STR_TO_DATE(INVOICE_DATE, '%d-%m-%Y'), '%m') <= ?", [$periodeMonth])
+                    ->groupBy('NAME_BRANCH')
+                    ->get()
+                    ->keyBy('NAME_BRANCH');
+
+                foreach ($regionalGroups as $wilayah => $branches) {
+                    // Get pandu revenue - sum all revenue based on invoice date period
+                    $panduRevenue = DB::connection('dashboard_phinnisi')->table('pandu_prod')
+                        ->whereIn('NAME_BRANCH', $branches)
+                        ->whereRaw('DATE_FORMAT(STR_TO_DATE(INVOICE_DATE, \'%d-%m-%Y\'), \'%m-%Y\') = ?', [$selectedPeriode])
+                        ->sum('REVENUE');
+
+                    // Get tunda revenue per wilayah - sum REVENUE directly
+                    $tundaRevenue = DB::connection('dashboard_phinnisi')->table('tunda_prod')
+                        ->whereIn('NAME_BRANCH', $branches)
+                        ->whereRaw('DATE_FORMAT(STR_TO_DATE(INVOICE_DATE, \'%d-%m-%Y\'), \'%m-%Y\') = ?', [$selectedPeriode])
+                        ->sum('REVENUE');
+
+                    // Get transaction count (distinct BILLING from pandu_prod)
+                    $wilayahTransaksi = DB::connection('dashboard_phinnisi')->table('pandu_prod')
+                        ->select('BILLING')
+                        ->whereIn('NAME_BRANCH', $branches)
+                        ->whereRaw('DATE_FORMAT(STR_TO_DATE(INVOICE_DATE, \'%d-%m-%Y\'), \'%m-%Y\') = ?', [$selectedPeriode])
+                        ->distinct()
+                        ->count('BILLING');
+
+                    $regionalData[$wilayah] = [
+                        'pandu_revenue' => $panduRevenue ?? 0,
+                        'tunda_revenue' => $tundaRevenue ?? 0,
+                        'total_revenue' => (($panduRevenue ?? 0) + ($tundaRevenue ?? 0)),
+                        'total_transaksi' => $wilayahTransaksi
+                    ];
+
+                    // Aggregate YTD per wilayah from bulk branch-level results
+                    $ytdPandu = 0; $ytdTunda = 0; $ytdTransaksi = 0;
+                    foreach ($branches as $branch) {
+                        $ytdPandu     += (float)($ytdPanduPerBranch[$branch]->total_pandu ?? 0);
+                        $ytdTransaksi += (int)($ytdPanduPerBranch[$branch]->total_transaksi ?? 0);
+                        $ytdTunda     += (float)($ytdTundaPerBranch[$branch]->total_tunda ?? 0);
+                    }
+                    $regionalData[$wilayah]['ytd_pandu_revenue']   = $ytdPandu;
+                    $regionalData[$wilayah]['ytd_tunda_revenue']   = $ytdTunda;
+                    $regionalData[$wilayah]['ytd_total_revenue']   = $ytdPandu + $ytdTunda;
+                    $regionalData[$wilayah]['ytd_total_transaksi'] = $ytdTransaksi;
                 }
-                $regionalData[$wilayah]['ytd_pandu_revenue']   = $ytdPandu;
-                $regionalData[$wilayah]['ytd_tunda_revenue']   = $ytdTunda;
-                $regionalData[$wilayah]['ytd_total_revenue']   = $ytdPandu + $ytdTunda;
-                $regionalData[$wilayah]['ytd_total_transaksi'] = $ytdTransaksi;
-            }
-            
-            // Calculate DELEGATION specific totals (from WILAYAH branches only, exclude JAI)
-            $delegationData = [];
-            $delegations = ['PELINDO', 'SPJM', 'JAI'];
+                
+                // Calculate DELEGATION specific totals (from WILAYAH branches only, exclude JAI)
+                $delegationData = [];
+                $delegations = ['PELINDO', 'SPJM', 'JAI'];
 
-            $delegationDataYtd = [];
-            
-            foreach ($delegations as $delegation) {
-                $delPandu = DB::connection('dashboard_phinnisi')->table('pandu_prod')
-                    ->whereIn('NAME_BRANCH', $wilayahBranches)
-                    ->where('DELEGATION', $delegation)
+                $delegationDataYtd = [];
+                
+                foreach ($delegations as $delegation) {
+                    $delPandu = DB::connection('dashboard_phinnisi')->table('pandu_prod')
+                        ->whereIn('NAME_BRANCH', $wilayahBranches)
+                        ->where('DELEGATION', $delegation)
+                        ->whereRaw('DATE_FORMAT(STR_TO_DATE(INVOICE_DATE, \'%d-%m-%Y\'), \'%m-%Y\') = ?', [$selectedPeriode])
+                        ->sum('REVENUE');
+                    
+                    $delTunda = DB::connection('dashboard_phinnisi')->table('tunda_prod')
+                        ->whereIn('NAME_BRANCH', $wilayahBranches)
+                        ->where('DELEGATION', $delegation)
+                        ->whereRaw('DATE_FORMAT(STR_TO_DATE(INVOICE_DATE, \'%d-%m-%Y\'), \'%m-%Y\') = ?', [$selectedPeriode])
+                        ->sum('REVENUE');
+                    
+                    $delTransaksi = DB::connection('dashboard_phinnisi')->table('pandu_prod')
+                        ->select('BILLING')
+                        ->whereIn('NAME_BRANCH', $wilayahBranches)
+                        ->where('DELEGATION', $delegation)
+                        ->whereRaw('DATE_FORMAT(STR_TO_DATE(INVOICE_DATE, \'%d-%m-%Y\'), \'%m-%Y\') = ?', [$selectedPeriode])
+                        ->distinct()
+                        ->count('BILLING');
+                    
+                    $delegationData[$delegation] = [
+                        'pandu' => $delPandu ?? 0,
+                        'tunda' => $delTunda ?? 0,
+                        'transaksi' => $delTransaksi
+                    ];
+
+                    // YTD: sum from January to selected month in the same year
+                    $ytdPandu = DB::connection('dashboard_phinnisi')->table('pandu_prod')
+                        ->whereIn('NAME_BRANCH', $wilayahBranches)
+                        ->where('DELEGATION', $delegation)
+                        ->whereRaw("DATE_FORMAT(STR_TO_DATE(INVOICE_DATE, '%d-%m-%Y'), '%Y') = ?", [$periodeYear])
+                        ->whereRaw("DATE_FORMAT(STR_TO_DATE(INVOICE_DATE, '%d-%m-%Y'), '%m') <= ?", [$periodeMonth])
+                        ->sum('REVENUE');
+
+                    $ytdTunda = DB::connection('dashboard_phinnisi')->table('tunda_prod')
+                        ->whereIn('NAME_BRANCH', $wilayahBranches)
+                        ->where('DELEGATION', $delegation)
+                        ->whereRaw("DATE_FORMAT(STR_TO_DATE(INVOICE_DATE, '%d-%m-%Y'), '%Y') = ?", [$periodeYear])
+                        ->whereRaw("DATE_FORMAT(STR_TO_DATE(INVOICE_DATE, '%d-%m-%Y'), '%m') <= ?", [$periodeMonth])
+                        ->sum('REVENUE');
+
+                    $ytdTransaksi = DB::connection('dashboard_phinnisi')->table('pandu_prod')
+                        ->select('BILLING')
+                        ->whereIn('NAME_BRANCH', $wilayahBranches)
+                        ->where('DELEGATION', $delegation)
+                        ->whereRaw("DATE_FORMAT(STR_TO_DATE(INVOICE_DATE, '%d-%m-%Y'), '%Y') = ?", [$periodeYear])
+                        ->whereRaw("DATE_FORMAT(STR_TO_DATE(INVOICE_DATE, '%d-%m-%Y'), '%m') <= ?", [$periodeMonth])
+                        ->distinct()
+                        ->count('BILLING');
+
+                    $delegationDataYtd[$delegation] = [
+                        'pandu' => $ytdPandu ?? 0,
+                        'tunda' => $ytdTunda ?? 0,
+                        'transaksi' => $ytdTransaksi
+                    ];
+                }
+                
+                // Calculate JAI specific totals
+                $jaiBranches = $regionalGroups['JAI'] ?? [];
+                $jaiTotalPandu = DB::connection('dashboard_phinnisi')->table('pandu_prod')
+                    ->whereIn('NAME_BRANCH', $jaiBranches)
                     ->whereRaw('DATE_FORMAT(STR_TO_DATE(INVOICE_DATE, \'%d-%m-%Y\'), \'%m-%Y\') = ?', [$selectedPeriode])
                     ->sum('REVENUE');
                 
-                $delTunda = DB::connection('dashboard_phinnisi')->table('tunda_prod')
-                    ->whereIn('NAME_BRANCH', $wilayahBranches)
-                    ->where('DELEGATION', $delegation)
+                $jaiTotalTunda = DB::connection('dashboard_phinnisi')->table('tunda_prod')
+                    ->whereIn('NAME_BRANCH', $jaiBranches)
                     ->whereRaw('DATE_FORMAT(STR_TO_DATE(INVOICE_DATE, \'%d-%m-%Y\'), \'%m-%Y\') = ?', [$selectedPeriode])
                     ->sum('REVENUE');
                 
-                $delTransaksi = DB::connection('dashboard_phinnisi')->table('pandu_prod')
+                $jaiTotalTransaksi = DB::connection('dashboard_phinnisi')->table('pandu_prod')
                     ->select('BILLING')
-                    ->whereIn('NAME_BRANCH', $wilayahBranches)
-                    ->where('DELEGATION', $delegation)
+                    ->whereIn('NAME_BRANCH', $jaiBranches)
                     ->whereRaw('DATE_FORMAT(STR_TO_DATE(INVOICE_DATE, \'%d-%m-%Y\'), \'%m-%Y\') = ?', [$selectedPeriode])
                     ->distinct()
                     ->count('BILLING');
-                
-                $delegationData[$delegation] = [
-                    'pandu' => $delPandu ?? 0,
-                    'tunda' => $delTunda ?? 0,
-                    'transaksi' => $delTransaksi
-                ];
 
-                // YTD: sum from January to selected month in the same year
-                $ytdPandu = DB::connection('dashboard_phinnisi')->table('pandu_prod')
+                // YTD totals for WILAYAH summary cards — combine pandu+tunda+transaksi into 2 queries
+                $ytdWilayahPandu = DB::connection('dashboard_phinnisi')->table('pandu_prod')
+                    ->selectRaw("SUM(REVENUE) as total_pandu, COUNT(DISTINCT BILLING) as total_transaksi")
                     ->whereIn('NAME_BRANCH', $wilayahBranches)
-                    ->where('DELEGATION', $delegation)
+                    ->whereRaw("DATE_FORMAT(STR_TO_DATE(INVOICE_DATE, '%d-%m-%Y'), '%Y') = ?", [$periodeYear])
+                    ->whereRaw("DATE_FORMAT(STR_TO_DATE(INVOICE_DATE, '%d-%m-%Y'), '%m') <= ?", [$periodeMonth])
+                    ->first();
+
+                $ytdTotalPandu = (float)($ytdWilayahPandu->total_pandu ?? 0);
+                $ytdTotalTransaksi = (int)($ytdWilayahPandu->total_transaksi ?? 0);
+
+                $ytdTotalTundaRevenue = (float)DB::connection('dashboard_phinnisi')->table('tunda_prod')
+                    ->whereIn('NAME_BRANCH', $wilayahBranches)
                     ->whereRaw("DATE_FORMAT(STR_TO_DATE(INVOICE_DATE, '%d-%m-%Y'), '%Y') = ?", [$periodeYear])
                     ->whereRaw("DATE_FORMAT(STR_TO_DATE(INVOICE_DATE, '%d-%m-%Y'), '%m') <= ?", [$periodeMonth])
                     ->sum('REVENUE');
 
-                $ytdTunda = DB::connection('dashboard_phinnisi')->table('tunda_prod')
-                    ->whereIn('NAME_BRANCH', $wilayahBranches)
-                    ->where('DELEGATION', $delegation)
+                // YTD totals for JAI summary cards — combine pandu+transaksi into 1 query
+                $ytdJaiPandu = DB::connection('dashboard_phinnisi')->table('pandu_prod')
+                    ->selectRaw("SUM(REVENUE) as total_pandu, COUNT(DISTINCT BILLING) as total_transaksi")
+                    ->whereIn('NAME_BRANCH', $jaiBranches)
+                    ->whereRaw("DATE_FORMAT(STR_TO_DATE(INVOICE_DATE, '%d-%m-%Y'), '%Y') = ?", [$periodeYear])
+                    ->whereRaw("DATE_FORMAT(STR_TO_DATE(INVOICE_DATE, '%d-%m-%Y'), '%m') <= ?", [$periodeMonth])
+                    ->first();
+
+                $ytdJaiTotalPandu = (float)($ytdJaiPandu->total_pandu ?? 0);
+                $ytdJaiTotalTransaksi = (int)($ytdJaiPandu->total_transaksi ?? 0);
+
+                $ytdJaiTotalTunda = (float)DB::connection('dashboard_phinnisi')->table('tunda_prod')
+                    ->whereIn('NAME_BRANCH', $jaiBranches)
                     ->whereRaw("DATE_FORMAT(STR_TO_DATE(INVOICE_DATE, '%d-%m-%Y'), '%Y') = ?", [$periodeYear])
                     ->whereRaw("DATE_FORMAT(STR_TO_DATE(INVOICE_DATE, '%d-%m-%Y'), '%m') <= ?", [$periodeMonth])
                     ->sum('REVENUE');
-
-                $ytdTransaksi = DB::connection('dashboard_phinnisi')->table('pandu_prod')
-                    ->select('BILLING')
-                    ->whereIn('NAME_BRANCH', $wilayahBranches)
-                    ->where('DELEGATION', $delegation)
-                    ->whereRaw("DATE_FORMAT(STR_TO_DATE(INVOICE_DATE, '%d-%m-%Y'), '%Y') = ?", [$periodeYear])
-                    ->whereRaw("DATE_FORMAT(STR_TO_DATE(INVOICE_DATE, '%d-%m-%Y'), '%m') <= ?", [$periodeMonth])
-                    ->distinct()
-                    ->count('BILLING');
-
-                $delegationDataYtd[$delegation] = [
-                    'pandu' => $ytdPandu ?? 0,
-                    'tunda' => $ytdTunda ?? 0,
-                    'transaksi' => $ytdTransaksi
-                ];
+            } catch (\Exception $e) {
+                $totalPandu = 0;
+                $totalTundaRevenue = 0;
+                $totalTransaksi = 0;
+                $jaiTotalPandu = 0;
+                $jaiTotalTunda = 0;
+                $jaiTotalTransaksi = 0;
+                $delegationData = [];
+                $delegationDataYtd = [];
+                $ytdStartLabel = null;
+                $ytdTotalPandu = 0;
+                $ytdTotalTundaRevenue = 0;
+                $ytdTotalTransaksi = 0;
+                $ytdJaiTotalPandu = 0;
+                $ytdJaiTotalTunda = 0;
+                $ytdJaiTotalTransaksi = 0;
+                $regionalData = [];
             }
-            
-            // Calculate JAI specific totals
-            $jaiBranches = $regionalGroups['JAI'] ?? [];
-            $jaiTotalPandu = DB::connection('dashboard_phinnisi')->table('pandu_prod')
-                ->whereIn('NAME_BRANCH', $jaiBranches)
-                ->whereRaw('DATE_FORMAT(STR_TO_DATE(INVOICE_DATE, \'%d-%m-%Y\'), \'%m-%Y\') = ?', [$selectedPeriode])
-                ->sum('REVENUE');
-            
-            $jaiTotalTunda = DB::connection('dashboard_phinnisi')->table('tunda_prod')
-                ->whereIn('NAME_BRANCH', $jaiBranches)
-                ->whereRaw('DATE_FORMAT(STR_TO_DATE(INVOICE_DATE, \'%d-%m-%Y\'), \'%m-%Y\') = ?', [$selectedPeriode])
-                ->sum('REVENUE');
-            
-            $jaiTotalTransaksi = DB::connection('dashboard_phinnisi')->table('pandu_prod')
-                ->select('BILLING')
-                ->whereIn('NAME_BRANCH', $jaiBranches)
-                ->whereRaw('DATE_FORMAT(STR_TO_DATE(INVOICE_DATE, \'%d-%m-%Y\'), \'%m-%Y\') = ?', [$selectedPeriode])
-                ->distinct()
-                ->count('BILLING');
-
-            // YTD totals for WILAYAH summary cards — combine pandu+tunda+transaksi into 2 queries
-            $ytdWilayahPandu = DB::connection('dashboard_phinnisi')->table('pandu_prod')
-                ->selectRaw("SUM(REVENUE) as total_pandu, COUNT(DISTINCT BILLING) as total_transaksi")
-                ->whereIn('NAME_BRANCH', $wilayahBranches)
-                ->whereRaw("DATE_FORMAT(STR_TO_DATE(INVOICE_DATE, '%d-%m-%Y'), '%Y') = ?", [$periodeYear])
-                ->whereRaw("DATE_FORMAT(STR_TO_DATE(INVOICE_DATE, '%d-%m-%Y'), '%m') <= ?", [$periodeMonth])
-                ->first();
-
-            $ytdTotalPandu = (float)($ytdWilayahPandu->total_pandu ?? 0);
-            $ytdTotalTransaksi = (int)($ytdWilayahPandu->total_transaksi ?? 0);
-
-            $ytdTotalTundaRevenue = (float)DB::connection('dashboard_phinnisi')->table('tunda_prod')
-                ->whereIn('NAME_BRANCH', $wilayahBranches)
-                ->whereRaw("DATE_FORMAT(STR_TO_DATE(INVOICE_DATE, '%d-%m-%Y'), '%Y') = ?", [$periodeYear])
-                ->whereRaw("DATE_FORMAT(STR_TO_DATE(INVOICE_DATE, '%d-%m-%Y'), '%m') <= ?", [$periodeMonth])
-                ->sum('REVENUE');
-
-            // YTD totals for JAI summary cards — combine pandu+transaksi into 1 query
-            $ytdJaiPandu = DB::connection('dashboard_phinnisi')->table('pandu_prod')
-                ->selectRaw("SUM(REVENUE) as total_pandu, COUNT(DISTINCT BILLING) as total_transaksi")
-                ->whereIn('NAME_BRANCH', $jaiBranches)
-                ->whereRaw("DATE_FORMAT(STR_TO_DATE(INVOICE_DATE, '%d-%m-%Y'), '%Y') = ?", [$periodeYear])
-                ->whereRaw("DATE_FORMAT(STR_TO_DATE(INVOICE_DATE, '%d-%m-%Y'), '%m') <= ?", [$periodeMonth])
-                ->first();
-
-            $ytdJaiTotalPandu = (float)($ytdJaiPandu->total_pandu ?? 0);
-            $ytdJaiTotalTransaksi = (int)($ytdJaiPandu->total_transaksi ?? 0);
-
-            $ytdJaiTotalTunda = (float)DB::connection('dashboard_phinnisi')->table('tunda_prod')
-                ->whereIn('NAME_BRANCH', $jaiBranches)
-                ->whereRaw("DATE_FORMAT(STR_TO_DATE(INVOICE_DATE, '%d-%m-%Y'), '%Y') = ?", [$periodeYear])
-                ->whereRaw("DATE_FORMAT(STR_TO_DATE(INVOICE_DATE, '%d-%m-%Y'), '%m') <= ?", [$periodeMonth])
-                ->sum('REVENUE');
         } else {
             $totalPandu = 0;
             $totalTundaRevenue = 0;
@@ -410,57 +429,61 @@ class RegionalController extends Controller
         // Only load data if period is selected
         if ($selectedPeriode != 'all') {
             foreach ($regionalGroups as $wilayah => $branches) {
-                // Get detailed data per branch - compute split revenue by revenue account prefix
-                $branchPanduData = DB::connection('dashboard_phinnisi')->table('pandu_prod')
-                    ->select('NAME_BRANCH')
-                    ->selectRaw("SUM(REVENUE) as total_revenue")
-                    ->selectRaw("COUNT(DISTINCT BILLING) as total_transaksi")
-                    ->selectRaw("SUM(CASE WHEN LEFT(REVENUE_ACCOUNT,4) = '4010' THEN REVENUE ELSE 0 END) as pandu_derum")
-                    ->selectRaw("SUM(CASE WHEN LEFT(REVENUE_ACCOUNT,4) = '4110' THEN REVENUE ELSE 0 END) as pandu_tersus")
-                    ->whereIn('NAME_BRANCH', $branches)
-                    ->whereRaw('DATE_FORMAT(STR_TO_DATE(INVOICE_DATE, \'%d-%m-%Y\'), \'%m-%Y\') = ?', [$selectedPeriode])
-                    ->groupBy('NAME_BRANCH')
-                    ->get()
-                    ->keyBy('NAME_BRANCH');
+                try {
+                    // Get detailed data per branch - compute split revenue by revenue account prefix
+                    $branchPanduData = DB::connection('dashboard_phinnisi')->table('pandu_prod')
+                        ->select('NAME_BRANCH')
+                        ->selectRaw("SUM(REVENUE) as total_revenue")
+                        ->selectRaw("COUNT(DISTINCT BILLING) as total_transaksi")
+                        ->selectRaw("SUM(CASE WHEN LEFT(REVENUE_ACCOUNT,4) = '4010' THEN REVENUE ELSE 0 END) as pandu_derum")
+                        ->selectRaw("SUM(CASE WHEN LEFT(REVENUE_ACCOUNT,4) = '4110' THEN REVENUE ELSE 0 END) as pandu_tersus")
+                        ->whereIn('NAME_BRANCH', $branches)
+                        ->whereRaw('DATE_FORMAT(STR_TO_DATE(INVOICE_DATE, \'%d-%m-%Y\'), \'%m-%Y\') = ?', [$selectedPeriode])
+                        ->groupBy('NAME_BRANCH')
+                        ->get()
+                        ->keyBy('NAME_BRANCH');
 
-                $branchTundaData = DB::connection('dashboard_phinnisi')->table('tunda_prod')
-                    ->select('NAME_BRANCH')
-                    ->selectRaw("SUM(REVENUE) as total_revenue")
-                    ->selectRaw("SUM(CASE WHEN LEFT(REVENUE_ACCOUNT,4) = '4010' THEN REVENUE ELSE 0 END) as tunda_derum")
-                    ->selectRaw("SUM(CASE WHEN LEFT(REVENUE_ACCOUNT,4) = '4110' THEN REVENUE ELSE 0 END) as tunda_tersus")
-                    ->whereIn('NAME_BRANCH', $branches)
-                    ->whereRaw('DATE_FORMAT(STR_TO_DATE(INVOICE_DATE, \'%d-%m-%Y\'), \'%m-%Y\') = ?', [$selectedPeriode])
-                    ->groupBy('NAME_BRANCH')
-                    ->get()
-                    ->keyBy('NAME_BRANCH');
-                
-                $branchDetails[$wilayah] = [];
-                foreach ($branches as $branch) {
-                    $panduData = $branchPanduData->get($branch);
-                    $tundaData = $branchTundaData->get($branch);
+                    $branchTundaData = DB::connection('dashboard_phinnisi')->table('tunda_prod')
+                        ->select('NAME_BRANCH')
+                        ->selectRaw("SUM(REVENUE) as total_revenue")
+                        ->selectRaw("SUM(CASE WHEN LEFT(REVENUE_ACCOUNT,4) = '4010' THEN REVENUE ELSE 0 END) as tunda_derum")
+                        ->selectRaw("SUM(CASE WHEN LEFT(REVENUE_ACCOUNT,4) = '4110' THEN REVENUE ELSE 0 END) as tunda_tersus")
+                        ->whereIn('NAME_BRANCH', $branches)
+                        ->whereRaw('DATE_FORMAT(STR_TO_DATE(INVOICE_DATE, \'%d-%m-%Y\'), \'%m-%Y\') = ?', [$selectedPeriode])
+                        ->groupBy('NAME_BRANCH')
+                        ->get()
+                        ->keyBy('NAME_BRANCH');
+                    
+                    $branchDetails[$wilayah] = [];
+                    foreach ($branches as $branch) {
+                        $panduData = $branchPanduData->get($branch);
+                        $tundaData = $branchTundaData->get($branch);
 
-                    $panduDerum = $panduData->pandu_derum ?? 0;
-                    $panduTersus = $panduData->pandu_tersus ?? 0;
-                    $tundaDerum = $tundaData->tunda_derum ?? 0;
-                    $tundaTersus = $tundaData->tunda_tersus ?? 0;
-                    $branchTransaksi = $panduData->total_transaksi ?? 0;
+                        $panduDerum = $panduData->pandu_derum ?? 0;
+                        $panduTersus = $panduData->pandu_tersus ?? 0;
+                        $tundaDerum = $tundaData->tunda_derum ?? 0;
+                        $tundaTersus = $tundaData->tunda_tersus ?? 0;
+                        $branchTransaksi = $panduData->total_transaksi ?? 0;
 
-                    $branchPandu = ($panduDerum + $panduTersus);
-                    $branchTunda = ($tundaDerum + $tundaTersus);
+                        $branchPandu = ($panduDerum + $panduTersus);
+                        $branchTunda = ($tundaDerum + $tundaTersus);
 
-                    // Only add branches with data
-                    if ($branchPandu > 0 || $branchTunda > 0) {
-                        $branchDetails[$wilayah][$branch] = [
-                            'pandu_derum' => $panduDerum,
-                            'pandu_tersus' => $panduTersus,
-                            'tunda_derum' => $tundaDerum,
-                            'tunda_tersus' => $tundaTersus,
-                            'pandu' => $branchPandu,
-                            'tunda' => $branchTunda,
-                            'total' => $branchPandu + $branchTunda,
-                            'transaksi' => $branchTransaksi
-                        ];
+                        // Only add branches with data
+                        if ($branchPandu > 0 || $branchTunda > 0) {
+                            $branchDetails[$wilayah][$branch] = [
+                                'pandu_derum' => $panduDerum,
+                                'pandu_tersus' => $panduTersus,
+                                'tunda_derum' => $tundaDerum,
+                                'tunda_tersus' => $tundaTersus,
+                                'pandu' => $branchPandu,
+                                'tunda' => $branchTunda,
+                                'total' => $branchPandu + $branchTunda,
+                                'transaksi' => $branchTransaksi
+                            ];
+                        }
                     }
+                } catch (\Exception $e) {
+                    $branchDetails[$wilayah] = [];
                 }
             }
         }
@@ -631,7 +654,11 @@ class RegionalController extends Controller
             }
         }
 
-        $rows = $query->groupBy($regionCol, 'branch')->orderBy($regionCol)->orderBy('branch')->get();
+        try {
+            $rows = $query->groupBy($regionCol, 'branch')->orderBy($regionCol)->orderBy('branch')->get();
+        } catch (\Exception $e) {
+            $rows = collect();
+        }
 
         if ($wilayah === 'all') {
             // group rows by wilayah for display
@@ -737,54 +764,58 @@ class RegionalController extends Controller
         $branchDetails = [];
 
         foreach ($regionalGroups as $wilayah => $branches) {
-            $branchPanduData = DB::connection('dashboard_phinnisi')->table('pandu_prod')
-                ->select('NAME_BRANCH')
-                ->selectRaw("SUM(REVENUE) as total_revenue")
-                ->selectRaw("COUNT(DISTINCT BILLING) as total_transaksi")
-                ->selectRaw("SUM(CASE WHEN LEFT(REVENUE_ACCOUNT,4) = '4010' THEN REVENUE ELSE 0 END) as pandu_derum")
-                ->selectRaw("SUM(CASE WHEN LEFT(REVENUE_ACCOUNT,4) = '4110' THEN REVENUE ELSE 0 END) as pandu_tersus")
-                ->whereIn('NAME_BRANCH', $branches)
-                ->whereRaw('DATE_FORMAT(STR_TO_DATE(INVOICE_DATE, \'%d-%m-%Y\'), \'%m-%Y\') = ?', [$selectedPeriode])
-                ->groupBy('NAME_BRANCH')
-                ->get()
-                ->keyBy('NAME_BRANCH');
+            try {
+                $branchPanduData = DB::connection('dashboard_phinnisi')->table('pandu_prod')
+                    ->select('NAME_BRANCH')
+                    ->selectRaw("SUM(REVENUE) as total_revenue")
+                    ->selectRaw("COUNT(DISTINCT BILLING) as total_transaksi")
+                    ->selectRaw("SUM(CASE WHEN LEFT(REVENUE_ACCOUNT,4) = '4010' THEN REVENUE ELSE 0 END) as pandu_derum")
+                    ->selectRaw("SUM(CASE WHEN LEFT(REVENUE_ACCOUNT,4) = '4110' THEN REVENUE ELSE 0 END) as pandu_tersus")
+                    ->whereIn('NAME_BRANCH', $branches)
+                    ->whereRaw('DATE_FORMAT(STR_TO_DATE(INVOICE_DATE, \'%d-%m-%Y\'), \'%m-%Y\') = ?', [$selectedPeriode])
+                    ->groupBy('NAME_BRANCH')
+                    ->get()
+                    ->keyBy('NAME_BRANCH');
 
-            $branchTundaData = DB::connection('dashboard_phinnisi')->table('tunda_prod')
-                ->select('NAME_BRANCH')
-                ->selectRaw("SUM(REVENUE) as total_revenue")
-                ->selectRaw("SUM(CASE WHEN LEFT(REVENUE_ACCOUNT,4) = '4010' THEN REVENUE ELSE 0 END) as tunda_derum")
-                ->selectRaw("SUM(CASE WHEN LEFT(REVENUE_ACCOUNT,4) = '4110' THEN REVENUE ELSE 0 END) as tunda_tersus")
-                ->whereIn('NAME_BRANCH', $branches)
-                ->whereRaw('DATE_FORMAT(STR_TO_DATE(INVOICE_DATE, \'%d-%m-%Y\'), \'%m-%Y\') = ?', [$selectedPeriode])
-                ->groupBy('NAME_BRANCH')
-                ->get()
-                ->keyBy('NAME_BRANCH');
-            
-            $branchDetails[$wilayah] = [];
-            foreach ($branches as $branch) {
-                $panduData = $branchPanduData->get($branch);
-                $tundaData = $branchTundaData->get($branch);
+                $branchTundaData = DB::connection('dashboard_phinnisi')->table('tunda_prod')
+                    ->select('NAME_BRANCH')
+                    ->selectRaw("SUM(REVENUE) as total_revenue")
+                    ->selectRaw("SUM(CASE WHEN LEFT(REVENUE_ACCOUNT,4) = '4010' THEN REVENUE ELSE 0 END) as tunda_derum")
+                    ->selectRaw("SUM(CASE WHEN LEFT(REVENUE_ACCOUNT,4) = '4110' THEN REVENUE ELSE 0 END) as tunda_tersus")
+                    ->whereIn('NAME_BRANCH', $branches)
+                    ->whereRaw('DATE_FORMAT(STR_TO_DATE(INVOICE_DATE, \'%d-%m-%Y\'), \'%m-%Y\') = ?', [$selectedPeriode])
+                    ->groupBy('NAME_BRANCH')
+                    ->get()
+                    ->keyBy('NAME_BRANCH');
                 
-                $panduDerum = $panduData->pandu_derum ?? 0;
-                $panduTersus = $panduData->pandu_tersus ?? 0;
-                $tundaDerum = $tundaData->tunda_derum ?? 0;
-                $tundaTersus = $tundaData->tunda_tersus ?? 0;
-                $branchPandu = ($panduDerum + $panduTersus);
-                $branchTunda = ($tundaDerum + $tundaTersus);
-                $branchTransaksi = $panduData->total_transaksi ?? 0;
+                $branchDetails[$wilayah] = [];
+                foreach ($branches as $branch) {
+                    $panduData = $branchPanduData->get($branch);
+                    $tundaData = $branchTundaData->get($branch);
+                    
+                    $panduDerum = $panduData->pandu_derum ?? 0;
+                    $panduTersus = $panduData->pandu_tersus ?? 0;
+                    $tundaDerum = $tundaData->tunda_derum ?? 0;
+                    $tundaTersus = $tundaData->tunda_tersus ?? 0;
+                    $branchPandu = ($panduDerum + $panduTersus);
+                    $branchTunda = ($tundaDerum + $tundaTersus);
+                    $branchTransaksi = $panduData->total_transaksi ?? 0;
 
-                if ($branchPandu > 0 || $branchTunda > 0) {
-                    $branchDetails[$wilayah][$branch] = [
-                        'pandu_derum' => $panduDerum,
-                        'pandu_tersus' => $panduTersus,
-                        'tunda_derum' => $tundaDerum,
-                        'tunda_tersus' => $tundaTersus,
-                        'pandu' => $branchPandu,
-                        'tunda' => $branchTunda,
-                        'total' => $branchPandu + $branchTunda,
-                        'transaksi' => $branchTransaksi
-                    ];
+                    if ($branchPandu > 0 || $branchTunda > 0) {
+                        $branchDetails[$wilayah][$branch] = [
+                            'pandu_derum' => $panduDerum,
+                            'pandu_tersus' => $panduTersus,
+                            'tunda_derum' => $tundaDerum,
+                            'tunda_tersus' => $tundaTersus,
+                            'pandu' => $branchPandu,
+                            'tunda' => $branchTunda,
+                            'total' => $branchPandu + $branchTunda,
+                            'transaksi' => $branchTransaksi
+                        ];
+                    }
                 }
+            } catch (\Exception $e) {
+                $branchDetails[$wilayah] = [];
             }
         }
         

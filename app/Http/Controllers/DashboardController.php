@@ -230,7 +230,44 @@ class DashboardController extends Controller
                 ->selectRaw("SUM(CASE WHEN UPPER(REALISAS_PILOT_VIA) = 'WEB' THEN 1 ELSE 0 END) as web, SUM(CASE WHEN UPPER(REALISAS_PILOT_VIA) = 'MOBILE' THEN 1 ELSE 0 END) as mobile, SUM(CASE WHEN UPPER(REALISAS_PILOT_VIA) = 'PARTIAL' THEN 1 ELSE 0 END) as partial")
                 ->first();
             
-            $realisasiTunda = (object)['web' => 0, 'mobile' => 0, 'partial' => 0]; // Default for tunda
+            // Realisasi Tunda - count per-tug columns if present (REALISAS_TUG1_VIA..REALISAS_TUG4_VIA)
+            try {
+                $schema = DB::connection('dashboard_phinnisi')->getSchemaBuilder();
+                $hasTugCols = $schema->hasColumn('lhgk', 'realisas_tug1_via') || $schema->hasColumn('lhgk', 'realisas_tug2_via') || $schema->hasColumn('lhgk', 'realisas_tug3_via') || $schema->hasColumn('lhgk', 'realisas_tug4_via');
+
+                // Use tug columns if present; do NOT fallback to REALISAS_PILOT_VIA
+                if ($hasTugCols) {
+                    // Count each column occurrence separately (rows may have multiple tugs)
+                    $realisasiTunda = Lhgk::where('PERIODE', $selectedPeriode)
+                        ->where('NM_BRANCH', $selectedBranch)
+                        ->selectRaw(
+                            "(
+                                SUM(CASE WHEN UPPER(COALESCE(realisas_tug1_via,'')) = 'WEB' THEN 1 ELSE 0 END) +
+                                SUM(CASE WHEN UPPER(COALESCE(realisas_tug2_via,'')) = 'WEB' THEN 1 ELSE 0 END) +
+                                SUM(CASE WHEN UPPER(COALESCE(realisas_tug3_via,'')) = 'WEB' THEN 1 ELSE 0 END) +
+                                SUM(CASE WHEN UPPER(COALESCE(realisas_tug4_via,'')) = 'WEB' THEN 1 ELSE 0 END)
+                            ) as web,
+                            (
+                                SUM(CASE WHEN UPPER(COALESCE(realisas_tug1_via,'')) = 'MOBILE' THEN 1 ELSE 0 END) +
+                                SUM(CASE WHEN UPPER(COALESCE(realisas_tug2_via,'')) = 'MOBILE' THEN 1 ELSE 0 END) +
+                                SUM(CASE WHEN UPPER(COALESCE(realisas_tug3_via,'')) = 'MOBILE' THEN 1 ELSE 0 END) +
+                                SUM(CASE WHEN UPPER(COALESCE(realisas_tug4_via,'')) = 'MOBILE' THEN 1 ELSE 0 END)
+                            ) as mobile,
+                            (
+                                SUM(CASE WHEN UPPER(COALESCE(realisas_tug1_via,'')) = 'PARTIAL' THEN 1 ELSE 0 END) +
+                                SUM(CASE WHEN UPPER(COALESCE(realisas_tug2_via,'')) = 'PARTIAL' THEN 1 ELSE 0 END) +
+                                SUM(CASE WHEN UPPER(COALESCE(realisas_tug3_via,'')) = 'PARTIAL' THEN 1 ELSE 0 END) +
+                                SUM(CASE WHEN UPPER(COALESCE(realisas_tug4_via,'')) = 'PARTIAL' THEN 1 ELSE 0 END)
+                            ) as partial"
+                        )
+                        ->first();
+                } else {
+                    // Columns not present — return zeros to reflect requested source
+                    $realisasiTunda = (object)['web' => 0, 'mobile' => 0, 'partial' => 0];
+                }
+            } catch (\Exception $e) {
+                $realisasiTunda = (object)['web' => 0, 'mobile' => 0, 'partial' => 0];
+            }
             
             // Count distinct tunda kapal
             try {
@@ -468,7 +505,8 @@ class DashboardController extends Controller
                 ->count();
 
             $waitingTimeData = null;
-            if ($showWaitingTime && $waitingTimeCount > 0) {                $waitingTimeData = Lhgk::select(
+            if ($showWaitingTime && $waitingTimeCount > 0) {
+                $waitingTimeData = Lhgk::select(
                         'PPKB_CODE',
                         'NO_UKK',
                         'NO_BKT_PANDU',
@@ -722,18 +760,21 @@ class DashboardController extends Controller
         $totalPandu = (clone $baseQuery)->distinct('NM_PERS_PANDU')->count('NM_PERS_PANDU');
 
         // jumlah kapal tunda: count distinct names across NM_KAPAL_1/2/3
-        $tundaResult = DB::connection('dashboard_phinnisi')->selectOne(
-            "SELECT COUNT(DISTINCT nm) as total FROM (
-                SELECT NM_KAPAL_1 as nm FROM lhgk WHERE PERIODE = ? AND NM_BRANCH = ? AND NM_KAPAL_1 IS NOT NULL AND NM_KAPAL_1 != ''
-                UNION ALL
-                SELECT NM_KAPAL_2 as nm FROM lhgk WHERE PERIODE = ? AND NM_BRANCH = ? AND NM_KAPAL_2 IS NOT NULL AND NM_KAPAL_2 != ''
-                UNION ALL
-                SELECT NM_KAPAL_3 as nm FROM lhgk WHERE PERIODE = ? AND NM_BRANCH = ? AND NM_KAPAL_3 IS NOT NULL AND NM_KAPAL_3 != ''
-            ) t",
-            [$selectedPeriode, $selectedBranch, $selectedPeriode, $selectedBranch, $selectedPeriode, $selectedBranch]
-        );
-
-        $tundaDistinct = $tundaResult->total ?? 0;
+        try {
+            $tundaResult = DB::connection('dashboard_phinnisi')->selectOne(
+                "SELECT COUNT(DISTINCT nm) as total FROM (
+                    SELECT NM_KAPAL_1 as nm FROM lhgk WHERE PERIODE = ? AND NM_BRANCH = ? AND NM_KAPAL_1 IS NOT NULL AND NM_KAPAL_1 != ''
+                    UNION ALL
+                    SELECT NM_KAPAL_2 as nm FROM lhgk WHERE PERIODE = ? AND NM_BRANCH = ? AND NM_KAPAL_2 IS NOT NULL AND NM_KAPAL_2 != ''
+                    UNION ALL
+                    SELECT NM_KAPAL_3 as nm FROM lhgk WHERE PERIODE = ? AND NM_BRANCH = ? AND NM_KAPAL_3 IS NOT NULL AND NM_KAPAL_3 != ''
+                ) t",
+                [$selectedPeriode, $selectedBranch, $selectedPeriode, $selectedBranch, $selectedPeriode, $selectedBranch]
+            );
+            $tundaDistinct = $tundaResult->total ?? 0;
+        } catch (\Exception $e) {
+            $tundaDistinct = 0;
+        }
 
         // jumlah transaksi berdasarkan kelompok pelayaran (Dalam Negeri / Luar Negeri) lalu jenis kapal, serta rata-rata GT
         $pelayaranCase = "CASE WHEN LOWER(PELAYARAN) LIKE '%luar%' THEN 'Luar Negeri' ELSE 'Dalam Negeri' END";
@@ -791,18 +832,21 @@ class DashboardController extends Controller
             ->toArray();
 
         // daftar nama tunda (distinct across NM_KAPAL_1/2/3)
-        $tundaRows = DB::connection('dashboard_phinnisi')->select(
-            "SELECT DISTINCT nm FROM (
-                SELECT NM_KAPAL_1 as nm FROM lhgk WHERE PERIODE = ? AND NM_BRANCH = ? AND NM_KAPAL_1 IS NOT NULL AND NM_KAPAL_1 != ''
-                UNION ALL
-                SELECT NM_KAPAL_2 as nm FROM lhgk WHERE PERIODE = ? AND NM_BRANCH = ? AND NM_KAPAL_2 IS NOT NULL AND NM_KAPAL_2 != ''
-                UNION ALL
-                SELECT NM_KAPAL_3 as nm FROM lhgk WHERE PERIODE = ? AND NM_BRANCH = ? AND NM_KAPAL_3 IS NOT NULL AND NM_KAPAL_3 != ''
-            ) t ORDER BY nm",
-            [$selectedPeriode, $selectedBranch, $selectedPeriode, $selectedBranch, $selectedPeriode, $selectedBranch]
-        );
-
-        $tundaList = array_map(function($r) { return $r->nm ?? null; }, $tundaRows);
+        try {
+            $tundaRows = DB::connection('dashboard_phinnisi')->select(
+                "SELECT DISTINCT nm FROM (
+                    SELECT NM_KAPAL_1 as nm FROM lhgk WHERE PERIODE = ? AND NM_BRANCH = ? AND NM_KAPAL_1 IS NOT NULL AND NM_KAPAL_1 != ''
+                    UNION ALL
+                    SELECT NM_KAPAL_2 as nm FROM lhgk WHERE PERIODE = ? AND NM_BRANCH = ? AND NM_KAPAL_2 IS NOT NULL AND NM_KAPAL_2 != ''
+                    UNION ALL
+                    SELECT NM_KAPAL_3 as nm FROM lhgk WHERE PERIODE = ? AND NM_BRANCH = ? AND NM_KAPAL_3 IS NOT NULL AND NM_KAPAL_3 != ''
+                ) t ORDER BY nm",
+                [$selectedPeriode, $selectedBranch, $selectedPeriode, $selectedBranch, $selectedPeriode, $selectedBranch]
+            );
+            $tundaList = array_map(function($r) { return $r->nm ?? null; }, $tundaRows);
+        } catch (\Exception $e) {
+            $tundaList = [];
+        }
 
         return view('dashboard-operasional', compact('stats', 'tundaDistinct', 'transaksiByShip', 'periods', 'selectedPeriode', 'regionalGroups', 'allBranches', 'selectedBranch', 'pilotList', 'tundaList', 'viaCounts'));
     }

@@ -434,9 +434,9 @@
                         <h6 class="mb-2"><i class="bi bi-clock-history"></i> Realisasi Penundaan</h6>
                         <div class="small text-muted mb-2"></div>
                         @php
-                            $tunda_mobile = $realisasiTunda->mobile ?? 0;
-                            $tunda_web = $realisasiTunda->web ?? 0;
-                            $tunda_partial = $realisasiTunda->partial ?? 0;
+                            $tunda_mobile = (int) data_get($realisasiTunda, 'mobile', 0);
+                            $tunda_web = (int) data_get($realisasiTunda, 'web', 0);
+                            $tunda_partial = (int) data_get($realisasiTunda, 'partial', 0);
                             $tunda_total = $tunda_mobile + $tunda_web + $tunda_partial;
                             $tunda_mobile_pct = $tunda_total > 0 ? round(($tunda_mobile / $tunda_total) * 100, 1) : 0;
                             $tunda_web_pct = $tunda_total > 0 ? round(($tunda_web / $tunda_total) * 100, 1) : 0;

@@ -11,6 +11,7 @@ use App\Http\Controllers\TrafikController;
 use App\Http\Controllers\SummaryController;
 use App\Http\Controllers\SarprasController;
 use App\Http\Controllers\AnperController;
+use App\Http\Controllers\SapController;
 use App\Models\Lhgk;
 
 Route::get('/', [DashboardController::class, 'index'])->name('dashboard');
@@ -34,6 +35,9 @@ Route::get('/export-nota-batal', [NotaController::class, 'exportNotaBatal'])->na
 // Pendapatan SAP
 Route::get('/pendapatan-sap', [NotaController::class, 'pendapatanSap'])->name('pendapatan.sap');
 
+// Data SAP ZFI039
+Route::get('/sap', [SapController::class, 'index'])->name('sap');
+
 // Regional Revenue routes
 Route::get('/regional-revenue', [RegionalController::class, 'index'])->name('regional.revenue');
 Route::get('/regional-detail', [RegionalController::class, 'detail'])->name('regional.detail');
@@ -47,6 +51,7 @@ Route::get('/trafik', [TrafikController::class, 'index'])->name('trafik');
 
 // Summary
 Route::get('/summary', [SummaryController::class, 'index'])->name('summary');
+Route::get('/summary-lhgk', [SummaryController::class, 'summaryLhgk'])->name('summary.lhgk');
 Route::get('/sarpras', [SarprasController::class, 'index'])->name('sarpras');
 
 // Pendapatan Per Anak Perusahaan
