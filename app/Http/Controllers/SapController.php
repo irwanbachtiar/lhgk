@@ -321,7 +321,7 @@ class SapController extends Controller
             if ($custCol && $pendapatanCol) {
                 $allCustQuery = DB::connection('dashboard_phinnisi')
                     ->table('zfi039')
-                    ->selectRaw("{$custCol} as customer_name, SUM(CAST({$pendapatanCol} AS DECIMAL(20,2))) as total_revenue, COUNT(DISTINCT {$custCol}) as transaction_count")
+                    ->selectRaw("{$custCol} as customer_name, SUM(CAST({$pendapatanCol} AS DECIMAL(20,2))) as total_revenue, COUNT(*) as transaction_count")
                     ->whereNotNull($custCol)
                     ->whereRaw("LENGTH(COALESCE({$custCol}, '')) > 0");
 
