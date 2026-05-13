@@ -1462,6 +1462,124 @@
         </div>
         <?php endif; ?>
 
+        <!-- Durasi Pemanduan 0 Section -->
+        <?php if($selectedPeriode != 'all' && $selectedBranch != 'all' && $durasiPemanduan0Count > 0): ?>
+        <div class="row mb-4">
+            <div class="col-12">
+                <div class="card stat-card">
+                    <?php if(!$showDurasiPemanduan0): ?>
+                    <div class="card-body text-center py-4">
+                        <i class="bi bi-clock" style="font-size: 3rem; color: #10b981;"></i>
+                        <h5 class="mt-3">Durasi Pemanduan 0</h5>
+                        <p class="text-muted">
+                            Ditemukan <strong style="color: #10b981;"><?php echo e(number_format($durasiPemanduan0Count)); ?> transaksi</strong> 
+                            dengan Durasi Pemanduan (PND) = 00 : 00 atau kosong
+                        </p>
+                        <a href="<?php echo e(route('dashboard', ['periode' => $selectedPeriode, 'cabang' => $selectedBranch, 'show_durasi_pemanduan_0' => 1])); ?>#durasi-pemanduan-0-section" 
+                           class="btn" style="background: linear-gradient(135deg, #10b981 0%, #059669 100%); color: white;">
+                            <i class="bi bi-eye"></i> Tampilkan Data Durasi Pemanduan 0
+                        </a>
+                    </div>
+                    <?php else: ?>
+                    <div class="card-header" style="background: linear-gradient(135deg, #10b981 0%, #059669 100%); color: white;" id="durasi-pemanduan-0-section">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <h5 class="mb-0">
+                                <i class="bi bi-clock"></i> 
+                                Data Durasi Pemanduan 0 (PND = 00 : 00 atau kosong)
+                            </h5>
+                            <div>
+                                <a href="<?php echo e(route('dashboard', ['periode' => $selectedPeriode, 'cabang' => $selectedBranch])); ?>" 
+                                   class="btn btn-light btn-sm">
+                                    <i class="bi bi-x-circle"></i> Sembunyikan
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="card-body">
+                        <div class="alert alert-info mb-3">
+                            <i class="bi bi-info-circle-fill"></i>
+                            <strong><?php echo e(number_format($durasiPemanduan0Count)); ?> transaksi</strong> memiliki Durasi Pemanduan (PND) = 00 : 00 atau kosong (0 menit).
+                            <div class="mt-2">
+                                <small class="text-muted">Data diurutkan berdasarkan PPKB Code</small>
+                            </div>
+                        </div>
+                        
+                        <?php if($durasiPemanduan0Data && $durasiPemanduan0Data->count() > 0): ?>
+                        <div class="table-responsive">
+                            <table class="table table-hover table-striped table-sm">
+                                <thead class="table-dark">
+                                    <tr>
+                                        <th>No</th>
+                                        <th>PPKB Code</th>
+                                        <th>No. UKK</th>
+                                        <th>No. Bukti Pandu</th>
+                                        <th>Nama Kapal</th>
+                                        <th>Nama Pandu</th>
+                                        <th>Tgl Tiba</th>
+                                        <th>Jam Tiba</th>
+                                        <th>Tgl PMT</th>
+                                        <th>Jam PMT</th>
+                                        <th>PNK</th>
+                                        <th>KB</th>
+                                        <th>Mulai Pelaksanaan</th>
+                                        <th>Selesai Pelaksanaan</th>
+                                        <th class="text-center">PND</th>
+                                        <th>Pandu Dari</th>
+                                        <th>Pandu Ke</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <?php $__currentLoopData = $durasiPemanduan0Data; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $index => $data): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
+                                    <tr>
+                                        <td><?php echo e($durasiPemanduan0Data->firstItem() + $index); ?></td>
+                                        <td><span class="badge bg-secondary"><?php echo e($data->PPKB_CODE ?? '-'); ?></span></td>
+                                        <td><span class="badge bg-info"><?php echo e($data->NO_UKK ?? '-'); ?></span></td>
+                                        <td><?php echo e($data->NO_BKT_PANDU ?? '-'); ?></td>
+                                        <td><strong><?php echo e($data->NM_KAPAL ?? '-'); ?></strong></td>
+                                        <td><?php echo e($data->NM_PERS_PANDU ?? '-'); ?></td>
+                                        <td><?php echo e($data->TGL_TIBA ?? '-'); ?></td>
+                                        <td><?php echo e($data->JAM_TIBA ?? '-'); ?></td>
+                                        <td><?php echo e($data->TGL_PMT ?? '-'); ?></td>
+                                        <td><?php echo e($data->JAM_PMT ?? '-'); ?></td>
+                                        <td><?php echo e($data->PNK ?? '-'); ?></td>
+                                        <td><?php echo e($data->KB ?? '-'); ?></td>
+                                        <td><?php echo e($data->MULAI_PELAKSANAAN ?? '-'); ?></td>
+                                        <td><?php echo e($data->SELESAI_PELAKSANAAN ?? '-'); ?></td>
+                                        <td class="text-center">
+                                            <span class="badge bg-success"><?php echo e($data->PND ?? '0'); ?></span>
+                                        </td>
+                                        <td><?php echo e($data->PANDU_DARI ?? '-'); ?></td>
+                                        <td><?php echo e($data->PANDU_KE ?? '-'); ?></td>
+                                    </tr>
+                                    <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>
+                                </tbody>
+                            </table>
+                        </div>
+                        
+                        <!-- Pagination -->
+                        <?php if($durasiPemanduan0Data->hasPages()): ?>
+                        <div class="d-flex justify-content-between align-items-center mt-3">
+                            <div class="text-muted">
+                                Menampilkan <?php echo e($durasiPemanduan0Data->firstItem()); ?> - <?php echo e($durasiPemanduan0Data->lastItem()); ?> dari <?php echo e($durasiPemanduan0Data->total()); ?> data
+                            </div>
+                            <div>
+                                <?php echo e($durasiPemanduan0Data->links('pagination::bootstrap-5')); ?>
+
+                            </div>
+                        </div>
+                        <?php endif; ?>
+                        <?php else: ?>
+                        <div class="alert alert-secondary">
+                            <i class="bi bi-info-circle"></i> Tidak ada data untuk ditampilkan
+                        </div>
+                        <?php endif; ?>
+                    </div>
+                    <?php endif; ?>
+                </div>
+            </div>
+        </div>
+        <?php endif; ?>
+
         <!-- Ship Statistics by GT Range and Flag -->
         <?php if(($selectedPeriode != 'all' || $selectedBranch != 'all') && $shipStatsByGT->count() > 0): ?>
         <div class="row mb-4">

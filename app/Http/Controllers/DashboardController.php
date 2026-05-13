@@ -306,6 +306,7 @@ class DashboardController extends Controller
             $showBackdate = $request->get('show_backdate', 0);
             $showRealisasiWeb = $request->get('show_realisasi_web', 0);
             $showAnomali = $request->get('show_anomali', 0);
+            $showDurasiPemanduan0 = $request->get('show_durasi_pemanduan_0', 0);
             $filterStatusNota = $request->get('filter_status_nota', 'all');
             
             // Count queries for section visibility
@@ -561,6 +562,40 @@ class DashboardController extends Controller
                     ->appends(request()->query());
             }
 
+            // Durasi Pemanduan 0 (PND = '00 : 00' atau PND IS NULL)
+            $durasiPemanduan0Count = Lhgk::where('PERIODE', $selectedPeriode)
+                ->where('NM_BRANCH', $selectedBranch)
+                ->whereRaw("(PND = '00 : 00' OR PND IS NULL OR PND = '' OR PND = '0')")
+                ->count();
+
+            $durasiPemanduan0Data = null;
+            if ($showDurasiPemanduan0 && $durasiPemanduan0Count > 0) {
+                $durasiPemanduan0Data = Lhgk::select(
+                        'PPKB_CODE',
+                        'NO_UKK',
+                        'NO_BKT_PANDU',
+                        'NM_KAPAL',
+                        'NM_PERS_PANDU',
+                        'TGL_TIBA',
+                        'JAM_TIBA',
+                        'TGL_PMT',
+                        'JAM_PMT',
+                        'PNK',
+                        'KB',
+                        'MULAI_PELAKSANAAN',
+                        'SELESAI_PELAKSANAAN',
+                        'PND',
+                        'PANDU_DARI',
+                        'PANDU_KE'
+                    )
+                    ->where('PERIODE', $selectedPeriode)
+                    ->where('NM_BRANCH', $selectedBranch)
+                    ->whereRaw("(PND = '00 : 00' OR PND IS NULL OR PND = '' OR PND = '0')")
+                    ->orderBy('PPKB_CODE')
+                    ->paginate(10)
+                    ->appends(request()->query());
+            }
+
             $realisasiWebData = null;
             if ($showRealisasiWeb && $realisasiWebCount > 0) {
                 $realisasiWebData = Lhgk::select(
@@ -604,10 +639,13 @@ class DashboardController extends Controller
             $showAnomali = false;
             $anomaliCount = 0;
             $anomaliData = null;
+            $showDurasiPemanduan0 = false;
+            $durasiPemanduan0Count = 0;
+            $durasiPemanduan0Data = null;
         }
 
         // Show main dashboard view with filters, but without data until filters are selected
-        return view('dashboard', compact('statistics', 'chartData', 'totalOverall', 'periods', 'selectedPeriode', 'regionalGroups', 'allBranches', 'selectedBranch', 'topPilot', 'shipStatsByGT', 'showDeparture', 'departureDelayCount', 'departureDelayData', 'showStatusNota', 'statusNotaCount', 'statusNotaData', 'filterStatusNota', 'showWaitingTime', 'waitingTimeCount', 'waitingTimeData', 'showPkkManual', 'pkkManualCount', 'pkkManualData', 'showBackdate', 'backdateCount', 'backdateData', 'showRealisasiWeb', 'realisasiWebCount', 'realisasiWebData', 'realisasiPandu', 'realisasiTunda', 'totalTundaDistinct', 'showAnomali', 'anomaliCount', 'anomaliData'));
+        return view('dashboard', compact('statistics', 'chartData', 'totalOverall', 'periods', 'selectedPeriode', 'regionalGroups', 'allBranches', 'selectedBranch', 'topPilot', 'shipStatsByGT', 'showDeparture', 'departureDelayCount', 'departureDelayData', 'showStatusNota', 'statusNotaCount', 'statusNotaData', 'filterStatusNota', 'showWaitingTime', 'waitingTimeCount', 'waitingTimeData', 'showPkkManual', 'pkkManualCount', 'pkkManualData', 'showBackdate', 'backdateCount', 'backdateData', 'showRealisasiWeb', 'realisasiWebCount', 'realisasiWebData', 'realisasiPandu', 'realisasiTunda', 'totalTundaDistinct', 'showAnomali', 'anomaliCount', 'anomaliData', 'showDurasiPemanduan0', 'durasiPemanduan0Count', 'durasiPemanduan0Data'));
     }
 
     private function getRegionalGroups()
@@ -1632,6 +1670,122 @@ class DashboardController extends Controller
                 '',
                 'RATA-RATA WT:',
                 number_format($waitingTimeData->avg('wt_decimal'), 2) . ' jam'
+            ]);
+
+            fclose($file);
+        };
+
+        return response()->stream($callback, 200, $headers);
+    }
+
+    public function exportDurasiPemanduan0(Request $request)
+    {
+        $selectedPeriode = $request->get('periode');
+        $selectedBranch = $request->get('cabang');
+
+        if (!$selectedPeriode || !$selectedBranch) {
+            return redirect()->back()->with('error', 'Pilih periode dan cabang terlebih dahulu');
+        }
+
+        // Get all durasi pemanduan 0 data for export (PND = '00 : 00' atau NULL)
+        $durasiPemanduan0Data = Lhgk::select(
+                'PPKB_CODE',
+                'NO_UKK',
+                'NO_BKT_PANDU',
+                'NM_KAPAL',
+                'NM_PERS_PANDU',
+                'TGL_TIBA',
+                'JAM_TIBA',
+                'TGL_PMT',
+                'JAM_PMT',
+                'PNK',
+                'KB',
+                'MULAI_PELAKSANAAN',
+                'SELESAI_PELAKSANAAN',
+                'PND',
+                'PANDU_DARI',
+                'PANDU_KE'
+            )
+            ->where('PERIODE', $selectedPeriode)
+            ->where('NM_BRANCH', $selectedBranch)
+            ->whereRaw("(PND = '00 : 00' OR PND IS NULL OR PND = '' OR PND = '0')")
+            ->orderBy('PPKB_CODE')
+            ->get();
+
+        if ($durasiPemanduan0Data->isEmpty()) {
+            return redirect()->back()->with('error', 'Tidak ada data durasi pemanduan 0 untuk periode dan cabang yang dipilih');
+        }
+
+        // Generate CSV file
+        $filename = 'Durasi_Pemanduan_0_' . str_replace(' ', '_', $selectedBranch) . '_' . str_replace('-', '', $selectedPeriode) . '_' . date('YmdHis') . '.csv';
+        
+        $headers = [
+            'Content-Type' => 'text/csv; charset=UTF-8',
+            'Content-Disposition' => 'attachment; filename="' . $filename . '"',
+            'Pragma' => 'no-cache',
+            'Cache-Control' => 'must-revalidate, post-check=0, pre-check=0',
+            'Expires' => '0'
+        ];
+
+        $callback = function() use ($durasiPemanduan0Data) {
+            $file = fopen('php://output', 'w');
+            
+            // Add BOM for UTF-8
+            fprintf($file, chr(0xEF).chr(0xBB).chr(0xBF));
+            
+            // Header
+            fputcsv($file, [
+                'No',
+                'PPKB Code',
+                'No. UKK',
+                'No. Bukti Pandu',
+                'Nama Kapal',
+                'Nama Pandu',
+                'Tanggal Tiba',
+                'Jam Tiba',
+                'Tanggal PMT',
+                'Jam PMT',
+                'PNK',
+                'KB',
+                'Mulai Pelaksanaan',
+                'Selesai Pelaksanaan',
+                'PND',
+                'Pandu Dari',
+                'Pandu Ke'
+            ]);
+
+            // Data
+            $no = 1;
+            foreach ($durasiPemanduan0Data as $data) {
+                fputcsv($file, [
+                    $no++,
+                    $data->PPKB_CODE ?? '-',
+                    $data->NO_UKK ?? '-',
+                    $data->NO_BKT_PANDU ?? '-',
+                    $data->NM_KAPAL ?? '-',
+                    $data->NM_PERS_PANDU ?? '-',
+                    $data->TGL_TIBA ?? '-',
+                    $data->JAM_TIBA ?? '-',
+                    $data->TGL_PMT ?? '-',
+                    $data->JAM_PMT ?? '-',
+                    $data->PNK ?? '-',
+                    $data->KB ?? '-',
+                    $data->MULAI_PELAKSANAAN ?? '-',
+                    $data->SELESAI_PELAKSANAAN ?? '-',
+                    $data->PND ?? '-',
+                    $data->PANDU_DARI ?? '-',
+                    $data->PANDU_KE ?? '-'
+                ]);
+            }
+
+            // Summary
+            fputcsv($file, []);
+            fputcsv($file, [
+                '',
+                '',
+                '',
+                'TOTAL TRANSAKSI:',
+                count($durasiPemanduan0Data)
             ]);
 
             fclose($file);
