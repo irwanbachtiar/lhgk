@@ -12,6 +12,7 @@ use App\Http\Controllers\SummaryController;
 use App\Http\Controllers\SarprasController;
 use App\Http\Controllers\AnperController;
 use App\Http\Controllers\SapController;
+use App\Http\Controllers\VisitorController;
 use App\Models\Lhgk;
 
 Route::get('/', [DashboardController::class, 'index'])->name('dashboard');
@@ -57,6 +58,11 @@ Route::get('/sarpras', [SarprasController::class, 'index'])->name('sarpras');
 
 // Pendapatan Per Anak Perusahaan
 Route::get('/anper', [AnperController::class, 'index'])->name('anper');
+
+// Visitor Monitoring routes
+Route::get('/visitors', [VisitorController::class, 'index'])->name('visitors');
+Route::get('/visitors/export', [VisitorController::class, 'export'])->name('visitors.export');
+Route::get('/api/visitors/stats', [VisitorController::class, 'getStats'])->name('visitors.api.stats');
 
 // Sync Phinnisi routes (manual trigger)
 Route::get('/sync-phinnisi-pandu', function() {
