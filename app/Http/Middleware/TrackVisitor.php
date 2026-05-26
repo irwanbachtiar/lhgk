@@ -32,7 +32,7 @@ class TrackVisitor
                 'ip_address' => $request->ip(),
                 'user_agent' => $userAgent,
                 'page_url' => $request->path(),
-                'referrer' => $request->referrer(),
+                'referrer' => $request->header('referer'),
                 'method' => $request->method(),
                 'browser' => $deviceInfo['browser'],
                 'os' => $deviceInfo['os'],

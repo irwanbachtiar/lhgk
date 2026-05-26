@@ -130,12 +130,17 @@ class NotaController extends Controller
         $regionalGroups = $this->getRegionalGroups();
 
         // Get available periods (extract from INVOICE_DATE MM-YYYY format)
-        $periods = Nota::selectRaw('DATE_FORMAT(STR_TO_DATE(INVOICE_DATE, \'%d-%m-%Y\'), \'%m-%Y\') as periode')
-            ->whereNotNull('INVOICE_DATE')
-            ->where('INVOICE_DATE', '!=', '')
-            ->groupBy('periode')
-            ->orderByRaw('STR_TO_DATE(CONCAT(\'01-\', periode), \'%d-%m-%Y\') DESC')
-            ->pluck('periode');
+        try {
+            $periods = Nota::selectRaw('DATE_FORMAT(STR_TO_DATE(INVOICE_DATE, \'%d-%m-%Y\'), \'%m-%Y\') as periode')
+                ->whereNotNull('INVOICE_DATE')
+                ->where('INVOICE_DATE', '!=', '')
+                ->groupBy('periode')
+                ->orderByRaw('STR_TO_DATE(CONCAT(\'01-\', periode), \'%d-%m-%Y\') DESC')
+                ->pluck('periode');
+        } catch (\Exception $e) {
+            \Log::error('monitoring-nota: failed to load periods: ' . $e->getMessage());
+            $periods = collect();
+        }
 
         // Initialize variables
         $totalNota = 0;

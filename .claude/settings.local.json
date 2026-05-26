@@ -1,0 +1,8 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(Get-Item storage\\\\logs\\\\laravel.log)",
+      "Bash(Select-Object Length,LastWriteTime)"
+    ]
+  }
+}
