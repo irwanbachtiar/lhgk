@@ -11,6 +11,9 @@ return new class extends Migration
      */
     public function up(): void
     {
+        if (Schema::hasColumn('lhgk', 'NM_BRANCH')) {
+            return;
+        }
         Schema::table('lhgk', function (Blueprint $table) {
             $table->string('NM_BRANCH')->nullable()->after('NM_PERS_PANDU');
         });

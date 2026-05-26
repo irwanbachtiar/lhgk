@@ -11,6 +11,9 @@ return new class extends Migration
      */
     public function up(): void
     {
+        if (Schema::hasTable('pandu_prod')) {
+            return;
+        }
         Schema::create('pandu_prod', function (Blueprint $table) {
             $table->id();
             $table->string('NM_PERS_PANDU')->nullable();

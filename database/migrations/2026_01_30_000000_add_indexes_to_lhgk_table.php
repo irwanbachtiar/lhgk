@@ -1,8 +1,6 @@
 <?php
 
 use Illuminate\Database\Migrations\Migration;
-use Illuminate\Database\Schema\Blueprint;
-use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Facades\DB;
 
 return new class extends Migration
@@ -12,11 +10,14 @@ return new class extends Migration
      */
     public function up(): void
     {
-        // Add indexes to lhgk table for better query performance
-        DB::connection('dashboard_phinnisi')->statement('ALTER TABLE lhgk ADD INDEX idx_periode (PERIODE)');
-        DB::connection('dashboard_phinnisi')->statement('ALTER TABLE lhgk ADD INDEX idx_nm_branch (NM_BRANCH)');
-        DB::connection('dashboard_phinnisi')->statement('ALTER TABLE lhgk ADD INDEX idx_periode_branch (PERIODE, NM_BRANCH)');
-        DB::connection('dashboard_phinnisi')->statement('ALTER TABLE lhgk ADD INDEX idx_nm_pers_pandu (NM_PERS_PANDU)');
+        $indexes = ['idx_periode' => 'PERIODE', 'idx_nm_branch' => 'NM_BRANCH', 'idx_periode_branch' => 'PERIODE, NM_BRANCH', 'idx_nm_pers_pandu' => 'NM_PERS_PANDU'];
+        foreach ($indexes as $name => $columns) {
+            try {
+                DB::connection('dashboard_phinnisi')->statement("ALTER TABLE lhgk ADD INDEX {$name} ({$columns})");
+            } catch (\Exception $e) {
+                // index already exists, skip
+            }
+        }
     }
 
     /**
