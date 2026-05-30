@@ -17,8 +17,8 @@ class TrackVisitor
      */
     public function handle(Request $request, Closure $next)
     {
-        // Jangan track request API
-        if ($request->is('api/*') || $request->is('sync-*') || $request->is('debug-*')) {
+        // Hanya track halaman utama
+        if (!$request->is('/')) {
             return $next($request);
         }
 
