@@ -106,7 +106,8 @@ class NotaController extends Controller
                 'REGIONAL 4 KENDARI',
                 'REGIONAL 4 MAKASSAR',
                 'REGIONAL 4 BULA',
-                'REGIONAL 4 MANADO'
+                'REGIONAL 4 MANADO',
+                'REGIONAL 4 SAUMLAKI'
             ],
             'JAI' => [
                 'JAI AREA IV STS MUSI',
