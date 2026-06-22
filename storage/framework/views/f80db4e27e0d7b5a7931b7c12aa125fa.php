@@ -661,8 +661,10 @@
                                         <th>Cabang</th>
                                         <th>Gerakan</th>
                                         <th>Selesai Pelaksanaan</th>
+                                        <th>Tanggal Billing</th>
+                                        <th class="text-center">Selisih (Hari)</th>
                                         <th>Tanggal Invoice</th>
-                                        <th class="text-center">Selisih (hari)</th>
+                                        <th class="text-center">Total (Hari)</th>
                                         <th class="text-end">Pendapatan Pandu</th>
                                         <th class="text-end">Pendapatan Tunda</th>
                                     </tr>
@@ -682,6 +684,16 @@
                                             </span>
                                         </td>
                                         <td><?php echo e($data->SELESAI_PELAKSANAAN); ?></td>
+                                        <td><?php echo e($data->BILL_DATE ?? '-'); ?></td>
+                                        <td class="text-center">
+                                            <?php if($data->selisih_billing !== null): ?>
+                                                <span class="badge <?php echo e($data->selisih_billing > 2 ? 'bg-danger' : 'bg-success'); ?> fs-6">
+                                                    <?php echo e($data->selisih_billing); ?> hari
+                                                </span>
+                                            <?php else: ?>
+                                                <span class="text-muted">-</span>
+                                            <?php endif; ?>
+                                        </td>
                                         <td><?php echo e($data->INVOICE_DATE); ?></td>
                                         <td class="text-center">
                                             <span class="badge bg-danger fs-6">
@@ -1488,6 +1500,10 @@
                                 Data Durasi Pemanduan 0 (PND = 00 : 00 atau kosong)
                             </h5>
                             <div>
+                                <a href="<?php echo e(route('export.durasi.pemanduan.0', ['periode' => $selectedPeriode, 'cabang' => $selectedBranch])); ?>" 
+                                   class="btn btn-light btn-sm me-2">
+                                    <i class="bi bi-file-earmark-excel"></i> Download Excel
+                                </a>
                                 <a href="<?php echo e(route('dashboard', ['periode' => $selectedPeriode, 'cabang' => $selectedBranch])); ?>" 
                                    class="btn btn-light btn-sm">
                                     <i class="bi bi-x-circle"></i> Sembunyikan

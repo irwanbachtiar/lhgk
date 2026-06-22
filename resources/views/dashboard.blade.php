@@ -659,8 +659,10 @@
                                         <th>Cabang</th>
                                         <th>Gerakan</th>
                                         <th>Selesai Pelaksanaan</th>
+                                        <th>Tanggal Billing</th>
+                                        <th class="text-center">Selisih (Hari)</th>
                                         <th>Tanggal Invoice</th>
-                                        <th class="text-center">Selisih (hari)</th>
+                                        <th class="text-center">Total (Hari)</th>
                                         <th class="text-end">Pendapatan Pandu</th>
                                         <th class="text-end">Pendapatan Tunda</th>
                                     </tr>
@@ -679,6 +681,16 @@
                                             </span>
                                         </td>
                                         <td>{{ $data->SELESAI_PELAKSANAAN }}</td>
+                                        <td>{{ $data->BILL_DATE ?? '-' }}</td>
+                                        <td class="text-center">
+                                            @if($data->selisih_billing !== null)
+                                                <span class="badge {{ $data->selisih_billing > 2 ? 'bg-danger' : 'bg-success' }} fs-6">
+                                                    {{ $data->selisih_billing }} hari
+                                                </span>
+                                            @else
+                                                <span class="text-muted">-</span>
+                                            @endif
+                                        </td>
                                         <td>{{ $data->INVOICE_DATE }}</td>
                                         <td class="text-center">
                                             <span class="badge bg-danger fs-6">

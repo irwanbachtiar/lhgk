@@ -375,6 +375,7 @@ class DashboardController extends Controller
             if ($showDeparture && $departureDelayCount > 0) {
                 $departureDelayData = Lhgk::select(
                         'NO_UKK',
+                        'BILL_DATE',
                         'NM_KAPAL',
                         'NM_PERS_PANDU',
                         'NM_BRANCH',
@@ -385,6 +386,7 @@ class DashboardController extends Controller
                         'PENDAPATAN_TUNDA'
                     )
                     ->selectRaw('DATEDIFF(STR_TO_DATE(INVOICE_DATE, "%d-%m-%Y"), STR_TO_DATE(SELESAI_PELAKSANAAN, "%d-%m-%Y")) as selisih_hari')
+                    ->selectRaw('DATEDIFF(STR_TO_DATE(BILL_DATE, "%d-%m-%Y"), STR_TO_DATE(SELESAI_PELAKSANAAN, "%d-%m-%Y")) as selisih_billing')
                     ->whereRaw("GERAKAN = 'DEPARTURE'")
                     ->whereNotNull('INVOICE_DATE')
                     ->whereNotNull('SELESAI_PELAKSANAAN')
@@ -1238,6 +1240,7 @@ class DashboardController extends Controller
         // Get all departure delay data for export
         $departureDelayData = Lhgk::select(
                 'NO_UKK',
+                'BILL_DATE',
                 'NM_KAPAL',
                 'NM_PERS_PANDU',
                 'NM_BRANCH',
@@ -1284,6 +1287,7 @@ class DashboardController extends Controller
             fputcsv($file, [
                 'No',
                 'No. UKK',
+                'Tgl. Billing',
                 'Nama Kapal',
                 'Nama Pandu',
                 'Cabang',
@@ -1302,6 +1306,7 @@ class DashboardController extends Controller
                 fputcsv($file, [
                     $no++,
                     $data->NO_UKK,
+                    $data->BILL_DATE,
                     $data->NM_KAPAL,
                     $data->NM_PERS_PANDU,
                     $data->NM_BRANCH,
@@ -1318,6 +1323,7 @@ class DashboardController extends Controller
             // Summary
             fputcsv($file, []);
             fputcsv($file, [
+                '',
                 '',
                 '',
                 '',
