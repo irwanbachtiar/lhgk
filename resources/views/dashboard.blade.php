@@ -662,6 +662,7 @@
                                         <th>Tanggal Billing</th>
                                         <th class="text-center">Selisih (Hari)</th>
                                         <th>Tanggal Invoice</th>
+                                        <th class="text-center">Billing to Invoice</th>
                                         <th class="text-center">Total (Hari)</th>
                                         <th class="text-end">Pendapatan Pandu</th>
                                         <th class="text-end">Pendapatan Tunda</th>
@@ -692,6 +693,15 @@
                                             @endif
                                         </td>
                                         <td>{{ $data->INVOICE_DATE }}</td>
+                                        <td class="text-center">
+                                            @if($data->selisih_billing_to_invoice !== null)
+                                                <span class="badge {{ $data->selisih_billing_to_invoice > 0 ? 'bg-warning text-dark' : 'bg-success' }} fs-6">
+                                                    {{ $data->selisih_billing_to_invoice }} hari
+                                                </span>
+                                            @else
+                                                <span class="text-muted">-</span>
+                                            @endif
+                                        </td>
                                         <td class="text-center">
                                             <span class="badge bg-danger fs-6">
                                                 {{ $data->selisih_hari }} hari

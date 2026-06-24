@@ -387,6 +387,7 @@ class DashboardController extends Controller
                     )
                     ->selectRaw('DATEDIFF(STR_TO_DATE(INVOICE_DATE, "%d-%m-%Y"), STR_TO_DATE(SELESAI_PELAKSANAAN, "%d-%m-%Y")) as selisih_hari')
                     ->selectRaw('DATEDIFF(STR_TO_DATE(BILL_DATE, "%d-%m-%Y"), STR_TO_DATE(SELESAI_PELAKSANAAN, "%d-%m-%Y")) as selisih_billing')
+                    ->selectRaw('DATEDIFF(STR_TO_DATE(INVOICE_DATE, "%d-%m-%Y"), STR_TO_DATE(BILL_DATE, "%d-%m-%Y")) as selisih_billing_to_invoice')
                     ->whereRaw("GERAKAN = 'DEPARTURE'")
                     ->whereNotNull('INVOICE_DATE')
                     ->whereNotNull('SELESAI_PELAKSANAAN')
@@ -1251,6 +1252,8 @@ class DashboardController extends Controller
                 'PENDAPATAN_TUNDA'
             )
             ->selectRaw('DATEDIFF(STR_TO_DATE(INVOICE_DATE, "%d-%m-%Y"), STR_TO_DATE(SELESAI_PELAKSANAAN, "%d-%m-%Y")) as selisih_hari')
+            ->selectRaw('DATEDIFF(STR_TO_DATE(BILL_DATE, "%d-%m-%Y"), STR_TO_DATE(SELESAI_PELAKSANAAN, "%d-%m-%Y")) as selisih_billing')
+            ->selectRaw('DATEDIFF(STR_TO_DATE(INVOICE_DATE, "%d-%m-%Y"), STR_TO_DATE(BILL_DATE, "%d-%m-%Y")) as selisih_billing_to_invoice')
             ->whereRaw("GERAKAN = 'DEPARTURE'")
             ->whereNotNull('INVOICE_DATE')
             ->whereNotNull('SELESAI_PELAKSANAAN')
@@ -1287,14 +1290,16 @@ class DashboardController extends Controller
             fputcsv($file, [
                 'No',
                 'No. UKK',
-                'Tgl. Billing',
                 'Nama Kapal',
                 'Nama Pandu',
                 'Cabang',
                 'Gerakan',
                 'Selesai Pelaksanaan',
+                'Tanggal Billing',
+                'Selisih (Hari)',
                 'Tanggal Invoice',
-                'Selisih (hari)',
+                'Billing to Invoice',
+                'Total (Hari)',
                 'Pendapatan Pandu',
                 'Pendapatan Tunda',
                 'Total Pendapatan'
@@ -1306,13 +1311,15 @@ class DashboardController extends Controller
                 fputcsv($file, [
                     $no++,
                     $data->NO_UKK,
-                    $data->BILL_DATE,
                     $data->NM_KAPAL,
                     $data->NM_PERS_PANDU,
                     $data->NM_BRANCH,
                     strtoupper($data->GERAKAN),
                     $data->SELESAI_PELAKSANAAN,
+                    $data->BILL_DATE ?? '-',
+                    ($data->selisih_billing !== null ? $data->selisih_billing . ' hari' : '-'),
                     $data->INVOICE_DATE,
+                    ($data->selisih_billing_to_invoice !== null ? $data->selisih_billing_to_invoice . ' hari' : '-'),
                     $data->selisih_hari . ' hari',
                     number_format($data->PENDAPATAN_PANDU, 0, ',', '.'),
                     number_format($data->PENDAPATAN_TUNDA, 0, ',', '.'),
@@ -1323,6 +1330,8 @@ class DashboardController extends Controller
             // Summary
             fputcsv($file, []);
             fputcsv($file, [
+                '',
+                '',
                 '',
                 '',
                 '',
