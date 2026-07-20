@@ -1070,6 +1070,7 @@
                                         <th style="width:80px">Jam PMT</th>
                                         <th style="width:155px">Mulai Pelaksanaan</th>
                                         <th style="width:155px">Selesai Pelaksanaan</th>
+                                        <th style="width:110px" class="text-center">Selisih Hari</th>
                                         <th style="width:150px">Created By</th>
                                         <th style="width:150px">Pilot Deploy By</th>
                                     </tr>
@@ -1091,6 +1092,15 @@
                                         <td class="text-nowrap small"><?php echo e($row->JAM_PMT ?? '-'); ?></td>
                                         <td class="text-nowrap small text-success fw-semibold"><?php echo e($row->MULAI_PELAKSANAAN ?? '-'); ?></td>
                                         <td class="text-nowrap small"><?php echo e($row->SELESAI_PELAKSANAAN ?? '-'); ?></td>
+                                        <td class="text-center">
+                                            <?php if($row->selisih_backdate !== null): ?>
+                                                <span class="badge <?php echo e($row->selisih_backdate < 0 ? 'bg-danger' : 'bg-warning text-dark'); ?>">
+                                                    <?php echo e($row->selisih_backdate); ?> hari
+                                                </span>
+                                            <?php else: ?>
+                                                <span class="text-muted">-</span>
+                                            <?php endif; ?>
+                                        </td>
                                         <td class="text-nowrap small"><?php echo e($row->CREATED_BY ?? '-'); ?></td>
                                         <td class="text-nowrap small"><?php echo e($row->PILOT_DEPLOY_BY ?? '-'); ?></td>
                                     </tr>

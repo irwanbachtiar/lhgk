@@ -475,6 +475,21 @@ class DashboardController extends Controller
                         'CREATED_BY',
                         'PILOT_DEPLOY_BY'
                     )
+                    ->selectRaw("DATEDIFF(
+                        STR_TO_DATE(CONCAT(
+                            SUBSTRING_INDEX(PPKB_SUBMIT, ' ', 1), '-',
+                            CASE SUBSTRING_INDEX(SUBSTRING_INDEX(PPKB_SUBMIT, ' ', 2), ' ', -1)
+                                WHEN 'Januari'   THEN '01' WHEN 'Februari'  THEN '02'
+                                WHEN 'Maret'     THEN '03' WHEN 'April'     THEN '04'
+                                WHEN 'Mei'       THEN '05' WHEN 'Juni'      THEN '06'
+                                WHEN 'Juli'      THEN '07' WHEN 'Agustus'   THEN '08'
+                                WHEN 'September' THEN '09' WHEN 'Oktober'   THEN '10'
+                                WHEN 'November'  THEN '11' WHEN 'Desember'  THEN '12'
+                                ELSE '00' END,
+                            '-', SUBSTRING_INDEX(PPKB_SUBMIT, ' ', -1)
+                        ), '%d-%m-%Y'),
+                        STR_TO_DATE(SUBSTRING(MULAI_PELAKSANAAN, 1, 10), '%d-%m-%Y')
+                    ) as selisih_backdate")
                     ->whereNotNull('MULAI_PELAKSANAAN')
                     ->where('MULAI_PELAKSANAAN', '!=', '')
                     ->whereNotNull('PPKB_SUBMIT')
@@ -1977,6 +1992,21 @@ class DashboardController extends Controller
                 'CREATED_BY',
                 'PILOT_DEPLOY_BY'
             )
+            ->selectRaw("DATEDIFF(
+                STR_TO_DATE(CONCAT(
+                    SUBSTRING_INDEX(PPKB_SUBMIT, ' ', 1), '-',
+                    CASE SUBSTRING_INDEX(SUBSTRING_INDEX(PPKB_SUBMIT, ' ', 2), ' ', -1)
+                        WHEN 'Januari'   THEN '01' WHEN 'Februari'  THEN '02'
+                        WHEN 'Maret'     THEN '03' WHEN 'April'     THEN '04'
+                        WHEN 'Mei'       THEN '05' WHEN 'Juni'      THEN '06'
+                        WHEN 'Juli'      THEN '07' WHEN 'Agustus'   THEN '08'
+                        WHEN 'September' THEN '09' WHEN 'Oktober'   THEN '10'
+                        WHEN 'November'  THEN '11' WHEN 'Desember'  THEN '12'
+                        ELSE '00' END,
+                    '-', SUBSTRING_INDEX(PPKB_SUBMIT, ' ', -1)
+                ), '%d-%m-%Y'),
+                STR_TO_DATE(SUBSTRING(MULAI_PELAKSANAAN, 1, 10), '%d-%m-%Y')
+            ) as selisih_backdate")
             ->whereNotNull('MULAI_PELAKSANAAN')
             ->where('MULAI_PELAKSANAAN', '!=', '')
             ->whereNotNull('PPKB_SUBMIT')
@@ -2023,6 +2053,7 @@ class DashboardController extends Controller
                 'Jam PMT',
                 'Mulai Pelaksanaan',
                 'Selesai Pelaksanaan',
+                'Selisih Hari',
                 'Created By',
                 'Pilot Deploy By'
             ]);
@@ -2044,6 +2075,7 @@ class DashboardController extends Controller
                     $row->JAM_PMT              ?? '-',
                     $row->MULAI_PELAKSANAAN    ?? '-',
                     $row->SELESAI_PELAKSANAAN  ?? '-',
+                    ($row->selisih_backdate !== null ? $row->selisih_backdate . ' hari' : '-'),
                     $row->CREATED_BY           ?? '-',
                     $row->PILOT_DEPLOY_BY      ?? '-'
                 ]);

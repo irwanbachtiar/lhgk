@@ -1062,6 +1062,7 @@
                                         <th style="width:80px">Jam PMT</th>
                                         <th style="width:155px">Mulai Pelaksanaan</th>
                                         <th style="width:155px">Selesai Pelaksanaan</th>
+                                        <th style="width:110px" class="text-center">Selisih Hari</th>
                                         <th style="width:150px">Created By</th>
                                         <th style="width:150px">Pilot Deploy By</th>
                                     </tr>
@@ -1083,6 +1084,15 @@
                                         <td class="text-nowrap small">{{ $row->JAM_PMT ?? '-' }}</td>
                                         <td class="text-nowrap small text-success fw-semibold">{{ $row->MULAI_PELAKSANAAN ?? '-' }}</td>
                                         <td class="text-nowrap small">{{ $row->SELESAI_PELAKSANAAN ?? '-' }}</td>
+                                        <td class="text-center">
+                                            @if($row->selisih_backdate !== null)
+                                                <span class="badge {{ $row->selisih_backdate < 0 ? 'bg-danger' : 'bg-warning text-dark' }}">
+                                                    {{ $row->selisih_backdate }} hari
+                                                </span>
+                                            @else
+                                                <span class="text-muted">-</span>
+                                            @endif
+                                        </td>
                                         <td class="text-nowrap small">{{ $row->CREATED_BY ?? '-' }}</td>
                                         <td class="text-nowrap small">{{ $row->PILOT_DEPLOY_BY ?? '-' }}</td>
                                     </tr>
