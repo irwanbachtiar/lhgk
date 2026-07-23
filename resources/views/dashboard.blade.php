@@ -1359,10 +1359,10 @@
                 <div class="card stat-card">
                     @if(!$showAnomali)
                     <div class="card-body text-center py-4">
-                        <i class="bi bi-exclamation-triangle" style="font-size: 3rem; color: #dc3545;"></i>
+                        <i class="bi bi-exclamation-triangle" style="font-size: 3rem; color: #f97316;"></i>
                         <h5 class="mt-3">Data Anomali</h5>
                         <p class="text-muted">
-                            Ditemukan <strong style="color: #dc3545;">{{ number_format($anomaliCount) }} record</strong>
+                            Ditemukan <strong style="color: #f97316;">{{ number_format($anomaliCount) }} record</strong>
                             dengan kondisi anomali
                         </p>
                         <a href="{{ route('dashboard', ['periode' => $selectedPeriode, 'cabang' => $selectedBranch, 'show_anomali' => 1]) }}#anomali-section"
@@ -1371,7 +1371,7 @@
                         </a>
                     </div>
                     @else
-                    <div class="card-header" style="background: linear-gradient(135deg, #dc3545 0%, #b02a37 100%); color: white;" id="anomali-section">
+                    <div class="card-header" style="background: linear-gradient(135deg, #f97316 0%, #ea580c 100%); color: white;" id="anomali-section">
                         <div class="d-flex justify-content-between align-items-center">
                             <h5 class="mb-0">
                                 <i class="bi bi-exclamation-triangle"></i>
@@ -1390,7 +1390,7 @@
                         </div>
                     </div>
                     <div class="card-body">
-                        <div class="alert alert-danger mb-3">
+                        <div class="alert mb-3" style="background: #fff7ed; border-left: 4px solid #f97316; color: #7c2d12;">
                             <i class="bi bi-info-circle-fill"></i>
                             Ditemukan <strong>{{ number_format($anomaliCount) }} record</strong> dengan kondisi anomali:
                             ARRIVE memiliki MULAI_TUNDA tetapi DEPARTURE tidak (atau sebaliknya) pada NO_UKK yang sama.
