@@ -25,6 +25,7 @@ Route::get('/export-status-nota', [DashboardController::class, 'exportStatusNota
 Route::get('/export-waiting-time', [DashboardController::class, 'exportWaitingTime'])->name('export.waiting.time');
 Route::get('/export-durasi-pemanduan-0', [DashboardController::class, 'exportDurasiPemanduan0'])->name('export.durasi.pemanduan.0');
 Route::get('/export-anomali', [DashboardController::class, 'exportAnomali'])->name('export.anomali');
+Route::get('/export-mismatch', [DashboardController::class, 'exportMismatch'])->name('export.mismatch');
 Route::get('/export-backdate', [DashboardController::class, 'exportBackdate'])->name('export.backdate');
 Route::get('/export-realisasi-web', [DashboardController::class, 'exportRealisasiWeb'])->name('export.realisasi.web');
 

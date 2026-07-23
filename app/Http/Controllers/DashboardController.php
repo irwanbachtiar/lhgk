@@ -307,6 +307,7 @@ class DashboardController extends Controller
             $showRealisasiWeb = $request->get('show_realisasi_web', 0);
             $showAnomali = $request->get('show_anomali', 0);
             $showDurasiPemanduan0 = $request->get('show_durasi_pemanduan_0', 0);
+            $showMismatch = $request->get('show_mismatch', 0);
             $filterStatusNota = $request->get('filter_status_nota', 'all');
             
             // Count queries for section visibility
@@ -614,6 +615,66 @@ class DashboardController extends Controller
                     ->appends(request()->query());
             }
 
+            // Mismatch: no_pkk yang tidak memiliki movement_type 'masuk' DAN 'keluar' sekaligus
+            $mismatchSubquery = "no_pkk IN (
+                SELECT no_pkk FROM pilot_production
+                WHERE DATE_FORMAT(STR_TO_DATE(invoice_date, '%d-%m-%Y'), '%m-%Y') = ?
+                AND name_branch = ?
+                AND no_pkk IS NOT NULL AND no_pkk != ''
+                GROUP BY no_pkk
+                HAVING SUM(CASE WHEN LOWER(movement_type) = 'masuk' THEN 1 ELSE 0 END) = 0
+                    OR SUM(CASE WHEN LOWER(movement_type) = 'keluar' THEN 1 ELSE 0 END) = 0
+            )";
+            $mismatchCount = 0;
+            $mismatchDebugError = null;
+            $mismatchColumns = [];
+            try {
+                $mismatchColumns = DB::connection('dashboard_phinnisi')->getSchemaBuilder()->getColumnListing('pilot_production');
+            } catch (\Exception $e) {
+                $mismatchDebugError = 'Gagal baca kolom: ' . $e->getMessage();
+            }
+            try {
+                $mismatchCount = DB::connection('dashboard_phinnisi')->table('pilot_production')
+                    ->whereRaw("DATE_FORMAT(STR_TO_DATE(invoice_date, '%d-%m-%Y'), '%m-%Y') = ?", [$selectedPeriode])
+                    ->where('name_branch', $selectedBranch)
+                    ->whereRaw($mismatchSubquery, [$selectedPeriode, $selectedBranch])
+                    ->count();
+            } catch (\Exception $e) {
+                $mismatchDebugError = $e->getMessage();
+            }
+
+            // Cari nama kolom no_pkk_inaportnet yang sebenarnya
+            $mismatchPkkInaportnetCol = null;
+            foreach ($mismatchColumns as $col) {
+                if (stripos($col, 'pkk') !== false && stripos($col, 'ina') !== false) {
+                    $mismatchPkkInaportnetCol = $col;
+                    break;
+                }
+            }
+
+            $mismatchData = null;
+            if ($showMismatch && $mismatchCount > 0) {
+                try {
+                    $selectCols = ['pilot', 'work_order', 'vessel', 'flag', 'location', 'movement_type', 'no_pkk', 'ppkb_code', 'name_branch', 'delegation'];
+                    if ($mismatchPkkInaportnetCol) {
+                        $aliasCol = DB::raw("`{$mismatchPkkInaportnetCol}` as no_pkk_inaportnet");
+                        array_splice($selectCols, 7, 0, [$aliasCol]);
+                    }
+                    $mismatchData = DB::connection('dashboard_phinnisi')->table('pilot_production')
+                        ->select($selectCols)
+                        ->whereRaw("DATE_FORMAT(STR_TO_DATE(invoice_date, '%d-%m-%Y'), '%m-%Y') = ?", [$selectedPeriode])
+                        ->where('name_branch', $selectedBranch)
+                        ->whereRaw($mismatchSubquery, [$selectedPeriode, $selectedBranch])
+                        ->orderBy('no_pkk')
+                        ->orderBy('movement_type')
+                        ->paginate(15)
+                        ->appends(request()->query());
+                } catch (\Exception $e) {
+                    $mismatchDebugError = $e->getMessage();
+                    $mismatchData = null;
+                }
+            }
+
             $realisasiWebData = null;
             if ($showRealisasiWeb && $realisasiWebCount > 0) {
                 $realisasiWebData = Lhgk::select(
@@ -660,10 +721,16 @@ class DashboardController extends Controller
             $showDurasiPemanduan0 = false;
             $durasiPemanduan0Count = 0;
             $durasiPemanduan0Data = null;
+            $showMismatch = false;
+            $mismatchCount = 0;
+            $mismatchData = null;
+            $mismatchDebugError = null;
+            $mismatchColumns = [];
+            $mismatchPkkInaportnetCol = null;
         }
 
         // Show main dashboard view with filters, but without data until filters are selected
-        return view('dashboard', compact('statistics', 'chartData', 'totalOverall', 'periods', 'selectedPeriode', 'regionalGroups', 'allBranches', 'selectedBranch', 'topPilot', 'shipStatsByGT', 'showDeparture', 'departureDelayCount', 'departureDelayData', 'showStatusNota', 'statusNotaCount', 'statusNotaData', 'filterStatusNota', 'showWaitingTime', 'waitingTimeCount', 'waitingTimeData', 'showPkkManual', 'pkkManualCount', 'pkkManualData', 'showBackdate', 'backdateCount', 'backdateData', 'showRealisasiWeb', 'realisasiWebCount', 'realisasiWebData', 'realisasiPandu', 'realisasiTunda', 'totalTundaDistinct', 'showAnomali', 'anomaliCount', 'anomaliData', 'showDurasiPemanduan0', 'durasiPemanduan0Count', 'durasiPemanduan0Data'));
+        return view('dashboard', compact('statistics', 'chartData', 'totalOverall', 'periods', 'selectedPeriode', 'regionalGroups', 'allBranches', 'selectedBranch', 'topPilot', 'shipStatsByGT', 'showDeparture', 'departureDelayCount', 'departureDelayData', 'showStatusNota', 'statusNotaCount', 'statusNotaData', 'filterStatusNota', 'showWaitingTime', 'waitingTimeCount', 'waitingTimeData', 'showPkkManual', 'pkkManualCount', 'pkkManualData', 'showBackdate', 'backdateCount', 'backdateData', 'showRealisasiWeb', 'realisasiWebCount', 'realisasiWebData', 'realisasiPandu', 'realisasiTunda', 'totalTundaDistinct', 'showAnomali', 'anomaliCount', 'anomaliData', 'showDurasiPemanduan0', 'durasiPemanduan0Count', 'durasiPemanduan0Data', 'showMismatch', 'mismatchCount', 'mismatchData', 'mismatchDebugError', 'mismatchColumns', 'mismatchPkkInaportnetCol'));
     }
 
     private function getRegionalGroups()
@@ -1703,6 +1770,87 @@ class DashboardController extends Controller
                 number_format($waitingTimeData->avg('wt_decimal'), 2) . ' jam'
             ]);
 
+            fclose($file);
+        };
+
+        return response()->stream($callback, 200, $headers);
+    }
+
+    public function exportMismatch(Request $request)
+    {
+        $selectedPeriode = $request->get('periode');
+        $selectedBranch  = $request->get('cabang');
+
+        if (!$selectedPeriode || !$selectedBranch) {
+            return redirect()->back()->with('error', 'Pilih periode dan cabang terlebih dahulu');
+        }
+
+        $mismatchSubquery = "no_pkk IN (
+            SELECT no_pkk FROM pilot_production
+            WHERE DATE_FORMAT(STR_TO_DATE(invoice_date, '%d-%m-%Y'), '%m-%Y') = ?
+            AND name_branch = ?
+            AND no_pkk IS NOT NULL AND no_pkk != ''
+            GROUP BY no_pkk
+            HAVING SUM(CASE WHEN LOWER(movement_type) = 'masuk' THEN 1 ELSE 0 END) = 0
+                OR SUM(CASE WHEN LOWER(movement_type) = 'keluar' THEN 1 ELSE 0 END) = 0
+        )";
+
+        try {
+            $data = DB::connection('dashboard_phinnisi')->table('pilot_production')
+                ->select('pilot', 'work_order', 'vessel', 'flag', 'location', 'movement_type', 'no_pkk', 'no_pkk_inapornet', 'ppkb_code', 'name_branch', 'delegation')
+                ->whereRaw("DATE_FORMAT(STR_TO_DATE(invoice_date, '%d-%m-%Y'), '%m-%Y') = ?", [$selectedPeriode])
+                ->where('name_branch', $selectedBranch)
+                ->whereRaw($mismatchSubquery, [$selectedPeriode, $selectedBranch])
+                ->orderBy('no_pkk')
+                ->orderBy('movement_type')
+                ->get();
+        } catch (\Exception $e) {
+            return redirect()->back()->with('error', 'Gagal mengambil data: ' . $e->getMessage());
+        }
+
+        if ($data->isEmpty()) {
+            return redirect()->back()->with('error', 'Tidak ada data mismatch untuk periode dan cabang yang dipilih');
+        }
+
+        $filename = 'Mismatch_PKK_' . str_replace(' ', '_', $selectedBranch) . '_' . str_replace('-', '', $selectedPeriode) . '_' . date('YmdHis') . '.csv';
+
+        $headers = [
+            'Content-Type' => 'text/csv; charset=UTF-8',
+            'Content-Disposition' => 'attachment; filename="' . $filename . '"',
+            'Pragma' => 'no-cache',
+            'Cache-Control' => 'must-revalidate, post-check=0, pre-check=0',
+            'Expires' => '0'
+        ];
+
+        $callback = function() use ($data) {
+            $file = fopen('php://output', 'w');
+            fprintf($file, chr(0xEF).chr(0xBB).chr(0xBF));
+
+            fputcsv($file, [
+                'No', 'Pilot', 'Work Order', 'Vessel', 'Flag', 'Location',
+                'Movement Type', 'No. PKK', 'No. PKK Inaportnet', 'PPKB Code', 'Name Branch', 'Delegation'
+            ]);
+
+            $no = 1;
+            foreach ($data as $row) {
+                fputcsv($file, [
+                    $no++,
+                    $row->pilot ?? '-',
+                    $row->work_order ?? '-',
+                    $row->vessel ?? '-',
+                    $row->flag ?? '-',
+                    $row->location ?? '-',
+                    $row->movement_type ?? '-',
+                    $row->no_pkk ?? '-',
+                    $row->no_pkk_inapornet ?? '-',
+                    $row->ppkb_code ?? '-',
+                    $row->name_branch ?? '-',
+                    $row->delegation ?? '-',
+                ]);
+            }
+
+            fputcsv($file, []);
+            fputcsv($file, ['', '', '', 'TOTAL RECORD MISMATCH:', \count($data)]);
             fclose($file);
         };
 

@@ -334,7 +334,7 @@
                                     <i class="bi bi-calendar3"></i> Bulan {{ $selectedPeriode }}
                                 </p>
                                 <div class="row text-center">
-                                    <div class="col-6 mb-2">
+                                    <div class="col-6 mb-2">    
                                         <small class="text-muted">Transaksi</small>
                                         <h6 class="text-primary mb-0">{{ number_format($delData['transaksi']) }}</h6>
                                     </div>

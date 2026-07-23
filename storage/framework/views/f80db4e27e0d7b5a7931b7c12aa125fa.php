@@ -1616,6 +1616,154 @@
         </div>
         <?php endif; ?>
 
+        <!-- Mismatch Section -->
+        <?php if($selectedPeriode != 'all' && $selectedBranch != 'all' && $mismatchCount > 0): ?>
+        <div class="row mb-4">
+            <div class="col-12">
+                <div class="card stat-card">
+                    <?php if(!$showMismatch): ?>
+                    <div class="card-body text-center py-4">
+                        <?php if($mismatchDebugError || !empty($mismatchColumns)): ?>
+                        <div class="alert alert-<?php echo e($mismatchDebugError ? 'danger' : 'info'); ?> text-start mb-3 small">
+                            <?php if($mismatchDebugError): ?>
+                            <i class="bi bi-bug-fill"></i> <strong>Error:</strong> <?php echo e($mismatchDebugError); ?><br>
+                            <?php endif; ?>
+                            <?php if(!empty($mismatchColumns)): ?>
+                            <i class="bi bi-list-columns"></i> <strong>Kolom pilot_production:</strong>
+                            <?php echo e(implode(', ', $mismatchColumns)); ?>
+
+                            <?php if($mismatchPkkInaportnetCol): ?>
+                            <br><i class="bi bi-check-circle-fill text-success"></i> Kolom inaportnet ditemukan: <strong><?php echo e($mismatchPkkInaportnetCol); ?></strong>
+                            <?php else: ?>
+                            <br><i class="bi bi-x-circle-fill text-danger"></i> Tidak ada kolom mengandung 'pkk' + 'ina'
+                            <?php endif; ?>
+                            <?php endif; ?>
+                        </div>
+                        <?php endif; ?>
+                        <i class="bi bi-arrows-collapse" style="font-size: 3rem; color: #7c3aed;"></i>
+                        <h5 class="mt-3">Mismatch PKK</h5>
+                        <p class="text-muted">
+                            Ditemukan <strong style="color: #7c3aed;"><?php echo e(number_format($mismatchCount)); ?> record</strong>
+                            pada no_pkk yang tidak memiliki movement_type <strong>"masuk"</strong> dan <strong>"keluar"</strong> sekaligus
+                        </p>
+                        <a href="<?php echo e(route('dashboard', ['periode' => $selectedPeriode, 'cabang' => $selectedBranch, 'show_mismatch' => 1])); ?>#mismatch-section"
+                           class="btn" style="background: linear-gradient(135deg, #7c3aed 0%, #5b21b6 100%); color: white;">
+                            <i class="bi bi-eye"></i> Tampilkan Data Mismatch
+                        </a>
+                    </div>
+                    <?php else: ?>
+                    <div class="card-header" style="background: linear-gradient(135deg, #7c3aed 0%, #5b21b6 100%); color: white;" id="mismatch-section">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <h5 class="mb-0">
+                                <i class="bi bi-arrows-collapse"></i>
+                                Mismatch PKK — No. PKK tanpa pasangan "Masuk" / "Keluar"
+                            </h5>
+                            <div>
+                                <a href="<?php echo e(route('export.mismatch', ['periode' => $selectedPeriode, 'cabang' => $selectedBranch])); ?>"
+                                   class="btn btn-light btn-sm me-2">
+                                    <i class="bi bi-file-earmark-excel"></i> Download Excel
+                                </a>
+                                <a href="<?php echo e(route('dashboard', ['periode' => $selectedPeriode, 'cabang' => $selectedBranch])); ?>"
+                                   class="btn btn-light btn-sm">
+                                    <i class="bi bi-x-circle"></i> Sembunyikan
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="card-body">
+                        <?php if($mismatchDebugError): ?>
+                        <div class="alert alert-danger mb-3">
+                            <i class="bi bi-bug-fill"></i> <strong>Debug Error:</strong> <?php echo e($mismatchDebugError); ?>
+
+                        </div>
+                        <?php endif; ?>
+                        <div class="alert mb-3" style="background: #ede9fe; border-left: 4px solid #7c3aed; color: #3b0764;">
+                            <i class="bi bi-info-circle-fill"></i>
+                            Ditemukan <strong><?php echo e(number_format($mismatchCount)); ?> record</strong> pada no_pkk yang tidak lengkap —
+                            setiap no_pkk seharusnya memiliki movement_type <strong>"masuk"</strong> dan <strong>"keluar"</strong>.
+                            Data di bawah menampilkan semua baris dari no_pkk yang mismatch.
+                            <div class="mt-2">
+                                <small class="text-muted">Data diurutkan berdasarkan No. PKK dan Movement Type</small>
+                            </div>
+                        </div>
+
+                        <?php if($mismatchData && $mismatchData->count() > 0): ?>
+                        <div class="table-responsive">
+                            <table class="table table-hover table-striped table-sm">
+                                <thead class="table-dark">
+                                    <tr>
+                                        <th style="width:48px">No</th>
+                                        <th>Pilot</th>
+                                        <th>Work Order</th>
+                                        <th>Vessel</th>
+                                        <th>Flag</th>
+                                        <th>Location</th>
+                                        <th class="text-center">Movement Type</th>
+                                        <th>No. PKK</th>
+                                        <th>No. PKK Inaportnet</th>
+                                        <th>PPKB Code</th>
+                                        <th>Name Branch</th>
+                                        <th>Delegation</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <?php $prevPkk = null; ?>
+                                    <?php $__currentLoopData = $mismatchData; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $index => $row): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
+                                    <?php if($prevPkk !== null && $prevPkk !== $row->no_pkk): ?>
+                                    <tr style="height:3px; background:#7c3aed; padding:0; line-height:0;"><td colspan="12" style="padding:0; height:3px; background:#7c3aed;"></td></tr>
+                                    <?php endif; ?>
+                                    <?php $prevPkk = $row->no_pkk; ?>
+                                    <tr>
+                                        <td><?php echo e($mismatchData->firstItem() + $index); ?></td>
+                                        <td class="text-nowrap small"><?php echo e($row->pilot ?? '-'); ?></td>
+                                        <td class="text-nowrap small"><?php echo e($row->work_order ?? '-'); ?></td>
+                                        <td class="text-nowrap small"><strong><?php echo e($row->vessel ?? '-'); ?></strong></td>
+                                        <td class="text-nowrap small"><?php echo e($row->flag ?? '-'); ?></td>
+                                        <td class="text-nowrap small"><?php echo e($row->location ?? '-'); ?></td>
+                                        <td class="text-center">
+                                            <?php $mt = strtolower($row->movement_type ?? ''); ?>
+                                            <span class="badge <?php echo e($mt === 'masuk' ? 'bg-success' : ($mt === 'keluar' ? 'bg-warning text-dark' : 'bg-secondary')); ?>">
+                                                <?php echo e(strtoupper($row->movement_type ?? '-')); ?>
+
+                                            </span>
+                                        </td>
+                                        <td class="text-nowrap small">
+                                            <span class="badge" style="background:#7c3aed;"><?php echo e($row->no_pkk ?? '-'); ?></span>
+                                        </td>
+                                        <td class="text-nowrap small"><?php echo e($row->no_pkk_inaportnet ?? '-'); ?></td>
+                                        <td class="text-nowrap small"><?php echo e($row->ppkb_code ?? '-'); ?></td>
+                                        <td class="text-nowrap small"><?php echo e($row->name_branch ?? '-'); ?></td>
+                                        <td class="text-nowrap small"><?php echo e($row->delegation ?? '-'); ?></td>
+                                    </tr>
+                                    <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>
+                                </tbody>
+                            </table>
+                        </div>
+
+                        <!-- Pagination -->
+                        <?php if($mismatchData->hasPages()): ?>
+                        <div class="d-flex justify-content-between align-items-center mt-3">
+                            <div class="text-muted">
+                                Menampilkan <?php echo e($mismatchData->firstItem()); ?> - <?php echo e($mismatchData->lastItem()); ?> dari <?php echo e($mismatchData->total()); ?> data
+                            </div>
+                            <div>
+                                <?php echo e($mismatchData->links('pagination::bootstrap-5')); ?>
+
+                            </div>
+                        </div>
+                        <?php endif; ?>
+                        <?php else: ?>
+                        <div class="alert alert-secondary">
+                            <i class="bi bi-info-circle"></i> Tidak ada data untuk ditampilkan
+                        </div>
+                        <?php endif; ?>
+                    </div>
+                    <?php endif; ?>
+                </div>
+            </div>
+        </div>
+        <?php endif; ?>
+
         <!-- Ship Statistics by GT Range and Flag -->
         <?php if(($selectedPeriode != 'all' || $selectedBranch != 'all') && $shipStatsByGT->count() > 0): ?>
         <div class="row mb-4">
