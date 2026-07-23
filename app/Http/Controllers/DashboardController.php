@@ -1785,6 +1785,20 @@ class DashboardController extends Controller
             return redirect()->back()->with('error', 'Pilih periode dan cabang terlebih dahulu');
         }
 
+        // Cari nama kolom no_pkk_inaportnet yang sebenarnya
+        $pkkInaportnetCol = null;
+        try {
+            $cols = DB::connection('dashboard_phinnisi')->getSchemaBuilder()->getColumnListing('pilot_production');
+            foreach ($cols as $col) {
+                if (stripos($col, 'pkk') !== false && stripos($col, 'ina') !== false) {
+                    $pkkInaportnetCol = $col;
+                    break;
+                }
+            }
+        } catch (\Exception $e) {
+            // lanjut tanpa kolom inaportnet
+        }
+
         $mismatchSubquery = "no_pkk IN (
             SELECT no_pkk FROM pilot_production
             WHERE DATE_FORMAT(STR_TO_DATE(invoice_date, '%d-%m-%Y'), '%m-%Y') = ?
@@ -1795,9 +1809,14 @@ class DashboardController extends Controller
                 OR SUM(CASE WHEN LOWER(movement_type) = 'keluar' THEN 1 ELSE 0 END) = 0
         )";
 
+        $selectCols = ['pilot', 'work_order', 'vessel', 'flag', 'location', 'movement_type', 'no_pkk', 'ppkb_code', 'name_branch', 'delegation'];
+        if ($pkkInaportnetCol) {
+            array_splice($selectCols, 7, 0, [DB::raw("`{$pkkInaportnetCol}` as no_pkk_inaportnet")]);
+        }
+
         try {
             $data = DB::connection('dashboard_phinnisi')->table('pilot_production')
-                ->select('pilot', 'work_order', 'vessel', 'flag', 'location', 'movement_type', 'no_pkk', 'no_pkk_inapornet', 'ppkb_code', 'name_branch', 'delegation')
+                ->select($selectCols)
                 ->whereRaw("DATE_FORMAT(STR_TO_DATE(invoice_date, '%d-%m-%Y'), '%m-%Y') = ?", [$selectedPeriode])
                 ->where('name_branch', $selectedBranch)
                 ->whereRaw($mismatchSubquery, [$selectedPeriode, $selectedBranch])
@@ -1842,7 +1861,7 @@ class DashboardController extends Controller
                     $row->location ?? '-',
                     $row->movement_type ?? '-',
                     $row->no_pkk ?? '-',
-                    $row->no_pkk_inapornet ?? '-',
+                    $row->no_pkk_inaportnet ?? '-',
                     $row->ppkb_code ?? '-',
                     $row->name_branch ?? '-',
                     $row->delegation ?? '-',
