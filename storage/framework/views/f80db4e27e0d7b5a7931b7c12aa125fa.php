@@ -1377,7 +1377,7 @@
                             dengan kondisi anomali
                         </p>
                         <a href="<?php echo e(route('dashboard', ['periode' => $selectedPeriode, 'cabang' => $selectedBranch, 'show_anomali' => 1])); ?>#anomali-section"
-                           class="btn" style="background: linear-gradient(135deg, #dc3545 0%, #b02a37 100%); color: white;">
+                           class="btn" style="background: linear-gradient(135deg, #f97316 0%, #ea580c 100%); color: white;">
                             <i class="bi bi-eye"></i> Tampilkan Data Anomali
                         </a>
                     </div>
