@@ -1610,20 +1610,9 @@
                 <div class="card stat-card">
                     @if(!$showMismatch)
                     <div class="card-body text-center py-4">
-                        @if($mismatchDebugError || !empty($mismatchColumns))
-                        <div class="alert alert-{{ $mismatchDebugError ? 'danger' : 'info' }} text-start mb-3 small">
-                            @if($mismatchDebugError)
-                            <i class="bi bi-bug-fill"></i> <strong>Error:</strong> {{ $mismatchDebugError }}<br>
-                            @endif
-                            @if(!empty($mismatchColumns))
-                            <i class="bi bi-list-columns"></i> <strong>Kolom pilot_production:</strong>
-                            {{ implode(', ', $mismatchColumns) }}
-                            @if($mismatchPkkInaportnetCol)
-                            <br><i class="bi bi-check-circle-fill text-success"></i> Kolom inaportnet ditemukan: <strong>{{ $mismatchPkkInaportnetCol }}</strong>
-                            @else
-                            <br><i class="bi bi-x-circle-fill text-danger"></i> Tidak ada kolom mengandung 'pkk' + 'ina'
-                            @endif
-                            @endif
+                        @if($mismatchDebugError)
+                        <div class="alert alert-danger text-start mb-3 small">
+                            <i class="bi bi-bug-fill"></i> <strong>Error:</strong> {{ $mismatchDebugError }}
                         </div>
                         @endif
                         <i class="bi bi-arrows-collapse" style="font-size: 3rem; color: #7c3aed;"></i>

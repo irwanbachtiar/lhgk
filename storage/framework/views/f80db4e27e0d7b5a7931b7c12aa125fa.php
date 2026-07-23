@@ -1623,21 +1623,10 @@
                 <div class="card stat-card">
                     <?php if(!$showMismatch): ?>
                     <div class="card-body text-center py-4">
-                        <?php if($mismatchDebugError || !empty($mismatchColumns)): ?>
-                        <div class="alert alert-<?php echo e($mismatchDebugError ? 'danger' : 'info'); ?> text-start mb-3 small">
-                            <?php if($mismatchDebugError): ?>
-                            <i class="bi bi-bug-fill"></i> <strong>Error:</strong> <?php echo e($mismatchDebugError); ?><br>
-                            <?php endif; ?>
-                            <?php if(!empty($mismatchColumns)): ?>
-                            <i class="bi bi-list-columns"></i> <strong>Kolom pilot_production:</strong>
-                            <?php echo e(implode(', ', $mismatchColumns)); ?>
+                        <?php if($mismatchDebugError): ?>
+                        <div class="alert alert-danger text-start mb-3 small">
+                            <i class="bi bi-bug-fill"></i> <strong>Error:</strong> <?php echo e($mismatchDebugError); ?>
 
-                            <?php if($mismatchPkkInaportnetCol): ?>
-                            <br><i class="bi bi-check-circle-fill text-success"></i> Kolom inaportnet ditemukan: <strong><?php echo e($mismatchPkkInaportnetCol); ?></strong>
-                            <?php else: ?>
-                            <br><i class="bi bi-x-circle-fill text-danger"></i> Tidak ada kolom mengandung 'pkk' + 'ina'
-                            <?php endif; ?>
-                            <?php endif; ?>
                         </div>
                         <?php endif; ?>
                         <i class="bi bi-arrows-collapse" style="font-size: 3rem; color: #7c3aed;"></i>
