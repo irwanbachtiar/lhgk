@@ -308,6 +308,7 @@ class DashboardController extends Controller
             $showAnomali = $request->get('show_anomali', 0);
             $showDurasiPemanduan0 = $request->get('show_durasi_pemanduan_0', 0);
             $showMismatch = $request->get('show_mismatch', 0);
+            $showPanduSetNotRealization = $request->get('show_pandu_set_not_realization', 0);
             $filterStatusNota = $request->get('filter_status_nota', 'all');
             
             // Count queries for section visibility
@@ -675,6 +676,50 @@ class DashboardController extends Controller
                 }
             }
 
+            $panduSetNotRealizationCount = 0;
+            $panduSetNotRealizationData = null;
+            try {
+                $panduSetNotRealizationCount = Lhgk::where('PERIODE', $selectedPeriode)
+                    ->where('NM_BRANCH', $selectedBranch)
+                    ->whereRaw("(PENDAPATAN_PANDU IS NULL OR PENDAPATAN_PANDU = '' OR CAST(REPLACE(PENDAPATAN_PANDU, ',', '') AS DECIMAL(15,2)) = 0)")
+                    ->whereRaw("LOWER(TRIM(STATUS_NOTA)) = 'terbit nota'")
+                    ->whereRaw("(JN_KAPAL IS NULL OR UPPER(TRIM(JN_KAPAL)) != 'ABRI')")
+                    ->count();
+            } catch (\Exception $e) {
+                $panduSetNotRealizationCount = 0;
+            }
+
+            if ($showPanduSetNotRealization && $panduSetNotRealizationCount > 0) {
+                try {
+                    $panduSetNotRealizationData = Lhgk::select(
+                            'NO_UKK',
+                            'NO_BKT_PANDU',
+                            'NM_KAPAL',
+                            'JN_KAPAL',
+                            'KP_GRT',
+                            'NM_PERS_PANDU',
+                            'MULAI_PELAKSANAAN',
+                            'SELESAI_PELAKSANAAN',
+                            'PANDU_DARI',
+                            'PANDU_KE',
+                            'PENDAPATAN_PANDU',
+                            'NO_PKK_INAPORTNET',
+                            'REALISAS_PILOT_VIA',
+                            'CREATED_BY'
+                        )
+                        ->where('PERIODE', $selectedPeriode)
+                        ->where('NM_BRANCH', $selectedBranch)
+                        ->whereRaw("(PENDAPATAN_PANDU IS NULL OR PENDAPATAN_PANDU = '' OR CAST(REPLACE(PENDAPATAN_PANDU, ',', '') AS DECIMAL(15,2)) = 0)")
+                        ->whereRaw("LOWER(TRIM(STATUS_NOTA)) = 'terbit nota'")
+                        ->whereRaw("(JN_KAPAL IS NULL OR UPPER(TRIM(JN_KAPAL)) != 'ABRI')")
+                        ->orderBy('NO_UKK')
+                        ->paginate(15)
+                        ->appends(request()->query());
+                } catch (\Exception $e) {
+                    $panduSetNotRealizationData = null;
+                }
+            }
+
             $realisasiWebData = null;
             if ($showRealisasiWeb && $realisasiWebCount > 0) {
                 $realisasiWebData = Lhgk::select(
@@ -727,10 +772,13 @@ class DashboardController extends Controller
             $mismatchDebugError = null;
             $mismatchColumns = [];
             $mismatchPkkInaportnetCol = null;
+            $showPanduSetNotRealization = false;
+            $panduSetNotRealizationCount = 0;
+            $panduSetNotRealizationData = null;
         }
 
         // Show main dashboard view with filters, but without data until filters are selected
-        return view('dashboard', compact('statistics', 'chartData', 'totalOverall', 'periods', 'selectedPeriode', 'regionalGroups', 'allBranches', 'selectedBranch', 'topPilot', 'shipStatsByGT', 'showDeparture', 'departureDelayCount', 'departureDelayData', 'showStatusNota', 'statusNotaCount', 'statusNotaData', 'filterStatusNota', 'showWaitingTime', 'waitingTimeCount', 'waitingTimeData', 'showPkkManual', 'pkkManualCount', 'pkkManualData', 'showBackdate', 'backdateCount', 'backdateData', 'showRealisasiWeb', 'realisasiWebCount', 'realisasiWebData', 'realisasiPandu', 'realisasiTunda', 'totalTundaDistinct', 'showAnomali', 'anomaliCount', 'anomaliData', 'showDurasiPemanduan0', 'durasiPemanduan0Count', 'durasiPemanduan0Data', 'showMismatch', 'mismatchCount', 'mismatchData', 'mismatchDebugError', 'mismatchColumns', 'mismatchPkkInaportnetCol'));
+        return view('dashboard', compact('statistics', 'chartData', 'totalOverall', 'periods', 'selectedPeriode', 'regionalGroups', 'allBranches', 'selectedBranch', 'topPilot', 'shipStatsByGT', 'showDeparture', 'departureDelayCount', 'departureDelayData', 'showStatusNota', 'statusNotaCount', 'statusNotaData', 'filterStatusNota', 'showWaitingTime', 'waitingTimeCount', 'waitingTimeData', 'showPkkManual', 'pkkManualCount', 'pkkManualData', 'showBackdate', 'backdateCount', 'backdateData', 'showRealisasiWeb', 'realisasiWebCount', 'realisasiWebData', 'realisasiPandu', 'realisasiTunda', 'totalTundaDistinct', 'showAnomali', 'anomaliCount', 'anomaliData', 'showDurasiPemanduan0', 'durasiPemanduan0Count', 'durasiPemanduan0Data', 'showMismatch', 'mismatchCount', 'mismatchData', 'mismatchDebugError', 'mismatchColumns', 'mismatchPkkInaportnetCol', 'showPanduSetNotRealization', 'panduSetNotRealizationCount', 'panduSetNotRealizationData'));
     }
 
     private function getRegionalGroups()
@@ -1870,6 +1918,80 @@ class DashboardController extends Controller
 
             fputcsv($file, []);
             fputcsv($file, ['', '', '', 'TOTAL RECORD MISMATCH:', \count($data)]);
+            fclose($file);
+        };
+
+        return response()->stream($callback, 200, $headers);
+    }
+
+    public function exportPanduSetNotRealization(Request $request)
+    {
+        $selectedPeriode = $request->get('periode');
+        $selectedBranch  = $request->get('cabang');
+
+        if (!$selectedPeriode || !$selectedBranch) {
+            return redirect()->back()->with('error', 'Pilih periode dan cabang terlebih dahulu');
+        }
+
+        try {
+            $data = Lhgk::select(
+                    'NO_UKK',
+                    'NO_BKT_PANDU',
+                    'NM_KAPAL',
+                    'JN_KAPAL',
+                    'KP_GRT',
+                    'NM_PERS_PANDU',
+                    'MULAI_PELAKSANAAN',
+                    'SELESAI_PELAKSANAAN',
+                    'PANDU_DARI',
+                    'PANDU_KE',
+                    'PENDAPATAN_PANDU',
+                    'NO_PKK_INAPORTNET',
+                    'REALISAS_PILOT_VIA',
+                    'CREATED_BY'
+                )
+                ->where('PERIODE', $selectedPeriode)
+                ->where('NM_BRANCH', $selectedBranch)
+                ->whereRaw("(PENDAPATAN_PANDU IS NULL OR PENDAPATAN_PANDU = '' OR CAST(REPLACE(PENDAPATAN_PANDU, ',', '') AS DECIMAL(15,2)) = 0)")
+                ->whereRaw("LOWER(TRIM(STATUS_NOTA)) = 'terbit nota'")
+                ->whereRaw("(JN_KAPAL IS NULL OR UPPER(TRIM(JN_KAPAL)) != 'ABRI')")
+                ->orderBy('NO_UKK')
+                ->get();
+        } catch (\Exception $e) {
+            return redirect()->back()->with('error', 'Gagal mengambil data: ' . $e->getMessage());
+        }
+
+        $filename = 'pandu_set_not_realization_' . $selectedPeriode . '_' . str_replace(' ', '_', $selectedBranch) . '.csv';
+
+        $headers = [
+            'Content-Type'        => 'text/csv; charset=UTF-8',
+            'Content-Disposition' => 'attachment; filename="' . $filename . '"',
+        ];
+
+        $callback = function () use ($data) {
+            $file = fopen('php://output', 'w');
+            fprintf($file, chr(0xEF) . chr(0xBB) . chr(0xBF));
+            fputcsv($file, ['No', 'NO UKK', 'No Bukti Pandu', 'Nama Kapal', 'Jenis Kapal', 'KP GRT', 'Nama Personil Pandu', 'Mulai Pelaksanaan', 'Selesai Pelaksanaan', 'Pandu Dari', 'Pandu Ke', 'Pendapatan Pandu', 'No PKK Inaportnet', 'Realisasi Pilot Via', 'Created By']);
+            $no = 1;
+            foreach ($data as $row) {
+                fputcsv($file, [
+                    $no++,
+                    $row->NO_UKK ?? '',
+                    $row->NO_BKT_PANDU ?? '',
+                    $row->NM_KAPAL ?? '',
+                    $row->JN_KAPAL ?? '',
+                    $row->KP_GRT ?? '',
+                    $row->NM_PERS_PANDU ?? '',
+                    $row->MULAI_PELAKSANAAN ?? '',
+                    $row->SELESAI_PELAKSANAAN ?? '',
+                    $row->PANDU_DARI ?? '',
+                    $row->PANDU_KE ?? '',
+                    $row->PENDAPATAN_PANDU ?? '',
+                    $row->NO_PKK_INAPORTNET ?? '',
+                    $row->REALISAS_PILOT_VIA ?? '',
+                    $row->CREATED_BY ?? '',
+                ]);
+            }
             fclose($file);
         };
 

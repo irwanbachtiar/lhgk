@@ -1736,6 +1736,122 @@
         </div>
         @endif
 
+        <!-- Pandu Set Not Realization Section -->
+        @if($selectedPeriode != 'all' && $selectedBranch != 'all' && $panduSetNotRealizationCount > 0)
+        <div class="row mb-4">
+            <div class="col-12">
+                <div class="card stat-card">
+                    @if(!$showPanduSetNotRealization)
+                    <div class="card-body text-center py-4">
+                        <i class="bi bi-exclamation-triangle-fill" style="font-size: 3rem; color: #0ea5e9;"></i>
+                        <h5 class="mt-3">Pandu Set Not Realization</h5>
+                        <p class="text-muted">
+                            Ditemukan <strong style="color: #0ea5e9;">{{ number_format($panduSetNotRealizationCount) }} record</strong>
+                            dengan Status Nota "Terbit Nota" namun Pendapatan Pandu kosong atau 0
+                        </p>
+                        <a href="{{ route('dashboard', array_merge(request()->query(), ['show_pandu_set_not_realization' => 1])) }}#pandu-set-not-realization-section"
+                           class="btn" style="background: linear-gradient(135deg, #0ea5e9 0%, #0284c7 100%); color: white;">
+                            <i class="bi bi-eye"></i> Tampilkan Data Pandu Set Not Realization
+                        </a>
+                    </div>
+                    @else
+                    <div class="card-header" style="background: linear-gradient(135deg, #0ea5e9 0%, #0284c7 100%); color: white;" id="pandu-set-not-realization-section">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <h5 class="mb-0">
+                                <i class="bi bi-exclamation-triangle-fill"></i>
+                                Pandu Set Not Realization
+                            </h5>
+                            <div>
+                                <a href="{{ route('export.pandu.set.not.realization', ['periode' => $selectedPeriode, 'cabang' => $selectedBranch]) }}"
+                                   class="btn btn-light btn-sm me-2">
+                                    <i class="bi bi-file-earmark-excel"></i> Download Excel
+                                </a>
+                                <a href="{{ route('dashboard', array_merge(request()->query(), ['show_pandu_set_not_realization' => 0])) }}"
+                                   class="btn btn-light btn-sm">
+                                    <i class="bi bi-x-circle"></i> Sembunyikan
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="card-body">
+                        <div class="alert mb-3" style="background: #e0f2fe; border-left: 4px solid #0ea5e9; color: #0c4a6e;">
+                            <i class="bi bi-info-circle-fill"></i>
+                            Ditemukan <strong>{{ number_format($panduSetNotRealizationCount) }} record</strong>
+                            dengan kondisi: Status Nota = <strong>"Terbit Nota"</strong>, Pendapatan Pandu = <strong>kosong/0</strong>,
+                            dan Jenis Kapal bukan <strong>"Abri"</strong>.
+                        </div>
+
+                        @if($panduSetNotRealizationData && $panduSetNotRealizationData->count() > 0)
+                        <div class="table-responsive">
+                            <table class="table table-hover table-striped table-sm">
+                                <thead class="table-dark">
+                                    <tr>
+                                        <th style="width:48px">No</th>
+                                        <th>NO UKK</th>
+                                        <th>No Bukti Pandu</th>
+                                        <th>Nama Kapal</th>
+                                        <th>Jenis Kapal</th>
+                                        <th>KP GRT</th>
+                                        <th>Nama Personil Pandu</th>
+                                        <th>Mulai Pelaksanaan</th>
+                                        <th>Selesai Pelaksanaan</th>
+                                        <th>Pandu Dari</th>
+                                        <th>Pandu Ke</th>
+                                        <th class="text-end">Pendapatan Pandu</th>
+                                        <th>No PKK Inaportnet</th>
+                                        <th>Realisasi Pilot Via</th>
+                                        <th>Created By</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    @foreach($panduSetNotRealizationData as $index => $row)
+                                    <tr>
+                                        <td>{{ $panduSetNotRealizationData->firstItem() + $index }}</td>
+                                        <td class="text-nowrap small">{{ $row->NO_UKK ?? '-' }}</td>
+                                        <td class="text-nowrap small">{{ $row->NO_BKT_PANDU ?? '-' }}</td>
+                                        <td class="text-nowrap small"><strong>{{ $row->NM_KAPAL ?? '-' }}</strong></td>
+                                        <td class="text-nowrap small">{{ $row->JN_KAPAL ?? '-' }}</td>
+                                        <td class="text-nowrap small">{{ $row->KP_GRT ? number_format((float)$row->KP_GRT, 0, ',', '.') : '-' }}</td>
+                                        <td class="text-nowrap small">{{ $row->NM_PERS_PANDU ?? '-' }}</td>
+                                        <td class="text-nowrap small">{{ $row->MULAI_PELAKSANAAN ?? '-' }}</td>
+                                        <td class="text-nowrap small">{{ $row->SELESAI_PELAKSANAAN ?? '-' }}</td>
+                                        <td class="text-nowrap small">{{ $row->PANDU_DARI ?? '-' }}</td>
+                                        <td class="text-nowrap small">{{ $row->PANDU_KE ?? '-' }}</td>
+                                        <td class="text-nowrap small text-end">
+                                            <span class="text-danger fw-bold">{{ $row->PENDAPATAN_PANDU ?: '0' }}</span>
+                                        </td>
+                                        <td class="text-nowrap small">{{ $row->NO_PKK_INAPORTNET ?? '-' }}</td>
+                                        <td class="text-nowrap small">{{ $row->REALISAS_PILOT_VIA ?? '-' }}</td>
+                                        <td class="text-nowrap small">{{ $row->CREATED_BY ?? '-' }}</td>
+                                    </tr>
+                                    @endforeach
+                                </tbody>
+                            </table>
+                        </div>
+
+                        <!-- Pagination -->
+                        @if($panduSetNotRealizationData->hasPages())
+                        <div class="d-flex justify-content-between align-items-center mt-3">
+                            <div class="text-muted">
+                                Menampilkan {{ $panduSetNotRealizationData->firstItem() }} - {{ $panduSetNotRealizationData->lastItem() }} dari {{ $panduSetNotRealizationData->total() }} data
+                            </div>
+                            <div>
+                                {{ $panduSetNotRealizationData->links('pagination::bootstrap-5') }}
+                            </div>
+                        </div>
+                        @endif
+                        @else
+                        <div class="alert alert-secondary">
+                            <i class="bi bi-info-circle"></i> Tidak ada data untuk ditampilkan
+                        </div>
+                        @endif
+                    </div>
+                    @endif
+                </div>
+            </div>
+        </div>
+        @endif
+
         <!-- Ship Statistics by GT Range and Flag -->
         @if(($selectedPeriode != 'all' || $selectedBranch != 'all') && $shipStatsByGT->count() > 0)
         <div class="row mb-4">
