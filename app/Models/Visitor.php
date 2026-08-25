@@ -18,6 +18,10 @@ class Visitor extends Model
         'device',
         'device_name',
         'country',
+        'latitude',
+        'longitude',
+        'location_accuracy',
+        'location_status',
         'visited_at',
     ];
 

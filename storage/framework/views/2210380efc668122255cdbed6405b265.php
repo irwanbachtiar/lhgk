@@ -316,16 +316,16 @@
                     <i class="bi bi-filter"></i> Pilih Periode
                 </h6>
                 <div class="filter-buttons">
-                    <a href="?period=today" class="btn-period {{ $period === 'today' ? 'active' : '' }}">
+                    <a href="?period=today" class="btn-period <?php echo e($period === 'today' ? 'active' : ''); ?>">
                         <i class="bi bi-calendar-day"></i> Hari Ini
                     </a>
-                    <a href="?period=week" class="btn-period {{ $period === 'week' ? 'active' : '' }}">
+                    <a href="?period=week" class="btn-period <?php echo e($period === 'week' ? 'active' : ''); ?>">
                         <i class="bi bi-calendar-week"></i> Minggu Ini
                     </a>
-                    <a href="?period=month" class="btn-period {{ $period === 'month' ? 'active' : '' }}">
+                    <a href="?period=month" class="btn-period <?php echo e($period === 'month' ? 'active' : ''); ?>">
                         <i class="bi bi-calendar-month"></i> Bulan Ini
                     </a>
-                    <a href="?period=all" class="btn-period {{ $period === 'all' ? 'active' : '' }}">
+                    <a href="?period=all" class="btn-period <?php echo e($period === 'all' ? 'active' : ''); ?>">
                         <i class="bi bi-calendar-range"></i> Semua Data
                     </a>
                 </div>
@@ -334,7 +334,7 @@
 
         <!-- Action Buttons -->
         <div class="action-buttons">
-            <a href="/visitors/export?period={{ $period }}" class="btn btn-outline-light" target="_blank">
+            <a href="/visitors/export?period=<?php echo e($period); ?>" class="btn btn-outline-light" target="_blank">
                 <i class="bi bi-download"></i> Export CSV
             </a>
             <button class="btn btn-outline-light" onclick="location.reload()">
@@ -347,28 +347,28 @@
             <div class="col-md-3 col-sm-6">
                 <div class="stat-card blue">
                     <i class="bi bi-people" style="font-size: 2rem;"></i>
-                    <div class="number">{{ $stats->total_visitors }}</div>
+                    <div class="number"><?php echo e($stats->total_visitors); ?></div>
                     <div class="label">Total Pengunjung</div>
                 </div>
             </div>
             <div class="col-md-3 col-sm-6">
                 <div class="stat-card green">
                     <i class="bi bi-globe" style="font-size: 2rem;"></i>
-                    <div class="number">{{ $stats->unique_ips }}</div>
+                    <div class="number"><?php echo e($stats->unique_ips); ?></div>
                     <div class="label">IP Unik</div>
                 </div>
             </div>
             <div class="col-md-3 col-sm-6">
                 <div class="stat-card orange">
                     <i class="bi bi-file-text" style="font-size: 2rem;"></i>
-                    <div class="number">{{ $stats->total_pages }}</div>
+                    <div class="number"><?php echo e($stats->total_pages); ?></div>
                     <div class="label">Halaman Dikunjungi</div>
                 </div>
             </div>
             <div class="col-md-3 col-sm-6">
                 <div class="stat-card red">
                     <i class="bi bi-devices" style="font-size: 2rem;"></i>
-                    <div class="number">{{ $stats->top_device->device ?? '-' }}</div>
+                    <div class="number"><?php echo e($stats->top_device->device ?? '-'); ?></div>
                     <div class="label">Device Populer</div>
                 </div>
             </div>
@@ -380,16 +380,16 @@
                 <h5 class="card-title">
                     <i class="bi bi-graph-up"></i> Grafik Traffic
                 </h5>
-                @if(count($chartData->data) > 0)
+                <?php if(count($chartData->data) > 0): ?>
                     <div class="chart-container">
                         <canvas id="trafficChart"></canvas>
                     </div>
-                @else
+                <?php else: ?>
                     <div class="empty-state">
                         <i class="bi bi-graph-up"></i>
                         <p>Tidak ada data untuk periode ini</p>
                     </div>
-                @endif
+                <?php endif; ?>
             </div>
         </div>
 
@@ -402,23 +402,23 @@
                         <h5 class="card-title">
                             <i class="bi bi-file-earmark"></i> Halaman Teratas
                         </h5>
-                        @if($topPages->count() > 0)
+                        <?php if($topPages->count() > 0): ?>
                             <div class="list-group list-group-flush">
-                                @foreach($topPages as $page)
+                                <?php $__currentLoopData = $topPages; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $page): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
                                     <div class="list-group-item d-flex justify-content-between align-items-center">
                                         <div>
-                                            <small class="text-muted">{{ substr($page->page_url, 0, 30) }}@if(strlen($page->page_url) > 30)...@endif</small>
+                                            <small class="text-muted"><?php echo e(substr($page->page_url, 0, 30)); ?><?php if(strlen($page->page_url) > 30): ?>...<?php endif; ?></small>
                                         </div>
-                                        <span class="badge bg-primary">{{ $page->total }}</span>
+                                        <span class="badge bg-primary"><?php echo e($page->total); ?></span>
                                     </div>
-                                @endforeach
+                                <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>
                             </div>
-                        @else
+                        <?php else: ?>
                             <div class="empty-state">
                                 <i class="bi bi-inbox"></i>
                                 <p>Tidak ada data</p>
                             </div>
-                        @endif
+                        <?php endif; ?>
                     </div>
                 </div>
             </div>
@@ -430,21 +430,21 @@
                         <h5 class="card-title">
                             <i class="bi bi-globe"></i> Browser
                         </h5>
-                        @if($browserDistribution->count() > 0)
+                        <?php if($browserDistribution->count() > 0): ?>
                             <div class="list-group list-group-flush">
-                                @foreach($browserDistribution as $browser)
+                                <?php $__currentLoopData = $browserDistribution; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $browser): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
                                     <div class="list-group-item d-flex justify-content-between align-items-center">
-                                        <small class="text-muted">{{ $browser->browser }}</small>
-                                        <span class="badge bg-info">{{ $browser->total }}</span>
+                                        <small class="text-muted"><?php echo e($browser->browser); ?></small>
+                                        <span class="badge bg-info"><?php echo e($browser->total); ?></span>
                                     </div>
-                                @endforeach
+                                <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>
                             </div>
-                        @else
+                        <?php else: ?>
                             <div class="empty-state">
                                 <i class="bi bi-inbox"></i>
                                 <p>Tidak ada data</p>
                             </div>
-                        @endif
+                        <?php endif; ?>
                     </div>
                 </div>
             </div>
@@ -456,21 +456,21 @@
                         <h5 class="card-title">
                             <i class="bi bi-cpu"></i> Operating System
                         </h5>
-                        @if($osDistribution->count() > 0)
+                        <?php if($osDistribution->count() > 0): ?>
                             <div class="list-group list-group-flush">
-                                @foreach($osDistribution as $os)
+                                <?php $__currentLoopData = $osDistribution; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $os): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
                                     <div class="list-group-item d-flex justify-content-between align-items-center">
-                                        <small class="text-muted">{{ $os->os }}</small>
-                                        <span class="badge bg-warning">{{ $os->total }}</span>
+                                        <small class="text-muted"><?php echo e($os->os); ?></small>
+                                        <span class="badge bg-warning"><?php echo e($os->total); ?></span>
                                     </div>
-                                @endforeach
+                                <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>
                             </div>
-                        @else
+                        <?php else: ?>
                             <div class="empty-state">
                                 <i class="bi bi-inbox"></i>
                                 <p>Tidak ada data</p>
                             </div>
-                        @endif
+                        <?php endif; ?>
                     </div>
                 </div>
             </div>
@@ -482,27 +482,29 @@
                 <h5 class="card-title">
                     <i class="bi bi-phone"></i> Distribusi Device
                 </h5>
-                @if($deviceDistribution->count() > 0)
+                <?php if($deviceDistribution->count() > 0): ?>
                     <div class="row">
-                        @foreach($deviceDistribution as $device)
+                        <?php $__currentLoopData = $deviceDistribution; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $device): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
                             <div class="col-md-3 col-sm-6 mb-3">
                                 <div class="text-center">
-                                    <div class="badge-device {{ strtolower($device->device) }}">
-                                        {{ $device->device }}
+                                    <div class="badge-device <?php echo e(strtolower($device->device)); ?>">
+                                        <?php echo e($device->device); ?>
+
                                     </div>
                                     <div style="font-size: 1.5rem; font-weight: bold; margin-top: 10px;">
-                                        {{ $device->total }}
+                                        <?php echo e($device->total); ?>
+
                                     </div>
                                 </div>
                             </div>
-                        @endforeach
+                        <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>
                     </div>
-                @else
+                <?php else: ?>
                     <div class="empty-state">
                         <i class="bi bi-inbox"></i>
                         <p>Tidak ada data</p>
                     </div>
-                @endif
+                <?php endif; ?>
             </div>
         </div>
 
@@ -526,59 +528,60 @@
                         </tr>
                     </thead>
                     <tbody>
-                        @forelse($latestVisitors as $visitor)
+                        <?php $__empty_1 = true; $__currentLoopData = $latestVisitors; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $visitor): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); $__empty_1 = false; ?>
                             <tr>
                                 <td>
-                                    <small class="text-muted">{{ $visitor->visited_at->format('d M Y H:i:s') }}</small>
+                                    <small class="text-muted"><?php echo e($visitor->visited_at->format('d M Y H:i:s')); ?></small>
                                 </td>
-                                <td>{{ $visitor->ip_address }}</td>
+                                <td><?php echo e($visitor->ip_address); ?></td>
                                 <td>
-                                    <small>{{ $visitor->browser ?? '-' }}</small>
-                                </td>
-                                <td>
-                                    <small>{{ $visitor->os ?? '-' }}</small>
+                                    <small><?php echo e($visitor->browser ?? '-'); ?></small>
                                 </td>
                                 <td>
-                                    <span class="badge bg-secondary">{{ $visitor->device }}</span>
+                                    <small><?php echo e($visitor->os ?? '-'); ?></small>
                                 </td>
                                 <td>
-                                    <small class="text-muted">{{ $visitor->device_name ?? '-' }}</small>
+                                    <span class="badge bg-secondary"><?php echo e($visitor->device); ?></span>
                                 </td>
                                 <td>
-                                    <small class="text-muted">{{ substr($visitor->page_url, 0, 40) }}@if(strlen($visitor->page_url) > 40)...@endif</small>
+                                    <small class="text-muted"><?php echo e($visitor->device_name ?? '-'); ?></small>
                                 </td>
                                 <td>
-                                    @if($visitor->latitude && $visitor->longitude)
-                                        <a href="https://www.google.com/maps?q={{ $visitor->latitude }},{{ $visitor->longitude }}" target="_blank" rel="noopener" class="badge bg-success text-decoration-none">
+                                    <small class="text-muted"><?php echo e(substr($visitor->page_url, 0, 40)); ?><?php if(strlen($visitor->page_url) > 40): ?>...<?php endif; ?></small>
+                                </td>
+                                <td>
+                                    <?php if($visitor->latitude && $visitor->longitude): ?>
+                                        <a href="https://www.google.com/maps?q=<?php echo e($visitor->latitude); ?>,<?php echo e($visitor->longitude); ?>" target="_blank" rel="noopener" class="badge bg-success text-decoration-none">
                                             <i class="bi bi-geo-alt-fill"></i> Lihat Peta
                                         </a>
-                                    @elseif($visitor->location_status === 'denied')
+                                    <?php elseif($visitor->location_status === 'denied'): ?>
                                         <span class="badge bg-secondary">Ditolak user</span>
-                                    @elseif($visitor->location_status)
-                                        <span class="badge bg-secondary">{{ ucfirst($visitor->location_status) }}</span>
-                                    @else
+                                    <?php elseif($visitor->location_status): ?>
+                                        <span class="badge bg-secondary"><?php echo e(ucfirst($visitor->location_status)); ?></span>
+                                    <?php else: ?>
                                         <span class="text-muted">-</span>
-                                    @endif
+                                    <?php endif; ?>
                                 </td>
                             </tr>
-                        @empty
+                        <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); if ($__empty_1): ?>
                             <tr>
                                 <td colspan="8" class="text-center text-muted py-4">
                                     <i class="bi bi-inbox" style="font-size: 2rem; opacity: 0.3;"></i>
                                     <p class="mt-2">Tidak ada data pengunjung untuk periode ini</p>
                                 </td>
                             </tr>
-                        @endforelse
+                        <?php endif; ?>
                     </tbody>
                 </table>
             </div>
 
             <!-- Pagination -->
-            @if($latestVisitors->hasPages())
+            <?php if($latestVisitors->hasPages()): ?>
                 <div class="card-footer">
-                    {{ $latestVisitors->render('pagination::bootstrap-5') }}
+                    <?php echo e($latestVisitors->render('pagination::bootstrap-5')); ?>
+
                 </div>
-            @endif
+            <?php endif; ?>
         </div>
     </div>
 
@@ -597,10 +600,10 @@
             new Chart(ctx, {
                 type: 'line',
                 data: {
-                    labels: {!! json_encode($chartData->labels) !!},
+                    labels: <?php echo json_encode($chartData->labels); ?>,
                     datasets: [{
                         label: 'Pengunjung',
-                        data: {!! json_encode($chartData->data) !!},
+                        data: <?php echo json_encode($chartData->data); ?>,
                         borderColor: '#667eea',
                         backgroundColor: 'rgba(102, 126, 234, 0.1)',
                         borderWidth: 3,
@@ -651,3 +654,4 @@
     </script>
 </body>
 </html>
+<?php /**PATH /Users/irwan/Downloads/project ai/lhgk/resources/views/visitors/monitor.blade.php ENDPATH**/ ?>

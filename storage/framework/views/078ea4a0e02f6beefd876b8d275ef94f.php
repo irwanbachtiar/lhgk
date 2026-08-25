@@ -241,8 +241,8 @@
                     <div class="card-body text-center">
                         <h3 class="text-danger">Rp <?php echo e(number_format($totalPendapatanPanduBatal, 0, ',', '.')); ?></h3>
                         <p class="mb-0"><i class="bi bi-cash-coin"></i> Nilai Nota Batal Pandu</p>
-                        <?php if(($totalPendapatanPandu + $totalPendapatanPanduBatal) > 0): ?>
-                            <small class="text-muted"><?php echo e(number_format(($totalPendapatanPanduBatal / ($totalPendapatanPandu + $totalPendapatanPanduBatal)) * 100, 2)); ?>% dari total</small>
+                        <?php if($totalPendapatanPandu != 0): ?>
+                            <small class="text-muted"><?php echo e(number_format(($totalPendapatanPanduBatal / $totalPendapatanPandu) * 100, 2)); ?>% dari total</small>
                         <?php endif; ?>
                     </div>
                 </div>
@@ -252,8 +252,8 @@
                     <div class="card-body text-center">
                         <h3 class="text-danger">Rp <?php echo e(number_format($totalPendapatanTundaBatal, 0, ',', '.')); ?></h3>
                         <p class="mb-0"><i class="bi bi-cash-stack"></i> Nilai Nota Batal Tunda</p>
-                        <?php if(($totalPendapatanTunda + $totalPendapatanTundaBatal) > 0): ?>
-                            <small class="text-muted"><?php echo e(number_format(($totalPendapatanTundaBatal / ($totalPendapatanTunda + $totalPendapatanTundaBatal)) * 100, 2)); ?>% dari total</small>
+                        <?php if($totalPendapatanTunda != 0): ?>
+                            <small class="text-muted"><?php echo e(number_format(($totalPendapatanTundaBatal / $totalPendapatanTunda) * 100, 2)); ?>% dari total</small>
                         <?php endif; ?>
                     </div>
                 </div>

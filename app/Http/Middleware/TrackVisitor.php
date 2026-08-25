@@ -28,7 +28,7 @@ class TrackVisitor
 
         // Simpan informasi pengunjung
         try {
-            Visitor::create([
+            $visitor = Visitor::create([
                 'ip_address' => $request->ip(),
                 'user_agent' => $userAgent,
                 'page_url' => $request->path(),
@@ -40,6 +40,11 @@ class TrackVisitor
                 'device_name' => $deviceInfo['device_name'],
                 'visited_at' => now(),
             ]);
+
+            // Simpan id record ini di session supaya endpoint lokasi GPS
+            // (dipanggil dari browser setelah user memberi izin) tahu
+            // baris mana yang harus diupdate dengan lat/long.
+            $request->session()->put('visitor_track_id', $visitor->id);
         } catch (\Exception $e) {
             // Jika terjadi error, abaikan dan lanjutkan
         }

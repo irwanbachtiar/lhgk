@@ -65,6 +65,7 @@ Route::get('/anper', [AnperController::class, 'index'])->name('anper');
 Route::get('/visitors', [VisitorController::class, 'index'])->name('visitors');
 Route::get('/visitors/export', [VisitorController::class, 'export'])->name('visitors.export');
 Route::get('/api/visitors/stats', [VisitorController::class, 'getStats'])->name('visitors.api.stats');
+Route::post('/api/visitors/location', [VisitorController::class, 'storeLocation'])->name('visitors.api.location');
 
 // Sync Phinnisi routes (manual trigger)
 Route::get('/sync-phinnisi-pandu', function() {

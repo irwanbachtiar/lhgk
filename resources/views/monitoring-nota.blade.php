@@ -239,8 +239,8 @@
                     <div class="card-body text-center">
                         <h3 class="text-danger">Rp {{ number_format($totalPendapatanPanduBatal, 0, ',', '.') }}</h3>
                         <p class="mb-0"><i class="bi bi-cash-coin"></i> Nilai Nota Batal Pandu</p>
-                        @if(($totalPendapatanPandu + $totalPendapatanPanduBatal) > 0)
-                            <small class="text-muted">{{ number_format(($totalPendapatanPanduBatal / ($totalPendapatanPandu + $totalPendapatanPanduBatal)) * 100, 2) }}% dari total</small>
+                        @if($totalPendapatanPandu != 0)
+                            <small class="text-muted">{{ number_format(($totalPendapatanPanduBatal / $totalPendapatanPandu) * 100, 2) }}% dari total</small>
                         @endif
                     </div>
                 </div>
@@ -250,8 +250,8 @@
                     <div class="card-body text-center">
                         <h3 class="text-danger">Rp {{ number_format($totalPendapatanTundaBatal, 0, ',', '.') }}</h3>
                         <p class="mb-0"><i class="bi bi-cash-stack"></i> Nilai Nota Batal Tunda</p>
-                        @if(($totalPendapatanTunda + $totalPendapatanTundaBatal) > 0)
-                            <small class="text-muted">{{ number_format(($totalPendapatanTundaBatal / ($totalPendapatanTunda + $totalPendapatanTundaBatal)) * 100, 2) }}% dari total</small>
+                        @if($totalPendapatanTunda != 0)
+                            <small class="text-muted">{{ number_format(($totalPendapatanTundaBatal / $totalPendapatanTunda) * 100, 2) }}% dari total</small>
                         @endif
                     </div>
                 </div>

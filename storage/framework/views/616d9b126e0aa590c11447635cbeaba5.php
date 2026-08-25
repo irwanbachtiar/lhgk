@@ -3,7 +3,6 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta name="csrf-token" content="{{ csrf_token() }}">
     <title>Dashboard LHGK</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-9ndCyUaIbzAi2FUVXJi0CjmCapSmO7SnpJef0486qhLnuZ2cdeRhO02iuK6FUUVM" crossorigin="anonymous">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css" rel="stylesheet" integrity="sha384-QuGBSgV5Im3DzL2z+8Ko9/hqNy/N0O7zwvXAtfd1MvPKWa/UbeLV65cfm4BV5Wgq" crossorigin="anonymous">
@@ -250,22 +249,22 @@
         <div class="container-fluid">
             <span class="navbar-brand mb-0 h1"><i class="bi bi-graph-up-arrow"></i> Dashboard LHGK</span>
             <div>
-                <a href="{{ route('trafik') }}" class="btn btn-light btn-sm me-2">
+                <a href="<?php echo e(route('trafik')); ?>" class="btn btn-light btn-sm me-2">
                     <i class="bi bi-graph-up-arrow"></i> Trafik
                 </a>
-                <a href="{{ route('dashboard.operasional') }}" class="btn btn-light btn-sm me-2">
+                <a href="<?php echo e(route('dashboard.operasional')); ?>" class="btn btn-light btn-sm me-2">
                     <i class="bi bi-kanban-fill"></i> Dashboard Operasional
                 </a>
-                <a href="{{ route('monitoring.nota') }}" class="btn btn-light btn-sm me-2">
+                <a href="<?php echo e(route('monitoring.nota')); ?>" class="btn btn-light btn-sm me-2">
                     <i class="bi bi-file-earmark-text"></i> Monitoring Nota
                 </a>
-                <a href="{{ route('regional.revenue') }}" class="btn btn-light btn-sm me-2">
+                <a href="<?php echo e(route('regional.revenue')); ?>" class="btn btn-light btn-sm me-2">
                     <i class="bi bi-geo-alt"></i> Pendapatan Wilayah
                 </a>
-                <a href="{{ url('regional-sharing') }}" class="btn btn-light btn-sm me-2">
+                <a href="<?php echo e(url('regional-sharing')); ?>" class="btn btn-light btn-sm me-2">
                     <i class="bi bi-people-fill"></i> Revenue Sharing
                 </a>
-                <a href="{{ route('analisis.kelelahan') }}" class="btn btn-light btn-sm">
+                <a href="<?php echo e(route('analisis.kelelahan')); ?>" class="btn btn-light btn-sm">
                     <i class="bi bi-activity"></i> Analisis Kelelahan
                 </a>
             </div>
@@ -277,35 +276,37 @@
         <div class="row mb-4">
             <div class="col-12">
                 <div class="period-filter">
-                    <form id="dashboardFilterForm" method="GET" action="{{ route('dashboard') }}" class="row align-items-center">
+                    <form id="dashboardFilterForm" method="GET" action="<?php echo e(route('dashboard')); ?>" class="row align-items-center">
                         <div class="col-md-2">
                             <label class="form-label"><i class="bi bi-funnel"></i> Filter:</label>
                         </div>
                         <div class="col-md-3">
                             <label class="form-label"><i class="bi bi-building"></i> Cabang:</label>
                             <select name="cabang" class="form-select filter-input">
-                                <option value="all" {{ $selectedBranch == 'all' ? 'selected' : '' }}>Semua Cabang</option>
-                                @foreach($regionalGroups as $wilayah => $branches)
-                                    <optgroup label="{{ $wilayah }}">
-                                        @foreach($branches as $branch)
-                                            <option value="{{ $branch }}" {{ $selectedBranch == $branch ? 'selected' : '' }} title="{{ $branch }}">
-                                                {{ Str::limit($branch, 50) }}
+                                <option value="all" <?php echo e($selectedBranch == 'all' ? 'selected' : ''); ?>>Semua Cabang</option>
+                                <?php $__currentLoopData = $regionalGroups; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $wilayah => $branches): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
+                                    <optgroup label="<?php echo e($wilayah); ?>">
+                                        <?php $__currentLoopData = $branches; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $branch): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
+                                            <option value="<?php echo e($branch); ?>" <?php echo e($selectedBranch == $branch ? 'selected' : ''); ?> title="<?php echo e($branch); ?>">
+                                                <?php echo e(Str::limit($branch, 50)); ?>
+
                                             </option>
-                                        @endforeach
+                                        <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>
                                     </optgroup>
-                                @endforeach
+                                <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>
                             </select>
                         </div>
                         <div class="col-md-3">
                             <label class="form-label"><i class="bi bi-calendar-range"></i> Periode:</label>
                             <div class="d-flex">
                                 <select name="periode" class="form-select filter-input">
-                                    <option value="all" {{ $selectedPeriode == 'all' ? 'selected' : '' }}>Semua Periode</option>
-                                    @foreach($periods as $period)
-                                        <option value="{{ $period }}" {{ $selectedPeriode == $period ? 'selected' : '' }}>
-                                            {{ $period }}
+                                    <option value="all" <?php echo e($selectedPeriode == 'all' ? 'selected' : ''); ?>>Semua Periode</option>
+                                    <?php $__currentLoopData = $periods; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $period): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
+                                        <option value="<?php echo e($period); ?>" <?php echo e($selectedPeriode == $period ? 'selected' : ''); ?>>
+                                            <?php echo e($period); ?>
+
                                         </option>
-                                    @endforeach
+                                    <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>
                                 </select>
 
                                 <button type="button" id="btnApplyFilters" class="btn btn-sm btn-primary ms-2" title="Apply filters">
@@ -315,11 +316,11 @@
                         </div>
                         <div class="col-md-3 d-flex justify-content-end align-items-center">
                             <div>
-                                @if($selectedPeriode != 'all' || $selectedBranch != 'all')
-                                    <a href="{{ route('dashboard') }}" class="btn btn-outline-secondary me-2">
+                                <?php if($selectedPeriode != 'all' || $selectedBranch != 'all'): ?>
+                                    <a href="<?php echo e(route('dashboard')); ?>" class="btn btn-outline-secondary me-2">
                                         <i class="bi bi-x-circle"></i> Reset
                                     </a>
-                                @endif
+                                <?php endif; ?>
                             </div>
                             <div class="btn-toolbar" role="toolbar" aria-label="Dashboard actions">
                                 <div class="btn-group" role="group" aria-label="Export and refresh">
@@ -339,7 +340,7 @@
         </div>
 
         <!-- Filter Info / Statistics Cards -->
-        @if($selectedPeriode == 'all' || $selectedBranch == 'all')
+        <?php if($selectedPeriode == 'all' || $selectedBranch == 'all'): ?>
         <div class="row mb-4">
             <div class="col-12">
                 <div class="alert alert-warning text-center">
@@ -350,7 +351,7 @@
                 </div>
             </div>
         </div>
-        @else
+        <?php else: ?>
         <!-- Overall Statistics -->
         <div class="row mb-4">
             <!-- Total Pandu moved into Realisasi row (kept out of top summary) -->
@@ -360,7 +361,7 @@
                         <div class="mb-2">
                             <i class="bi bi-receipt fs-1" style="color: var(--accent-pink);"></i>
                         </div>
-                        <h3 class="text-dark mb-1 metric-value">{{ number_format($totalOverall['total_transaksi']) }}</h3>
+                        <h3 class="text-dark mb-1 metric-value"><?php echo e(number_format($totalOverall['total_transaksi'])); ?></h3>
                         <p class="mb-0 text-muted small">Gerakan</p>
                     </div>
                 </div>
@@ -371,7 +372,7 @@
                         <div class="mb-2">
                             <i class="bi bi-cash-coin fs-1" style="color: var(--accent-green);"></i>
                         </div>
-                        <h4 class="text-dark mb-1 metric-value">Rp {{ number_format($totalOverall['total_pendapatan_pandu'], 0, ',', '.') }}</h4>
+                        <h4 class="text-dark mb-1 metric-value">Rp <?php echo e(number_format($totalOverall['total_pendapatan_pandu'], 0, ',', '.')); ?></h4>
                         <p class="mb-0 text-muted small">Total Pendapatan Pandu</p>
                     </div>
                 </div>
@@ -382,7 +383,7 @@
                         <div class="mb-2">
                             <i class="bi bi-water fs-1" style="color: var(--accent-cyan);"></i>
                         </div>
-                        <h4 class="text-dark mb-1 metric-value">Rp {{ number_format($totalOverall['total_pendapatan_tunda'], 0, ',', '.') }}</h4>
+                        <h4 class="text-dark mb-1 metric-value">Rp <?php echo e(number_format($totalOverall['total_pendapatan_tunda'], 0, ',', '.')); ?></h4>
                         <p class="mb-0 text-muted small">Total Pendapatan Tunda</p>
                     </div>
                 </div>
@@ -393,7 +394,7 @@
                         <div class="mb-2">
                             <i class="bi bi-graph-up-arrow fs-1" style="color: var(--accent-teal);"></i>
                         </div>
-                        <h4 class="text-dark mb-1 metric-value">Rp {{ number_format($totalOverall['total_pendapatan_pandu'] + $totalOverall['total_pendapatan_tunda'], 0, ',', '.') }}</h4>
+                        <h4 class="text-dark mb-1 metric-value">Rp <?php echo e(number_format($totalOverall['total_pendapatan_pandu'] + $totalOverall['total_pendapatan_tunda'], 0, ',', '.')); ?></h4>
                         <p class="mb-0 text-muted small">Total Pendapatan</p>
                     </div>
                 </div>
@@ -402,14 +403,14 @@
         
         <!-- Realisasi Cards: Pemanduan & Penundaan -->
         <div class="row mb-3">
-            {{-- realisasiPandu and realisasiTunda are provided by controller --}}
+            
 
             <div class="col-md-3">
                 <div class="card stat-card bg-white card-accent--blue">
                     <div class="card-body">
                         <h6 class="mb-2"><i class="bi bi-file-earmark-text"></i> Realisasi Pemanduan</h6>
                         <div class="small text-muted mb-2"></div>
-                        @php
+                        <?php
                             $pandu_mobile = (int) data_get($realisasiPandu, 'mobile', 0);
                             $pandu_web = (int) data_get($realisasiPandu, 'web', 0);
                             $pandu_partial = (int) data_get($realisasiPandu, 'partial', 0);
@@ -417,13 +418,13 @@
                             $pandu_mobile_pct = $pandu_total > 0 ? round(($pandu_mobile / $pandu_total) * 100, 1) : 0;
                             $pandu_web_pct = $pandu_total > 0 ? round(($pandu_web / $pandu_total) * 100, 1) : 0;
                             $pandu_partial_pct = $pandu_total > 0 ? round(($pandu_partial / $pandu_total) * 100, 1) : 0;
-                        @endphp
+                        ?>
                         <div class="d-flex gap-2">
-                            <span class="via-badge via-mobile"><i class="bi bi-phone"></i> Mobile: <strong>{{ number_format($pandu_mobile) }}</strong> ({{ $pandu_mobile_pct }}%)</span>
-                            <span class="via-badge via-web"><i class="bi bi-laptop"></i> Web: <strong>{{ number_format($pandu_web) }}</strong> ({{ $pandu_web_pct }}%)</span>
-                            @if($pandu_partial > 0)
-                                <span class="via-badge"><i class="bi bi-puzzle"></i> Partial: <strong>{{ number_format($pandu_partial) }}</strong> ({{ $pandu_partial_pct }}%)</span>
-                            @endif
+                            <span class="via-badge via-mobile"><i class="bi bi-phone"></i> Mobile: <strong><?php echo e(number_format($pandu_mobile)); ?></strong> (<?php echo e($pandu_mobile_pct); ?>%)</span>
+                            <span class="via-badge via-web"><i class="bi bi-laptop"></i> Web: <strong><?php echo e(number_format($pandu_web)); ?></strong> (<?php echo e($pandu_web_pct); ?>%)</span>
+                            <?php if($pandu_partial > 0): ?>
+                                <span class="via-badge"><i class="bi bi-puzzle"></i> Partial: <strong><?php echo e(number_format($pandu_partial)); ?></strong> (<?php echo e($pandu_partial_pct); ?>%)</span>
+                            <?php endif; ?>
                         </div>
                     </div>
                 </div>
@@ -434,7 +435,7 @@
                     <div class="card-body">
                         <h6 class="mb-2"><i class="bi bi-clock-history"></i> Realisasi Penundaan</h6>
                         <div class="small text-muted mb-2"></div>
-                        @php
+                        <?php
                             $tunda_mobile = (int) data_get($realisasiTunda, 'mobile', 0);
                             $tunda_web = (int) data_get($realisasiTunda, 'web', 0);
                             $tunda_partial = (int) data_get($realisasiTunda, 'partial', 0);
@@ -442,13 +443,13 @@
                             $tunda_mobile_pct = $tunda_total > 0 ? round(($tunda_mobile / $tunda_total) * 100, 1) : 0;
                             $tunda_web_pct = $tunda_total > 0 ? round(($tunda_web / $tunda_total) * 100, 1) : 0;
                             $tunda_partial_pct = $tunda_total > 0 ? round(($tunda_partial / $tunda_total) * 100, 1) : 0;
-                        @endphp
+                        ?>
                         <div class="d-flex gap-2">
-                            <span class="via-badge via-mobile"><i class="bi bi-phone"></i> Mobile: <strong>{{ number_format($tunda_mobile) }}</strong> ({{ $tunda_mobile_pct }}%)</span>
-                            <span class="via-badge via-web"><i class="bi bi-laptop"></i> Web: <strong>{{ number_format($tunda_web) }}</strong> ({{ $tunda_web_pct }}%)</span>
-                            @if($tunda_partial > 0)
-                                <span class="via-badge"><i class="bi bi-puzzle"></i> Partial: <strong>{{ number_format($tunda_partial) }}</strong> ({{ $tunda_partial_pct }}%)</span>
-                            @endif
+                            <span class="via-badge via-mobile"><i class="bi bi-phone"></i> Mobile: <strong><?php echo e(number_format($tunda_mobile)); ?></strong> (<?php echo e($tunda_mobile_pct); ?>%)</span>
+                            <span class="via-badge via-web"><i class="bi bi-laptop"></i> Web: <strong><?php echo e(number_format($tunda_web)); ?></strong> (<?php echo e($tunda_web_pct); ?>%)</span>
+                            <?php if($tunda_partial > 0): ?>
+                                <span class="via-badge"><i class="bi bi-puzzle"></i> Partial: <strong><?php echo e(number_format($tunda_partial)); ?></strong> (<?php echo e($tunda_partial_pct); ?>%)</span>
+                            <?php endif; ?>
                         </div>
                     </div>
                 </div>
@@ -459,7 +460,7 @@
                     <div class="card-body text-center">
                         <h6 class="mb-2"><img src="/images/tugboat.svg" alt="Tug" style="width:18px;height:18px;" class="me-1"> Total Tunda</h6>
                         <div class="small text-muted mb-2"></div>
-                        <div class="h3 mb-0 metric-value">{{ number_format($totalTundaDistinct ?? 0) }}</div>
+                        <div class="h3 mb-0 metric-value"><?php echo e(number_format($totalTundaDistinct ?? 0)); ?></div>
                         <p class="mb-0 text-muted small">Unit</p>
                     </div>
                 </div>
@@ -470,7 +471,7 @@
                     <div class="card-body text-center">
                         <h6 class="mb-2"><i class="bi bi-person-badge me-1"></i> Total Pandu</h6>
                         <div class="small text-muted mb-2"></div>
-                        <div class="h3 mb-0 metric-value">{{ number_format($totalOverall['total_pandu'] ?? 0) }}</div>
+                        <div class="h3 mb-0 metric-value"><?php echo e(number_format($totalOverall['total_pandu'] ?? 0)); ?></div>
                         <p class="mb-0 text-muted small">Orang</p>
                     </div>
                 </div>
@@ -486,15 +487,15 @@
                         <div class="d-flex justify-content-between align-items-center">
                             <div class="text-center">
                                 <small class="text-muted">WT &gt; 00:30</small>
-                                <div class="h4 mb-0">{{ number_format($totalOverall['transaksi_wt_di_atas_30'] ?? 0) }}</div>
+                                <div class="h4 mb-0"><?php echo e(number_format($totalOverall['transaksi_wt_di_atas_30'] ?? 0)); ?></div>
                             </div>
                             <div class="text-center">
                                 <small class="text-muted">Rata-Rata WT</small>
-                                <div class="h4 mb-0">{{ number_format((float)($totalOverall['rata_rata_wt'] ?? 0), 2) }}</div>
+                                <div class="h4 mb-0"><?php echo e(number_format((float)($totalOverall['rata_rata_wt'] ?? 0), 2)); ?></div>
                             </div>
                             <div class="text-center">
                                 <small class="text-muted">Maksimal WT</small>
-                                <div class="h4 mb-0">{{ number_format((float)($totalOverall['max_wt'] ?? 0), 2) }}</div>
+                                <div class="h4 mb-0"><?php echo e(number_format((float)($totalOverall['max_wt'] ?? 0), 2)); ?></div>
                             </div>
                         </div>
                     </div>
@@ -507,7 +508,7 @@
                                 <h5 class="mb-0 title-shift"><i class="bi bi-file-earmark-text"></i> Nota Summary</h5>
                                 <div class="text-muted small">Distribusi status nota</div>
 
-                                {{-- Pilot realisasi info removed from Nota Summary per request --}}
+                                
                             </div>
 
                             <div class="nota-canvas-wrap mx-3" style="flex:0 0 160px;">
@@ -516,14 +517,14 @@
 
                             <div class="nota-legend text-end small text-muted" style="flex:0 0 220px;">
                                 <div id="notaSummaryLegend">
-                                    <div class="mb-1"><i class="bi bi-circle-fill" style="color:#3b82f6"></i> Terbit: <strong>{{ number_format($totalOverall['total_nota'] ?? 0) }}</strong></div>
-                                    <div class="mb-1"><i class="bi bi-circle-fill" style="color:#ef4444"></i> Batal: <strong>{{ number_format($totalOverall['nota_batal'] ?? 0) }}</strong></div>
-                                    <div class="mb-1"><i class="bi bi-circle-fill" style="color:#f59e0b"></i> Menunggu: <strong>{{ number_format($totalOverall['menunggu_nota'] ?? 0) }}</strong></div>
-                                    <div><i class="bi bi-circle-fill" style="color:#6b7280"></i> Belum Verif: <strong>{{ number_format($totalOverall['belum_verifikasi'] ?? 0) }}</strong></div>
+                                    <div class="mb-1"><i class="bi bi-circle-fill" style="color:#3b82f6"></i> Terbit: <strong><?php echo e(number_format($totalOverall['total_nota'] ?? 0)); ?></strong></div>
+                                    <div class="mb-1"><i class="bi bi-circle-fill" style="color:#ef4444"></i> Batal: <strong><?php echo e(number_format($totalOverall['nota_batal'] ?? 0)); ?></strong></div>
+                                    <div class="mb-1"><i class="bi bi-circle-fill" style="color:#f59e0b"></i> Menunggu: <strong><?php echo e(number_format($totalOverall['menunggu_nota'] ?? 0)); ?></strong></div>
+                                    <div><i class="bi bi-circle-fill" style="color:#6b7280"></i> Belum Verif: <strong><?php echo e(number_format($totalOverall['belum_verifikasi'] ?? 0)); ?></strong></div>
                                 </div>
 
                                 <div class="mt-2 small text-muted">
-                                    Total: <strong>{{ number_format((($totalOverall['total_nota'] ?? 0) + ($totalOverall['nota_batal'] ?? 0) + ($totalOverall['menunggu_nota'] ?? 0) + ($totalOverall['belum_verifikasi'] ?? 0))) }}</strong>
+                                    Total: <strong><?php echo e(number_format((($totalOverall['total_nota'] ?? 0) + ($totalOverall['nota_batal'] ?? 0) + ($totalOverall['menunggu_nota'] ?? 0) + ($totalOverall['belum_verifikasi'] ?? 0)))); ?></strong>
                                 </div>
                             </div>
                         </div>
@@ -532,33 +533,33 @@
             </div>
 
             <div class="col-md-6 d-flex flex-column gap-3">
-                @if($topPilot)
+                <?php if($topPilot): ?>
                 <div class="card stat-card bg-white combined-card flex-fill d-flex card-accent--amber">
                     <div class="card-body d-flex flex-column justify-content-center align-items-center">
                         <div class="row w-100 align-items-center">
                             <div class="col-md-4">
                                 <h5 class="mb-0 text-dark"><i class="bi bi-trophy-fill text-warning"></i> Pilot Produksi Tertinggi</h5>
-                                <small class="text-muted d-block">{{ $topPilot->NM_BRANCH }}</small>
+                                <small class="text-muted d-block"><?php echo e($topPilot->NM_BRANCH); ?></small>
                             </div>
                             <div class="col-md-2 text-center">
-                                <h4 class="mb-0 text-dark">{{ $topPilot->NM_PERS_PANDU }}</h4>
+                                <h4 class="mb-0 text-dark"><?php echo e($topPilot->NM_PERS_PANDU); ?></h4>
                             </div>
                             <div class="col-md-2 text-center">
-                                <h4 class="mb-0 text-dark">{{ number_format($topPilot->total_produksi) }}</h4>
+                                <h4 class="mb-0 text-dark"><?php echo e(number_format($topPilot->total_produksi)); ?></h4>
                                 <small class="text-muted">Total Produksi</small>
                             </div>
                             <div class="col-md-2 text-center">
-                                <h5 class="mb-0 text-dark">{{ number_format($topPilot->rata_rata_wt, 2) }}</h5>
+                                <h5 class="mb-0 text-dark"><?php echo e(number_format($topPilot->rata_rata_wt, 2)); ?></h5>
                                 <small class="text-muted">Rata-Rata WT</small>
                             </div>
                             <div class="col-md-2 text-center">
-                                <h5 class="mb-0 text-dark">Rp {{ number_format($topPilot->total_pendapatan, 0, ',', '.') }}</h5>
+                                <h5 class="mb-0 text-dark">Rp <?php echo e(number_format($topPilot->total_pendapatan, 0, ',', '.')); ?></h5>
                                 <small class="text-muted">Total Pendapatan</small>
                             </div>
                         </div>
                     </div>
                 </div>
-                @endif
+                <?php endif; ?>
 
                 <div class="card stat-card bg-white combined-card flex-fill d-flex speedometer-card match-height card-accent--teal">
                     <div class="card-body p-3">
@@ -581,7 +582,7 @@
         </div>
 
         <!-- Chart Section -->
-        @if($selectedPeriode != 'all' && $selectedBranch != 'all')
+        <?php if($selectedPeriode != 'all' && $selectedBranch != 'all'): ?>
         <div class="row mb-4">
             <div class="col-md-6">
                 <div class="card stat-card">
@@ -600,27 +601,27 @@
                 </div>
             </div>
         </div>
-        @endif
+        <?php endif; ?>
 
         <!-- Departure Invoice Delay Section -->
-        @if($selectedPeriode != 'all' && $selectedBranch != 'all' && $departureDelayCount > 0)
+        <?php if($selectedPeriode != 'all' && $selectedBranch != 'all' && $departureDelayCount > 0): ?>
         <div class="row mb-4">
             <div class="col-12">
                 <div class="card stat-card">
-                    @if(!$showDeparture)
+                    <?php if(!$showDeparture): ?>
                     <div class="card-body text-center py-4">
                         <i class="bi bi-exclamation-triangle text-warning" style="font-size: 3rem;"></i>
                         <h5 class="mt-3">Data Keterlambatan Invoice Departure</h5>
                         <p class="text-muted">
-                            Ditemukan <strong class="text-danger">{{ number_format($departureDelayCount) }} transaksi</strong> 
+                            Ditemukan <strong class="text-danger"><?php echo e(number_format($departureDelayCount)); ?> transaksi</strong> 
                             dengan keterlambatan invoice > 2 hari
                         </p>
-                        <a href="{{ route('dashboard', ['periode' => $selectedPeriode, 'cabang' => $selectedBranch, 'show_departure' => 1]) }}#departure-section" 
+                        <a href="<?php echo e(route('dashboard', ['periode' => $selectedPeriode, 'cabang' => $selectedBranch, 'show_departure' => 1])); ?>#departure-section" 
                            class="btn btn-warning">
                             <i class="bi bi-eye"></i> Tampilkan Data Departure
                         </a>
                     </div>
-                    @else
+                    <?php else: ?>
                     <div class="card-header" style="background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%); color: white;" id="departure-section">
                         <div class="d-flex justify-content-between align-items-center">
                             <h5 class="mb-0">
@@ -628,11 +629,11 @@
                                 Data Departure - Keterlambatan Invoice (> 2 Hari)
                             </h5>
                             <div>
-                                <a href="{{ route('export.departure.delay', ['periode' => $selectedPeriode, 'cabang' => $selectedBranch]) }}" 
+                                <a href="<?php echo e(route('export.departure.delay', ['periode' => $selectedPeriode, 'cabang' => $selectedBranch])); ?>" 
                                    class="btn btn-light btn-sm me-2">
                                     <i class="bi bi-file-earmark-excel"></i> Download Excel
                                 </a>
-                                <a href="{{ route('dashboard', ['periode' => $selectedPeriode, 'cabang' => $selectedBranch]) }}" 
+                                <a href="<?php echo e(route('dashboard', ['periode' => $selectedPeriode, 'cabang' => $selectedBranch])); ?>" 
                                    class="btn btn-light btn-sm">
                                     <i class="bi bi-x-circle"></i> Sembunyikan
                                 </a>
@@ -642,13 +643,13 @@
                     <div class="card-body">
                         <div class="alert alert-info mb-3">
                             <i class="bi bi-info-circle-fill"></i>
-                            <strong>{{ number_format($departureDelayCount) }} transaksi</strong> memiliki selisih antara tanggal selesai pelaksanaan dan invoice lebih dari 2 hari.
+                            <strong><?php echo e(number_format($departureDelayCount)); ?> transaksi</strong> memiliki selisih antara tanggal selesai pelaksanaan dan invoice lebih dari 2 hari.
                             <div class="mt-2">
                                 <small class="text-muted">Data diurutkan berdasarkan selisih hari terbesar</small>
                             </div>
                         </div>
                         
-                        @if($departureDelayData && $departureDelayData->count() > 0)
+                        <?php if($departureDelayData && $departureDelayData->count() > 0): ?>
                         <div class="table-responsive">
                             <table class="table table-hover table-striped">
                                 <thead class="table-dark">
@@ -670,81 +671,83 @@
                                     </tr>
                                 </thead>
                                 <tbody>
-                                    @foreach($departureDelayData as $index => $data)
+                                    <?php $__currentLoopData = $departureDelayData; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $index => $data): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
                                     <tr>
-                                        <td>{{ $departureDelayData->firstItem() + $index }}</td>
-                                        <td><span class="badge bg-secondary">{{ $data->NO_UKK }}</span></td>
-                                        <td><strong>{{ $data->NM_KAPAL }}</strong></td>
-                                        <td>{{ $data->NM_PERS_PANDU }}</td>
-                                        <td>{{ $data->NM_BRANCH }}</td>
+                                        <td><?php echo e($departureDelayData->firstItem() + $index); ?></td>
+                                        <td><span class="badge bg-secondary"><?php echo e($data->NO_UKK); ?></span></td>
+                                        <td><strong><?php echo e($data->NM_KAPAL); ?></strong></td>
+                                        <td><?php echo e($data->NM_PERS_PANDU); ?></td>
+                                        <td><?php echo e($data->NM_BRANCH); ?></td>
                                         <td>
                                             <span class="badge bg-danger">
-                                                <i class="bi bi-arrow-up-circle"></i> {{ strtoupper($data->GERAKAN) }}
+                                                <i class="bi bi-arrow-up-circle"></i> <?php echo e(strtoupper($data->GERAKAN)); ?>
+
                                             </span>
                                         </td>
-                                        <td>{{ $data->SELESAI_PELAKSANAAN }}</td>
-                                        <td>{{ $data->BILL_DATE ?? '-' }}</td>
+                                        <td><?php echo e($data->SELESAI_PELAKSANAAN); ?></td>
+                                        <td><?php echo e($data->BILL_DATE ?? '-'); ?></td>
                                         <td class="text-center">
-                                            @if($data->selisih_billing !== null)
-                                                <span class="badge {{ $data->selisih_billing > 2 ? 'bg-danger' : 'bg-success' }} fs-6">
-                                                    {{ $data->selisih_billing }} hari
+                                            <?php if($data->selisih_billing !== null): ?>
+                                                <span class="badge <?php echo e($data->selisih_billing > 2 ? 'bg-danger' : 'bg-success'); ?> fs-6">
+                                                    <?php echo e($data->selisih_billing); ?> hari
                                                 </span>
-                                            @else
+                                            <?php else: ?>
                                                 <span class="text-muted">-</span>
-                                            @endif
+                                            <?php endif; ?>
                                         </td>
-                                        <td>{{ $data->INVOICE_DATE }}</td>
+                                        <td><?php echo e($data->INVOICE_DATE); ?></td>
                                         <td class="text-center">
-                                            @if($data->selisih_billing_to_invoice !== null)
-                                                <span class="badge {{ $data->selisih_billing_to_invoice > 0 ? 'bg-warning text-dark' : 'bg-success' }} fs-6">
-                                                    {{ $data->selisih_billing_to_invoice }} hari
+                                            <?php if($data->selisih_billing_to_invoice !== null): ?>
+                                                <span class="badge <?php echo e($data->selisih_billing_to_invoice > 0 ? 'bg-warning text-dark' : 'bg-success'); ?> fs-6">
+                                                    <?php echo e($data->selisih_billing_to_invoice); ?> hari
                                                 </span>
-                                            @else
+                                            <?php else: ?>
                                                 <span class="text-muted">-</span>
-                                            @endif
+                                            <?php endif; ?>
                                         </td>
                                         <td class="text-center">
                                             <span class="badge bg-danger fs-6">
-                                                {{ $data->selisih_hari }} hari
+                                                <?php echo e($data->selisih_hari); ?> hari
                                             </span>
                                         </td>
-                                        <td class="text-end">Rp {{ number_format($data->PENDAPATAN_PANDU, 0, ',', '.') }}</td>
-                                        <td class="text-end">Rp {{ number_format($data->PENDAPATAN_TUNDA, 0, ',', '.') }}</td>
+                                        <td class="text-end">Rp <?php echo e(number_format($data->PENDAPATAN_PANDU, 0, ',', '.')); ?></td>
+                                        <td class="text-end">Rp <?php echo e(number_format($data->PENDAPATAN_TUNDA, 0, ',', '.')); ?></td>
                                     </tr>
-                                    @endforeach
+                                    <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>
                                 </tbody>
                             </table>
                         </div>
                         
                         <!-- Pagination -->
-                        @if($departureDelayData->hasPages())
+                        <?php if($departureDelayData->hasPages()): ?>
                         <div class="d-flex justify-content-between align-items-center mt-3">
                             <div class="text-muted">
-                                Menampilkan {{ $departureDelayData->firstItem() }} - {{ $departureDelayData->lastItem() }} dari {{ $departureDelayData->total() }} data
+                                Menampilkan <?php echo e($departureDelayData->firstItem()); ?> - <?php echo e($departureDelayData->lastItem()); ?> dari <?php echo e($departureDelayData->total()); ?> data
                             </div>
                             <div>
-                                {{ $departureDelayData->links('pagination::bootstrap-5') }}
+                                <?php echo e($departureDelayData->links('pagination::bootstrap-5')); ?>
+
                             </div>
                         </div>
-                        @endif
-                        @else
+                        <?php endif; ?>
+                        <?php else: ?>
                         <div class="alert alert-secondary">
                             <i class="bi bi-info-circle"></i> Tidak ada data untuk ditampilkan
                         </div>
-                        @endif
+                        <?php endif; ?>
                     </div>
-                    @endif
+                    <?php endif; ?>
                 </div>
             </div>
         </div>
-        @endif
+        <?php endif; ?>
 
         <!-- PKK Manual Section -->
-        @if($selectedPeriode != 'all' && $selectedBranch != 'all')
+        <?php if($selectedPeriode != 'all' && $selectedBranch != 'all'): ?>
         <div class="row mb-4">
             <div class="col-12">
                 <div class="card stat-card">
-                    @if($pkkManualCount == 0)
+                    <?php if($pkkManualCount == 0): ?>
                     <div class="card-body text-center py-4">
                         <i class="bi bi-check-circle text-success" style="font-size: 3rem;"></i>
                         <h5 class="mt-3">PKK Manual</h5>
@@ -753,20 +756,20 @@
                             Semua nomor PKK sudah sesuai format.
                         </p>
                     </div>
-                    @elseif(!$showPkkManual)
+                    <?php elseif(!$showPkkManual): ?>
                     <div class="card-body text-center py-4">
                         <i class="bi bi-exclamation-triangle text-warning" style="font-size: 3rem;"></i>
                         <h5 class="mt-3">PKK Manual</h5>
                         <p class="text-muted">
-                            Ditemukan <strong class="text-warning">{{ number_format($pkkManualCount) }} transaksi</strong>
+                            Ditemukan <strong class="text-warning"><?php echo e(number_format($pkkManualCount)); ?> transaksi</strong>
                             dengan nomor PKK Inaportnet yang diinput secara manual (bukan format PKK)
                         </p>
-                        <a href="{{ route('dashboard', ['periode' => $selectedPeriode, 'cabang' => $selectedBranch, 'show_pkk_manual' => 1]) }}#pkk-manual-section"
+                        <a href="<?php echo e(route('dashboard', ['periode' => $selectedPeriode, 'cabang' => $selectedBranch, 'show_pkk_manual' => 1])); ?>#pkk-manual-section"
                            class="btn btn-warning">
                             <i class="bi bi-eye"></i> Tampilkan Data PKK Manual
                         </a>
                     </div>
-                    @else
+                    <?php else: ?>
                     <div class="card-header" style="background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%); color: white;" id="pkk-manual-section">
                         <div class="d-flex justify-content-between align-items-center">
                             <h5 class="mb-0">
@@ -774,7 +777,7 @@
                                 PKK Manual - No. PKK Inaportnet Bukan Format PKK
                             </h5>
                             <div>
-                                <a href="{{ route('dashboard', ['periode' => $selectedPeriode, 'cabang' => $selectedBranch]) }}"
+                                <a href="<?php echo e(route('dashboard', ['periode' => $selectedPeriode, 'cabang' => $selectedBranch])); ?>"
                                    class="btn btn-light btn-sm">
                                     <i class="bi bi-x-circle"></i> Sembunyikan
                                 </a>
@@ -784,10 +787,10 @@
                     <div class="card-body">
                         <div class="alert alert-warning mb-3">
                             <i class="bi bi-info-circle-fill"></i>
-                            <strong>{{ number_format($pkkManualCount) }} transaksi</strong> memiliki nilai kolom <code>NO_PKK_INAPORTNET</code> yang tidak dimulai dengan format <strong>PKK</strong> (kemungkinan diinput manual).
+                            <strong><?php echo e(number_format($pkkManualCount)); ?> transaksi</strong> memiliki nilai kolom <code>NO_PKK_INAPORTNET</code> yang tidak dimulai dengan format <strong>PKK</strong> (kemungkinan diinput manual).
                         </div>
 
-                        @if($pkkManualData && $pkkManualData->count() > 0)
+                        <?php if($pkkManualData && $pkkManualData->count() > 0): ?>
                         <div class="table-responsive">
                             <table class="table table-hover table-striped">
                                 <thead class="table-dark">
@@ -806,73 +809,75 @@
                                     </tr>
                                 </thead>
                                 <tbody>
-                                    @foreach($pkkManualData as $index => $data)
+                                    <?php $__currentLoopData = $pkkManualData; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $index => $data): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
                                     <tr>
-                                        <td>{{ $pkkManualData->firstItem() + $index }}</td>
-                                        <td><span class="badge bg-secondary">{{ $data->NO_UKK }}</span></td>
-                                        <td><strong>{{ $data->NM_KAPAL }}</strong></td>
-                                        <td>{{ $data->NM_PERS_PANDU }}</td>
-                                        <td>{{ $data->NM_BRANCH }}</td>
+                                        <td><?php echo e($pkkManualData->firstItem() + $index); ?></td>
+                                        <td><span class="badge bg-secondary"><?php echo e($data->NO_UKK); ?></span></td>
+                                        <td><strong><?php echo e($data->NM_KAPAL); ?></strong></td>
+                                        <td><?php echo e($data->NM_PERS_PANDU); ?></td>
+                                        <td><?php echo e($data->NM_BRANCH); ?></td>
                                         <td>
-                                            <span class="badge {{ strtoupper($data->GERAKAN) == 'DEPARTURE' ? 'bg-danger' : 'bg-primary' }}">
-                                                {{ strtoupper($data->GERAKAN) }}
+                                            <span class="badge <?php echo e(strtoupper($data->GERAKAN) == 'DEPARTURE' ? 'bg-danger' : 'bg-primary'); ?>">
+                                                <?php echo e(strtoupper($data->GERAKAN)); ?>
+
                                             </span>
                                         </td>
-                                        <td>{{ $data->MULAI_PELAKSANAAN }}</td>
-                                        <td>{{ $data->SELESAI_PELAKSANAAN }}</td>
+                                        <td><?php echo e($data->MULAI_PELAKSANAAN); ?></td>
+                                        <td><?php echo e($data->SELESAI_PELAKSANAAN); ?></td>
                                         <td>
-                                            <span class="badge bg-warning text-dark">{{ $data->NO_PKK_INAPORTNET }}</span>
+                                            <span class="badge bg-warning text-dark"><?php echo e($data->NO_PKK_INAPORTNET); ?></span>
                                         </td>
-                                        <td class="text-end">Rp {{ number_format($data->PENDAPATAN_PANDU, 0, ',', '.') }}</td>
-                                        <td class="text-end">Rp {{ number_format($data->PENDAPATAN_TUNDA, 0, ',', '.') }}</td>
+                                        <td class="text-end">Rp <?php echo e(number_format($data->PENDAPATAN_PANDU, 0, ',', '.')); ?></td>
+                                        <td class="text-end">Rp <?php echo e(number_format($data->PENDAPATAN_TUNDA, 0, ',', '.')); ?></td>
                                     </tr>
-                                    @endforeach
+                                    <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>
                                 </tbody>
                             </table>
                         </div>
 
                         <!-- Pagination -->
-                        @if($pkkManualData->hasPages())
+                        <?php if($pkkManualData->hasPages()): ?>
                         <div class="d-flex justify-content-between align-items-center mt-3">
                             <div class="text-muted">
-                                Menampilkan {{ $pkkManualData->firstItem() }} - {{ $pkkManualData->lastItem() }} dari {{ $pkkManualData->total() }} data
+                                Menampilkan <?php echo e($pkkManualData->firstItem()); ?> - <?php echo e($pkkManualData->lastItem()); ?> dari <?php echo e($pkkManualData->total()); ?> data
                             </div>
                             <div>
-                                {{ $pkkManualData->links('pagination::bootstrap-5') }}
+                                <?php echo e($pkkManualData->links('pagination::bootstrap-5')); ?>
+
                             </div>
                         </div>
-                        @endif
-                        @else
+                        <?php endif; ?>
+                        <?php else: ?>
                         <div class="alert alert-secondary">
                             <i class="bi bi-info-circle"></i> Tidak ada data untuk ditampilkan
                         </div>
-                        @endif
+                        <?php endif; ?>
                     </div>
-                    @endif
+                    <?php endif; ?>
                 </div>
             </div>
         </div>
-        @endif
+        <?php endif; ?>
 
         <!-- Status Nota Section -->
-        @if($selectedPeriode != 'all' && $selectedBranch != 'all' && $statusNotaCount > 0)
+        <?php if($selectedPeriode != 'all' && $selectedBranch != 'all' && $statusNotaCount > 0): ?>
         <div class="row mb-4">
             <div class="col-12">
                 <div class="card stat-card">
-                    @if(!$showStatusNota)
+                    <?php if(!$showStatusNota): ?>
                     <div class="card-body text-center py-4">
                         <i class="bi bi-clipboard-check text-info" style="font-size: 3rem;"></i>
                         <h5 class="mt-3">Data Status Nota</h5>
                         <p class="text-muted">
-                            Ditemukan <strong class="text-info">{{ number_format($statusNotaCount) }} transaksi</strong> 
+                            Ditemukan <strong class="text-info"><?php echo e(number_format($statusNotaCount)); ?> transaksi</strong> 
                             dengan status "menunggu nota" atau "belum verifikasi"
                         </p>
-                        <a href="{{ route('dashboard', ['periode' => $selectedPeriode, 'cabang' => $selectedBranch, 'show_status_nota' => 1]) }}#status-nota-section" 
+                        <a href="<?php echo e(route('dashboard', ['periode' => $selectedPeriode, 'cabang' => $selectedBranch, 'show_status_nota' => 1])); ?>#status-nota-section" 
                            class="btn btn-info">
                             <i class="bi bi-eye"></i> Tampilkan Data Status Nota
                         </a>
                     </div>
-                    @else
+                    <?php else: ?>
                     <div class="card-header" style="background: linear-gradient(135deg, #06b6d4 0%, #0891b2 100%); color: white;" id="status-nota-section">
                         <div class="d-flex justify-content-between align-items-center">
                             <h5 class="mb-0">
@@ -880,11 +885,11 @@
                                 Data Status Nota (Menunggu Nota / Belum Verifikasi)
                             </h5>
                             <div>
-                                <a href="{{ route('export.status.nota', ['periode' => $selectedPeriode, 'cabang' => $selectedBranch, 'filter_status_nota' => $filterStatusNota]) }}" 
+                                <a href="<?php echo e(route('export.status.nota', ['periode' => $selectedPeriode, 'cabang' => $selectedBranch, 'filter_status_nota' => $filterStatusNota])); ?>" 
                                    class="btn btn-light btn-sm me-2">
                                     <i class="bi bi-file-earmark-excel"></i> Download Excel
                                 </a>
-                                <a href="{{ route('dashboard', ['periode' => $selectedPeriode, 'cabang' => $selectedBranch]) }}" 
+                                <a href="<?php echo e(route('dashboard', ['periode' => $selectedPeriode, 'cabang' => $selectedBranch])); ?>" 
                                    class="btn btn-light btn-sm">
                                     <i class="bi bi-x-circle"></i> Sembunyikan
                                 </a>
@@ -895,16 +900,16 @@
                         <!-- Filter Status Nota -->
                         <div class="row mb-3">
                             <div class="col-md-4">
-                                <form method="GET" action="{{ route('dashboard') }}" id="filterStatusNotaForm">
-                                    <input type="hidden" name="periode" value="{{ $selectedPeriode }}">
-                                    <input type="hidden" name="cabang" value="{{ $selectedBranch }}">
+                                <form method="GET" action="<?php echo e(route('dashboard')); ?>" id="filterStatusNotaForm">
+                                    <input type="hidden" name="periode" value="<?php echo e($selectedPeriode); ?>">
+                                    <input type="hidden" name="cabang" value="<?php echo e($selectedBranch); ?>">
                                     <input type="hidden" name="show_status_nota" value="1">
                                     <div class="input-group">
                                         <label class="input-group-text bg-info text-white"><i class="bi bi-funnel-fill"></i></label>
                                         <select name="filter_status_nota" class="form-select filter-input">
-                                            <option value="all" {{ $filterStatusNota == 'all' ? 'selected' : '' }}>Semua Status</option>
-                                            <option value="menunggu nota" {{ $filterStatusNota == 'menunggu nota' ? 'selected' : '' }}>Menunggu Nota</option>
-                                            <option value="belum verifikasi" {{ $filterStatusNota == 'belum verifikasi' ? 'selected' : '' }}>Belum Verifikasi</option>
+                                            <option value="all" <?php echo e($filterStatusNota == 'all' ? 'selected' : ''); ?>>Semua Status</option>
+                                            <option value="menunggu nota" <?php echo e($filterStatusNota == 'menunggu nota' ? 'selected' : ''); ?>>Menunggu Nota</option>
+                                            <option value="belum verifikasi" <?php echo e($filterStatusNota == 'belum verifikasi' ? 'selected' : ''); ?>>Belum Verifikasi</option>
                                         </select>
                                         <button type="button" class="btn btn-primary" onclick="document.getElementById('globalLoading').style.display='flex'; this.closest('form').submit();">Apply</button>
                                     </div>
@@ -914,18 +919,18 @@
                         
                         <div class="alert alert-info mb-3">
                             <i class="bi bi-info-circle-fill"></i>
-                            <strong>{{ number_format($statusNotaCount) }} transaksi</strong> 
-                            @if($filterStatusNota == 'all')
+                            <strong><?php echo e(number_format($statusNotaCount)); ?> transaksi</strong> 
+                            <?php if($filterStatusNota == 'all'): ?>
                                 memiliki status nota "menunggu nota" atau "belum verifikasi".
-                            @else
-                                dengan status "{{ $filterStatusNota }}".
-                            @endif
+                            <?php else: ?>
+                                dengan status "<?php echo e($filterStatusNota); ?>".
+                            <?php endif; ?>
                             <div class="mt-2">
                                 <small class="text-muted">Data diurutkan berdasarkan mulai pelaksanaan terbaru</small>
                             </div>
                         </div>
                         
-                        @if($statusNotaData && $statusNotaData->count() > 0)
+                        <?php if($statusNotaData && $statusNotaData->count() > 0): ?>
                         <div class="table-responsive">
                             <table class="table table-hover table-striped">
                                 <thead class="table-dark">
@@ -944,78 +949,80 @@
                                     </tr>
                                 </thead>
                                 <tbody>
-                                    @foreach($statusNotaData as $index => $data)
+                                    <?php $__currentLoopData = $statusNotaData; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $index => $data): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
                                     <tr>
-                                        <td>{{ $statusNotaData->firstItem() + $index }}</td>
-                                        <td><span class="ukk-badge">{{ $data->NO_UKK }}</span></td>
-                                        <td class="nm-kapal"><strong title="{{ $data->NM_KAPAL }}">{{ Str::limit($data->NM_KAPAL, 40) }}</strong></td>
-                                        <td>{{ $data->PELAYARAN ?? '-' }}</td>
-                                        <td>{{ $data->NM_PERS_PANDU }}</td>
-                                        <td class="text-nowrap small">{{ $data->MULAI_PELAKSANAAN }}</td>
-                                        <td class="text-nowrap small">{{ $data->SELESAI_PELAKSANAAN }}</td>
-                                        @php $s = $data->SELISIH_HARI; @endphp
+                                        <td><?php echo e($statusNotaData->firstItem() + $index); ?></td>
+                                        <td><span class="ukk-badge"><?php echo e($data->NO_UKK); ?></span></td>
+                                        <td class="nm-kapal"><strong title="<?php echo e($data->NM_KAPAL); ?>"><?php echo e(Str::limit($data->NM_KAPAL, 40)); ?></strong></td>
+                                        <td><?php echo e($data->PELAYARAN ?? '-'); ?></td>
+                                        <td><?php echo e($data->NM_PERS_PANDU); ?></td>
+                                        <td class="text-nowrap small"><?php echo e($data->MULAI_PELAKSANAAN); ?></td>
+                                        <td class="text-nowrap small"><?php echo e($data->SELESAI_PELAKSANAAN); ?></td>
+                                        <?php $s = $data->SELISIH_HARI; ?>
                                         <td class="text-center">
-                                            @if($s === null || $s === '')
+                                            <?php if($s === null || $s === ''): ?>
                                                 -
-                                            @else
-                                                <span class="badge selisih-badge {{ $s < 0 ? 'bg-danger' : ($s == 0 ? 'bg-secondary' : 'bg-success') }}">{{ $s }}</span>
-                                            @endif
+                                            <?php else: ?>
+                                                <span class="badge selisih-badge <?php echo e($s < 0 ? 'bg-danger' : ($s == 0 ? 'bg-secondary' : 'bg-success')); ?>"><?php echo e($s); ?></span>
+                                            <?php endif; ?>
                                         </td>
-                                        <td class="text-end">Rp {{ number_format($data->PENDAPATAN_PANDU, 0, ',', '.') }}</td>
-                                        <td class="text-end">Rp {{ number_format($data->PENDAPATAN_TUNDA, 0, ',', '.') }}</td>
+                                        <td class="text-end">Rp <?php echo e(number_format($data->PENDAPATAN_PANDU, 0, ',', '.')); ?></td>
+                                        <td class="text-end">Rp <?php echo e(number_format($data->PENDAPATAN_TUNDA, 0, ',', '.')); ?></td>
                                         <td class="text-center">
-                                            <span class="badge {{ $data->STATUS_NOTA == 'menunggu nota' ? 'bg-warning' : 'bg-info' }} text-dark">
-                                                {{ strtoupper($data->STATUS_NOTA) }}
+                                            <span class="badge <?php echo e($data->STATUS_NOTA == 'menunggu nota' ? 'bg-warning' : 'bg-info'); ?> text-dark">
+                                                <?php echo e(strtoupper($data->STATUS_NOTA)); ?>
+
                                             </span>
                                         </td>
                                     </tr>
-                                    @endforeach
+                                    <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>
                                 </tbody>
                             </table>
                         </div>
                         
                         <!-- Pagination -->
-                        @if($statusNotaData->hasPages())
+                        <?php if($statusNotaData->hasPages()): ?>
                         <div class="d-flex justify-content-between align-items-center mt-3">
                             <div class="text-muted">
-                                Menampilkan {{ $statusNotaData->firstItem() }} - {{ $statusNotaData->lastItem() }} dari {{ $statusNotaData->total() }} data
+                                Menampilkan <?php echo e($statusNotaData->firstItem()); ?> - <?php echo e($statusNotaData->lastItem()); ?> dari <?php echo e($statusNotaData->total()); ?> data
                             </div>
                             <div>
-                                {{ $statusNotaData->links('pagination::bootstrap-5') }}
+                                <?php echo e($statusNotaData->links('pagination::bootstrap-5')); ?>
+
                             </div>
                         </div>
-                        @endif
-                        @else
+                        <?php endif; ?>
+                        <?php else: ?>
                         <div class="alert alert-secondary">
                             <i class="bi bi-info-circle"></i> Tidak ada data untuk ditampilkan
                         </div>
-                        @endif
+                        <?php endif; ?>
                     </div>
-                    @endif
+                    <?php endif; ?>
                 </div>
             </div>
         </div>
-        @endif
+        <?php endif; ?>
 
         <!-- PPKB/Realisasi Backdate Section -->
-        @if($selectedPeriode != 'all' && $selectedBranch != 'all' && $backdateCount > 0)
+        <?php if($selectedPeriode != 'all' && $selectedBranch != 'all' && $backdateCount > 0): ?>
         <div class="row mb-4">
             <div class="col-12">
                 <div class="card stat-card">
-                    @if(!$showBackdate)
+                    <?php if(!$showBackdate): ?>
                     <div class="card-body text-center py-4">
                         <i class="bi bi-calendar-x text-danger" style="font-size: 3rem;"></i>
                         <h5 class="mt-3">PPKB / Realisasi Backdate</h5>
                         <p class="text-muted">
-                            Ditemukan <strong class="text-danger">{{ number_format($backdateCount) }} transaksi</strong>
+                            Ditemukan <strong class="text-danger"><?php echo e(number_format($backdateCount)); ?> transaksi</strong>
                             dengan tanggal mulai pelaksanaan lebih awal dari tanggal PPKB Submit (backdate)
                         </p>
-                        <a href="{{ route('dashboard', ['periode' => $selectedPeriode, 'cabang' => $selectedBranch, 'show_backdate' => 1]) }}#backdate-section"
+                        <a href="<?php echo e(route('dashboard', ['periode' => $selectedPeriode, 'cabang' => $selectedBranch, 'show_backdate' => 1])); ?>#backdate-section"
                            class="btn btn-danger">
                             <i class="bi bi-eye"></i> Tampilkan Data Backdate
                         </a>
                     </div>
-                    @else
+                    <?php else: ?>
                     <div class="card-header" style="background: linear-gradient(135deg, #dc2626 0%, #991b1b 100%); color: white;" id="backdate-section">
                         <div class="d-flex justify-content-between align-items-center">
                             <h5 class="mb-0">
@@ -1023,11 +1030,11 @@
                                 PPKB / Realisasi Backdate
                             </h5>
                             <div>
-                                <a href="{{ route('export.backdate', ['periode' => $selectedPeriode, 'cabang' => $selectedBranch]) }}"
+                                <a href="<?php echo e(route('export.backdate', ['periode' => $selectedPeriode, 'cabang' => $selectedBranch])); ?>"
                                    class="btn btn-light btn-sm me-2">
                                     <i class="bi bi-file-earmark-excel"></i> Download Excel
                                 </a>
-                                <a href="{{ route('dashboard', ['periode' => $selectedPeriode, 'cabang' => $selectedBranch]) }}"
+                                <a href="<?php echo e(route('dashboard', ['periode' => $selectedPeriode, 'cabang' => $selectedBranch])); ?>"
                                    class="btn btn-light btn-sm">
                                     <i class="bi bi-x-circle"></i> Sembunyikan
                                 </a>
@@ -1037,14 +1044,14 @@
                     <div class="card-body">
                         <div class="alert alert-danger mb-3">
                             <i class="bi bi-exclamation-triangle-fill"></i>
-                            <strong>{{ number_format($backdateCount) }} transaksi</strong> terdeteksi sebagai backdate —
+                            <strong><?php echo e(number_format($backdateCount)); ?> transaksi</strong> terdeteksi sebagai backdate —
                             tanggal <strong>Mulai Pelaksanaan</strong> lebih awal dari tanggal <strong>PPKB Submit</strong>.
                             <div class="mt-2">
                                 <small class="text-muted">Data diurutkan berdasarkan mulai pelaksanaan terbaru</small>
                             </div>
                         </div>
 
-                        @if($backdateData && $backdateData->count() > 0)
+                        <?php if($backdateData && $backdateData->count() > 0): ?>
                         <div class="table-responsive">
                             <table class="table table-hover table-striped table-sm">
                                 <thead class="table-dark">
@@ -1069,81 +1076,82 @@
                                     </tr>
                                 </thead>
                                 <tbody>
-                                    @foreach($backdateData as $index => $row)
+                                    <?php $__currentLoopData = $backdateData; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $index => $row): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
                                     <tr>
-                                        <td>{{ $backdateData->firstItem() + $index }}</td>
-                                        <td class="text-nowrap small">{{ $row->PPKB_CODE ?? '-' }}</td>
-                                        <td class="text-nowrap small text-danger fw-semibold">{{ $row->PPKB_SUBMIT ?? '-' }}</td>
-                                        <td><span class="ukk-badge">{{ $row->NO_UKK ?? '-' }}</span></td>
-                                        <td class="text-nowrap small">{{ $row->NO_BKT_PANDU ?? '-' }}</td>
-                                        <td class="text-nowrap small">{{ $row->TGL_JAM_TIBA ?? '-' }}</td>
-                                        <td class="nm-kapal"><strong title="{{ $row->NM_KAPAL }}">{{ Str::limit($row->NM_KAPAL, 35) }}</strong></td>
-                                        <td class="text-nowrap small">{{ $row->JN_KAPAL ?? '-' }}</td>
-                                        <td class="text-nowrap small">{{ $row->TGL_TIBA ?? '-' }}</td>
-                                        <td class="text-nowrap small">{{ $row->JAM_TIBA ?? '-' }}</td>
-                                        <td class="text-nowrap small">{{ $row->TGL_PMT ?? '-' }}</td>
-                                        <td class="text-nowrap small">{{ $row->JAM_PMT ?? '-' }}</td>
-                                        <td class="text-nowrap small text-success fw-semibold">{{ $row->MULAI_PELAKSANAAN ?? '-' }}</td>
-                                        <td class="text-nowrap small">{{ $row->SELESAI_PELAKSANAAN ?? '-' }}</td>
+                                        <td><?php echo e($backdateData->firstItem() + $index); ?></td>
+                                        <td class="text-nowrap small"><?php echo e($row->PPKB_CODE ?? '-'); ?></td>
+                                        <td class="text-nowrap small text-danger fw-semibold"><?php echo e($row->PPKB_SUBMIT ?? '-'); ?></td>
+                                        <td><span class="ukk-badge"><?php echo e($row->NO_UKK ?? '-'); ?></span></td>
+                                        <td class="text-nowrap small"><?php echo e($row->NO_BKT_PANDU ?? '-'); ?></td>
+                                        <td class="text-nowrap small"><?php echo e($row->TGL_JAM_TIBA ?? '-'); ?></td>
+                                        <td class="nm-kapal"><strong title="<?php echo e($row->NM_KAPAL); ?>"><?php echo e(Str::limit($row->NM_KAPAL, 35)); ?></strong></td>
+                                        <td class="text-nowrap small"><?php echo e($row->JN_KAPAL ?? '-'); ?></td>
+                                        <td class="text-nowrap small"><?php echo e($row->TGL_TIBA ?? '-'); ?></td>
+                                        <td class="text-nowrap small"><?php echo e($row->JAM_TIBA ?? '-'); ?></td>
+                                        <td class="text-nowrap small"><?php echo e($row->TGL_PMT ?? '-'); ?></td>
+                                        <td class="text-nowrap small"><?php echo e($row->JAM_PMT ?? '-'); ?></td>
+                                        <td class="text-nowrap small text-success fw-semibold"><?php echo e($row->MULAI_PELAKSANAAN ?? '-'); ?></td>
+                                        <td class="text-nowrap small"><?php echo e($row->SELESAI_PELAKSANAAN ?? '-'); ?></td>
                                         <td class="text-center">
-                                            @if($row->selisih_backdate !== null)
-                                                <span class="badge {{ $row->selisih_backdate < 0 ? 'bg-danger' : 'bg-warning text-dark' }}">
-                                                    {{ $row->selisih_backdate }} hari
+                                            <?php if($row->selisih_backdate !== null): ?>
+                                                <span class="badge <?php echo e($row->selisih_backdate < 0 ? 'bg-danger' : 'bg-warning text-dark'); ?>">
+                                                    <?php echo e($row->selisih_backdate); ?> hari
                                                 </span>
-                                            @else
+                                            <?php else: ?>
                                                 <span class="text-muted">-</span>
-                                            @endif
+                                            <?php endif; ?>
                                         </td>
-                                        <td class="text-nowrap small">{{ $row->CREATED_BY ?? '-' }}</td>
-                                        <td class="text-nowrap small">{{ $row->PILOT_DEPLOY_BY ?? '-' }}</td>
+                                        <td class="text-nowrap small"><?php echo e($row->CREATED_BY ?? '-'); ?></td>
+                                        <td class="text-nowrap small"><?php echo e($row->PILOT_DEPLOY_BY ?? '-'); ?></td>
                                     </tr>
-                                    @endforeach
+                                    <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>
                                 </tbody>
                             </table>
                         </div>
 
                         <!-- Pagination -->
-                        @if($backdateData->hasPages())
+                        <?php if($backdateData->hasPages()): ?>
                         <div class="d-flex justify-content-between align-items-center mt-3">
                             <div class="text-muted">
-                                Menampilkan {{ $backdateData->firstItem() }} - {{ $backdateData->lastItem() }} dari {{ $backdateData->total() }} data
+                                Menampilkan <?php echo e($backdateData->firstItem()); ?> - <?php echo e($backdateData->lastItem()); ?> dari <?php echo e($backdateData->total()); ?> data
                             </div>
                             <div>
-                                {{ $backdateData->links('pagination::bootstrap-5') }}
+                                <?php echo e($backdateData->links('pagination::bootstrap-5')); ?>
+
                             </div>
                         </div>
-                        @endif
-                        @else
+                        <?php endif; ?>
+                        <?php else: ?>
                         <div class="alert alert-secondary">
                             <i class="bi bi-info-circle"></i> Tidak ada data untuk ditampilkan
                         </div>
-                        @endif
+                        <?php endif; ?>
                     </div>
-                    @endif
+                    <?php endif; ?>
                 </div>
             </div>
         </div>
-        @endif
+        <?php endif; ?>
 
         <!-- Realisasi Web Section -->
-        @if($selectedPeriode != 'all' && $selectedBranch != 'all' && $realisasiWebCount > 0)
+        <?php if($selectedPeriode != 'all' && $selectedBranch != 'all' && $realisasiWebCount > 0): ?>
         <div class="row mb-4">
             <div class="col-12">
                 <div class="card stat-card">
-                    @if(!$showRealisasiWeb)
+                    <?php if(!$showRealisasiWeb): ?>
                     <div class="card-body text-center py-4">
                         <i class="bi bi-globe2 text-primary" style="font-size: 3rem;"></i>
                         <h5 class="mt-3">Realisasi Web</h5>
                         <p class="text-muted">
-                            Ditemukan <strong class="text-primary">{{ number_format($realisasiWebCount) }} transaksi</strong>
+                            Ditemukan <strong class="text-primary"><?php echo e(number_format($realisasiWebCount)); ?> transaksi</strong>
                             dengan realisasi pilot via <strong>WEB</strong>
                         </p>
-                        <a href="{{ route('dashboard', ['periode' => $selectedPeriode, 'cabang' => $selectedBranch, 'show_realisasi_web' => 1]) }}#realisasi-web-section"
+                        <a href="<?php echo e(route('dashboard', ['periode' => $selectedPeriode, 'cabang' => $selectedBranch, 'show_realisasi_web' => 1])); ?>#realisasi-web-section"
                            class="btn btn-primary">
                             <i class="bi bi-eye"></i> Tampilkan Data Realisasi Web
                         </a>
                     </div>
-                    @else
+                    <?php else: ?>
                     <div class="card-header" style="background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%); color: white;" id="realisasi-web-section">
                         <div class="d-flex justify-content-between align-items-center">
                             <h5 class="mb-0">
@@ -1151,11 +1159,11 @@
                                 Realisasi Web (REALISAS_PILOT_VIA = WEB)
                             </h5>
                             <div>
-                                <a href="{{ route('export.realisasi.web', ['periode' => $selectedPeriode, 'cabang' => $selectedBranch]) }}"
+                                <a href="<?php echo e(route('export.realisasi.web', ['periode' => $selectedPeriode, 'cabang' => $selectedBranch])); ?>"
                                    class="btn btn-light btn-sm me-2">
                                     <i class="bi bi-file-earmark-excel"></i> Download Excel
                                 </a>
-                                <a href="{{ route('dashboard', ['periode' => $selectedPeriode, 'cabang' => $selectedBranch]) }}"
+                                <a href="<?php echo e(route('dashboard', ['periode' => $selectedPeriode, 'cabang' => $selectedBranch])); ?>"
                                    class="btn btn-light btn-sm">
                                     <i class="bi bi-x-circle"></i> Sembunyikan
                                 </a>
@@ -1165,13 +1173,13 @@
                     <div class="card-body">
                         <div class="alert alert-primary mb-3">
                             <i class="bi bi-info-circle-fill"></i>
-                            <strong>{{ number_format($realisasiWebCount) }} transaksi</strong> menggunakan realisasi pilot via <strong>WEB</strong>.
+                            <strong><?php echo e(number_format($realisasiWebCount)); ?> transaksi</strong> menggunakan realisasi pilot via <strong>WEB</strong>.
                             <div class="mt-2">
                                 <small class="text-muted">Data diurutkan berdasarkan PPKB Code</small>
                             </div>
                         </div>
 
-                        @if($realisasiWebData && $realisasiWebData->count() > 0)
+                        <?php if($realisasiWebData && $realisasiWebData->count() > 0): ?>
                         <div class="table-responsive">
                             <table class="table table-hover table-striped table-sm">
                                 <thead class="table-dark">
@@ -1189,68 +1197,69 @@
                                     </tr>
                                 </thead>
                                 <tbody>
-                                    @foreach($realisasiWebData as $index => $row)
+                                    <?php $__currentLoopData = $realisasiWebData; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $index => $row): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
                                     <tr>
-                                        <td>{{ $realisasiWebData->firstItem() + $index }}</td>
-                                        <td class="text-nowrap small">{{ $row->PPKB_CODE ?? '-' }}</td>
-                                        <td><span class="ukk-badge">{{ $row->NO_UKK ?? '-' }}</span></td>
-                                        <td class="text-nowrap small">{{ $row->NO_BKT_PANDU ?? '-' }}</td>
-                                        <td class="nm-kapal"><strong title="{{ $row->NM_KAPAL }}">{{ Str::limit($row->NM_KAPAL, 35) }}</strong></td>
-                                        <td class="text-nowrap small">{{ $row->NM_PERS_PANDU ?? '-' }}</td>
-                                        <td class="text-nowrap small">{{ $row->PANDU_DARI ?? '-' }}</td>
-                                        <td class="text-nowrap small">{{ $row->PANDU_KE ?? '-' }}</td>
+                                        <td><?php echo e($realisasiWebData->firstItem() + $index); ?></td>
+                                        <td class="text-nowrap small"><?php echo e($row->PPKB_CODE ?? '-'); ?></td>
+                                        <td><span class="ukk-badge"><?php echo e($row->NO_UKK ?? '-'); ?></span></td>
+                                        <td class="text-nowrap small"><?php echo e($row->NO_BKT_PANDU ?? '-'); ?></td>
+                                        <td class="nm-kapal"><strong title="<?php echo e($row->NM_KAPAL); ?>"><?php echo e(Str::limit($row->NM_KAPAL, 35)); ?></strong></td>
+                                        <td class="text-nowrap small"><?php echo e($row->NM_PERS_PANDU ?? '-'); ?></td>
+                                        <td class="text-nowrap small"><?php echo e($row->PANDU_DARI ?? '-'); ?></td>
+                                        <td class="text-nowrap small"><?php echo e($row->PANDU_KE ?? '-'); ?></td>
                                         <td class="text-center">
-                                            <span class="badge bg-primary">{{ strtoupper($row->REALISAS_PILOT_VIA ?? '-') }}</span>
+                                            <span class="badge bg-primary"><?php echo e(strtoupper($row->REALISAS_PILOT_VIA ?? '-')); ?></span>
                                         </td>
-                                        <td class="text-nowrap small">{{ $row->CREATED_BY ?? '-' }}</td>
+                                        <td class="text-nowrap small"><?php echo e($row->CREATED_BY ?? '-'); ?></td>
                                     </tr>
-                                    @endforeach
+                                    <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>
                                 </tbody>
                             </table>
                         </div>
 
                         <!-- Pagination -->
-                        @if($realisasiWebData->hasPages())
+                        <?php if($realisasiWebData->hasPages()): ?>
                         <div class="d-flex justify-content-between align-items-center mt-3">
                             <div class="text-muted">
-                                Menampilkan {{ $realisasiWebData->firstItem() }} - {{ $realisasiWebData->lastItem() }} dari {{ $realisasiWebData->total() }} data
+                                Menampilkan <?php echo e($realisasiWebData->firstItem()); ?> - <?php echo e($realisasiWebData->lastItem()); ?> dari <?php echo e($realisasiWebData->total()); ?> data
                             </div>
                             <div>
-                                {{ $realisasiWebData->links('pagination::bootstrap-5') }}
+                                <?php echo e($realisasiWebData->links('pagination::bootstrap-5')); ?>
+
                             </div>
                         </div>
-                        @endif
-                        @else
+                        <?php endif; ?>
+                        <?php else: ?>
                         <div class="alert alert-secondary">
                             <i class="bi bi-info-circle"></i> Tidak ada data untuk ditampilkan
                         </div>
-                        @endif
+                        <?php endif; ?>
                     </div>
-                    @endif
+                    <?php endif; ?>
                 </div>
             </div>
         </div>
-        @endif
+        <?php endif; ?>
 
         <!-- Waiting Time Section -->
-        @if($selectedPeriode != 'all' && $selectedBranch != 'all' && $waitingTimeCount > 0)
+        <?php if($selectedPeriode != 'all' && $selectedBranch != 'all' && $waitingTimeCount > 0): ?>
         <div class="row mb-4">
             <div class="col-12">
                 <div class="card stat-card">
-                    @if(!$showWaitingTime)
+                    <?php if(!$showWaitingTime): ?>
                     <div class="card-body text-center py-4">
                         <i class="bi bi-clock-history" style="font-size: 3rem; color: #764ba2;"></i>
                         <h5 class="mt-3">Data Waiting Time</h5>
                         <p class="text-muted">
-                            Ditemukan <strong style="color: #764ba2;">{{ number_format($waitingTimeCount) }} transaksi</strong> 
+                            Ditemukan <strong style="color: #764ba2;"><?php echo e(number_format($waitingTimeCount)); ?> transaksi</strong> 
                             dengan Waiting Time (WT) di atas 00:30
                         </p>
-                        <a href="{{ route('dashboard', ['periode' => $selectedPeriode, 'cabang' => $selectedBranch, 'show_waiting_time' => 1]) }}#waiting-time-section" 
+                        <a href="<?php echo e(route('dashboard', ['periode' => $selectedPeriode, 'cabang' => $selectedBranch, 'show_waiting_time' => 1])); ?>#waiting-time-section" 
                            class="btn" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white;">
                             <i class="bi bi-eye"></i> Tampilkan Data Waiting Time
                         </a>
                     </div>
-                    @else
+                    <?php else: ?>
                     <div class="card-header" style="background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%); color: white;" id="waiting-time-section">
                         <div class="d-flex justify-content-between align-items-center">
                             <h5 class="mb-0">
@@ -1258,11 +1267,11 @@
                                 Data Waiting Time (WT > 00:30)
                             </h5>
                             <div>
-                                <a href="{{ route('export.waiting.time', ['periode' => $selectedPeriode, 'cabang' => $selectedBranch]) }}" 
+                                <a href="<?php echo e(route('export.waiting.time', ['periode' => $selectedPeriode, 'cabang' => $selectedBranch])); ?>" 
                                    class="btn btn-light btn-sm me-2">
                                     <i class="bi bi-file-earmark-excel"></i> Download Excel
                                 </a>
-                                <a href="{{ route('dashboard', ['periode' => $selectedPeriode, 'cabang' => $selectedBranch]) }}" 
+                                <a href="<?php echo e(route('dashboard', ['periode' => $selectedPeriode, 'cabang' => $selectedBranch])); ?>" 
                                    class="btn btn-light btn-sm">
                                     <i class="bi bi-x-circle"></i> Sembunyikan
                                 </a>
@@ -1272,13 +1281,13 @@
                     <div class="card-body">
                         <div class="alert alert-warning mb-3">
                             <i class="bi bi-info-circle-fill"></i>
-                            <strong>{{ number_format($waitingTimeCount) }} transaksi</strong> memiliki Waiting Time (WT) lebih dari 00:30 (30 menit).
+                            <strong><?php echo e(number_format($waitingTimeCount)); ?> transaksi</strong> memiliki Waiting Time (WT) lebih dari 00:30 (30 menit).
                             <div class="mt-2">
                                 <small class="text-muted">Data diurutkan berdasarkan WT terbesar</small>
                             </div>
                         </div>
                         
-                        @if($waitingTimeData && $waitingTimeData->count() > 0)
+                        <?php if($waitingTimeData && $waitingTimeData->count() > 0): ?>
                         <div class="table-responsive">
                             <table class="table table-hover table-striped table-sm">
                                 <thead class="table-dark">
@@ -1303,75 +1312,76 @@
                                     </tr>
                                 </thead>
                                 <tbody>
-                                    @foreach($waitingTimeData as $index => $data)
+                                    <?php $__currentLoopData = $waitingTimeData; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $index => $data): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
                                     <tr>
-                                        <td>{{ $waitingTimeData->firstItem() + $index }}</td>
-                                        <td><span class="badge bg-secondary">{{ $data->PPKB_CODE ?? '-' }}</span></td>
-                                        <td><span class="badge bg-info">{{ $data->NO_UKK ?? '-' }}</span></td>
-                                        <td>{{ $data->NO_BKT_PANDU ?? '-' }}</td>
-                                        <td><strong>{{ $data->NM_KAPAL ?? '-' }}</strong></td>
-                                        <td>{{ $data->NM_PERS_PANDU ?? '-' }}</td>
-                                        <td>{{ $data->TGL_TIBA ?? '-' }}</td>
-                                        <td>{{ $data->JAM_TIBA ?? '-' }}</td>
-                                        <td>{{ $data->TGL_PMT ?? '-' }}</td>
-                                        <td>{{ $data->JAM_PMT ?? '-' }}</td>
-                                        <td>{{ $data->PNK ?? '-' }}</td>
-                                        <td>{{ $data->KB ?? '-' }}</td>
-                                        <td>{{ $data->MULAI_PELAKSANAAN ?? '-' }}</td>
-                                        <td>{{ $data->SELESAI_PELAKSANAAN ?? '-' }}</td>
+                                        <td><?php echo e($waitingTimeData->firstItem() + $index); ?></td>
+                                        <td><span class="badge bg-secondary"><?php echo e($data->PPKB_CODE ?? '-'); ?></span></td>
+                                        <td><span class="badge bg-info"><?php echo e($data->NO_UKK ?? '-'); ?></span></td>
+                                        <td><?php echo e($data->NO_BKT_PANDU ?? '-'); ?></td>
+                                        <td><strong><?php echo e($data->NM_KAPAL ?? '-'); ?></strong></td>
+                                        <td><?php echo e($data->NM_PERS_PANDU ?? '-'); ?></td>
+                                        <td><?php echo e($data->TGL_TIBA ?? '-'); ?></td>
+                                        <td><?php echo e($data->JAM_TIBA ?? '-'); ?></td>
+                                        <td><?php echo e($data->TGL_PMT ?? '-'); ?></td>
+                                        <td><?php echo e($data->JAM_PMT ?? '-'); ?></td>
+                                        <td><?php echo e($data->PNK ?? '-'); ?></td>
+                                        <td><?php echo e($data->KB ?? '-'); ?></td>
+                                        <td><?php echo e($data->MULAI_PELAKSANAAN ?? '-'); ?></td>
+                                        <td><?php echo e($data->SELESAI_PELAKSANAAN ?? '-'); ?></td>
                                         <td class="text-center">
-                                            <span class="badge bg-warning text-dark">{{ $data->WT ?? '-' }}</span>
+                                            <span class="badge bg-warning text-dark"><?php echo e($data->WT ?? '-'); ?></span>
                                         </td>
-                                        <td>{{ $data->PANDU_DARI ?? '-' }}</td>
-                                        <td>{{ $data->PANDU_KE ?? '-' }}</td>
+                                        <td><?php echo e($data->PANDU_DARI ?? '-'); ?></td>
+                                        <td><?php echo e($data->PANDU_KE ?? '-'); ?></td>
                                     </tr>
-                                    @endforeach
+                                    <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>
                                 </tbody>
                             </table>
                         </div>
                         
                         <!-- Pagination -->
-                        @if($waitingTimeData->hasPages())
+                        <?php if($waitingTimeData->hasPages()): ?>
                         <div class="d-flex justify-content-between align-items-center mt-3">
                             <div class="text-muted">
-                                Menampilkan {{ $waitingTimeData->firstItem() }} - {{ $waitingTimeData->lastItem() }} dari {{ $waitingTimeData->total() }} data
+                                Menampilkan <?php echo e($waitingTimeData->firstItem()); ?> - <?php echo e($waitingTimeData->lastItem()); ?> dari <?php echo e($waitingTimeData->total()); ?> data
                             </div>
                             <div>
-                                {{ $waitingTimeData->links('pagination::bootstrap-5') }}
+                                <?php echo e($waitingTimeData->links('pagination::bootstrap-5')); ?>
+
                             </div>
                         </div>
-                        @endif
-                        @else
+                        <?php endif; ?>
+                        <?php else: ?>
                         <div class="alert alert-secondary">
                             <i class="bi bi-info-circle"></i> Tidak ada data untuk ditampilkan
                         </div>
-                        @endif
+                        <?php endif; ?>
                     </div>
-                    @endif
+                    <?php endif; ?>
                 </div>
             </div>
         </div>
-        @endif
+        <?php endif; ?>
 
         <!-- Anomali Section -->
-        @if($selectedPeriode != 'all' && $selectedBranch != 'all' && $anomaliCount > 0)
+        <?php if($selectedPeriode != 'all' && $selectedBranch != 'all' && $anomaliCount > 0): ?>
         <div class="row mb-4">
             <div class="col-12">
                 <div class="card stat-card">
-                    @if(!$showAnomali)
+                    <?php if(!$showAnomali): ?>
                     <div class="card-body text-center py-4">
                         <i class="bi bi-exclamation-triangle" style="font-size: 3rem; color: #f97316;"></i>
                         <h5 class="mt-3">Data Anomali</h5>
                         <p class="text-muted">
-                            Ditemukan <strong style="color: #f97316;">{{ number_format($anomaliCount) }} record</strong>
+                            Ditemukan <strong style="color: #f97316;"><?php echo e(number_format($anomaliCount)); ?> record</strong>
                             dengan kondisi anomali
                         </p>
-                        <a href="{{ route('dashboard', ['periode' => $selectedPeriode, 'cabang' => $selectedBranch, 'show_anomali' => 1]) }}#anomali-section"
+                        <a href="<?php echo e(route('dashboard', ['periode' => $selectedPeriode, 'cabang' => $selectedBranch, 'show_anomali' => 1])); ?>#anomali-section"
                            class="btn" style="background: linear-gradient(135deg, #f97316 0%, #ea580c 100%); color: white;">
                             <i class="bi bi-eye"></i> Tampilkan Data Anomali
                         </a>
                     </div>
-                    @else
+                    <?php else: ?>
                     <div class="card-header" style="background: linear-gradient(135deg, #f97316 0%, #ea580c 100%); color: white;" id="anomali-section">
                         <div class="d-flex justify-content-between align-items-center">
                             <h5 class="mb-0">
@@ -1379,11 +1389,11 @@
                                 Data Anomali (ARRIVE / DEPARTURE tidak sinkron MULAI_TUNDA)
                             </h5>
                             <div>
-                                <a href="{{ route('export.anomali', ['periode' => $selectedPeriode, 'cabang' => $selectedBranch]) }}"
+                                <a href="<?php echo e(route('export.anomali', ['periode' => $selectedPeriode, 'cabang' => $selectedBranch])); ?>"
                                    class="btn btn-light btn-sm me-2">
                                     <i class="bi bi-file-earmark-excel"></i> Download Excel
                                 </a>
-                                <a href="{{ route('dashboard', ['periode' => $selectedPeriode, 'cabang' => $selectedBranch]) }}"
+                                <a href="<?php echo e(route('dashboard', ['periode' => $selectedPeriode, 'cabang' => $selectedBranch])); ?>"
                                    class="btn btn-light btn-sm">
                                     <i class="bi bi-x-circle"></i> Sembunyikan
                                 </a>
@@ -1393,14 +1403,14 @@
                     <div class="card-body">
                         <div class="alert mb-3" style="background: #fff7ed; border-left: 4px solid #f97316; color: #7c2d12;">
                             <i class="bi bi-info-circle-fill"></i>
-                            Ditemukan <strong>{{ number_format($anomaliCount) }} record</strong> dengan kondisi anomali:
+                            Ditemukan <strong><?php echo e(number_format($anomaliCount)); ?> record</strong> dengan kondisi anomali:
                             ARRIVE memiliki MULAI_TUNDA tetapi DEPARTURE tidak (atau sebaliknya) pada NO_UKK yang sama.
                             <div class="mt-2">
                                 <small class="text-muted">Data diurutkan berdasarkan NO_UKK dan Mulai Pelaksanaan</small>
                             </div>
                         </div>
 
-                        @if($anomaliData && $anomaliData->count() > 0)
+                        <?php if($anomaliData && $anomaliData->count() > 0): ?>
                         <div class="table-responsive">
                             <table class="table table-hover table-striped table-sm">
                                 <thead class="table-dark">
@@ -1423,85 +1433,86 @@
                                     </tr>
                                 </thead>
                                 <tbody>
-                                    @foreach($anomaliData as $index => $data)
-                                    <tr class="{{ in_array($data->GERAKAN, ['ARRIVE', 'DEPARTURE']) ? ($data->MULAI_TUNDA ? 'table-success' : 'table-danger') : '' }}">
-                                        <td>{{ $anomaliData->firstItem() + $index }}</td>
-                                        <td><span class="badge bg-secondary">{{ $data->PPKB_CODE ?? '-' }}</span></td>
-                                        <td><span class="badge bg-info">{{ $data->NO_UKK ?? '-' }}</span></td>
-                                        <td>{{ $data->NO_BKT_PANDU ?? '-' }}</td>
-                                        <td><strong>{{ $data->NM_KAPAL ?? '-' }}</strong></td>
-                                        <td class="text-end">{{ $data->KP_GRT ? number_format($data->KP_GRT, 0, ',', '.') : '-' }}</td>
-                                        <td class="text-end">{{ $data->KP_LOA ? number_format($data->KP_LOA, 2, ',', '.') : '-' }}</td>
-                                        <td>{{ $data->NM_PERS_PANDU ?? '-' }}</td>
-                                        <td>{{ $data->MULAI_PELAKSANAAN ?? '-' }}</td>
-                                        <td>{{ $data->PANDU_DARI ?? '-' }}</td>
-                                        <td>{{ $data->PANDU_KE ?? '-' }}</td>
+                                    <?php $__currentLoopData = $anomaliData; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $index => $data): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
+                                    <tr class="<?php echo e(in_array($data->GERAKAN, ['ARRIVE', 'DEPARTURE']) ? ($data->MULAI_TUNDA ? 'table-success' : 'table-danger') : ''); ?>">
+                                        <td><?php echo e($anomaliData->firstItem() + $index); ?></td>
+                                        <td><span class="badge bg-secondary"><?php echo e($data->PPKB_CODE ?? '-'); ?></span></td>
+                                        <td><span class="badge bg-info"><?php echo e($data->NO_UKK ?? '-'); ?></span></td>
+                                        <td><?php echo e($data->NO_BKT_PANDU ?? '-'); ?></td>
+                                        <td><strong><?php echo e($data->NM_KAPAL ?? '-'); ?></strong></td>
+                                        <td class="text-end"><?php echo e($data->KP_GRT ? number_format($data->KP_GRT, 0, ',', '.') : '-'); ?></td>
+                                        <td class="text-end"><?php echo e($data->KP_LOA ? number_format($data->KP_LOA, 2, ',', '.') : '-'); ?></td>
+                                        <td><?php echo e($data->NM_PERS_PANDU ?? '-'); ?></td>
+                                        <td><?php echo e($data->MULAI_PELAKSANAAN ?? '-'); ?></td>
+                                        <td><?php echo e($data->PANDU_DARI ?? '-'); ?></td>
+                                        <td><?php echo e($data->PANDU_KE ?? '-'); ?></td>
                                         <td>
-                                            @if($data->GERAKAN == 'ARRIVE')
-                                                <span class="badge bg-primary">{{ $data->GERAKAN }}</span>
-                                            @elseif($data->GERAKAN == 'DEPARTURE')
-                                                <span class="badge bg-warning text-dark">{{ $data->GERAKAN }}</span>
-                                            @else
-                                                <span class="badge bg-secondary">{{ $data->GERAKAN }}</span>
-                                            @endif
+                                            <?php if($data->GERAKAN == 'ARRIVE'): ?>
+                                                <span class="badge bg-primary"><?php echo e($data->GERAKAN); ?></span>
+                                            <?php elseif($data->GERAKAN == 'DEPARTURE'): ?>
+                                                <span class="badge bg-warning text-dark"><?php echo e($data->GERAKAN); ?></span>
+                                            <?php else: ?>
+                                                <span class="badge bg-secondary"><?php echo e($data->GERAKAN); ?></span>
+                                            <?php endif; ?>
                                         </td>
-                                        <td>{{ $data->NO_PKK_INAPORTNET ?? '-' }}</td>
+                                        <td><?php echo e($data->NO_PKK_INAPORTNET ?? '-'); ?></td>
                                         <td>
-                                            @if($data->MULAI_TUNDA)
-                                                <span class="badge bg-success">{{ $data->MULAI_TUNDA }}</span>
-                                            @else
+                                            <?php if($data->MULAI_TUNDA): ?>
+                                                <span class="badge bg-success"><?php echo e($data->MULAI_TUNDA); ?></span>
+                                            <?php else: ?>
                                                 <span class="badge bg-danger">-</span>
-                                            @endif
+                                            <?php endif; ?>
                                         </td>
-                                        <td class="text-end">{{ $data->PENDAPATAN_TUNDA ? 'Rp ' . number_format($data->PENDAPATAN_TUNDA, 0, ',', '.') : '-' }}</td>
+                                        <td class="text-end"><?php echo e($data->PENDAPATAN_TUNDA ? 'Rp ' . number_format($data->PENDAPATAN_TUNDA, 0, ',', '.') : '-'); ?></td>
                                     </tr>
-                                    @endforeach
+                                    <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>
                                 </tbody>
                             </table>
                         </div>
 
                         <!-- Pagination -->
-                        @if($anomaliData->hasPages())
+                        <?php if($anomaliData->hasPages()): ?>
                         <div class="d-flex justify-content-between align-items-center mt-3">
                             <div class="text-muted">
-                                Menampilkan {{ $anomaliData->firstItem() }} - {{ $anomaliData->lastItem() }} dari {{ $anomaliData->total() }} data
+                                Menampilkan <?php echo e($anomaliData->firstItem()); ?> - <?php echo e($anomaliData->lastItem()); ?> dari <?php echo e($anomaliData->total()); ?> data
                             </div>
                             <div>
-                                {{ $anomaliData->links('pagination::bootstrap-5') }}
+                                <?php echo e($anomaliData->links('pagination::bootstrap-5')); ?>
+
                             </div>
                         </div>
-                        @endif
-                        @else
+                        <?php endif; ?>
+                        <?php else: ?>
                         <div class="alert alert-secondary">
                             <i class="bi bi-info-circle"></i> Tidak ada data untuk ditampilkan
                         </div>
-                        @endif
+                        <?php endif; ?>
                     </div>
-                    @endif
+                    <?php endif; ?>
                 </div>
             </div>
         </div>
-        @endif
+        <?php endif; ?>
 
         <!-- Durasi Pemanduan 0 Section -->
-        @if($selectedPeriode != 'all' && $selectedBranch != 'all' && $durasiPemanduan0Count > 0)
+        <?php if($selectedPeriode != 'all' && $selectedBranch != 'all' && $durasiPemanduan0Count > 0): ?>
         <div class="row mb-4">
             <div class="col-12">
                 <div class="card stat-card">
-                    @if(!$showDurasiPemanduan0)
+                    <?php if(!$showDurasiPemanduan0): ?>
                     <div class="card-body text-center py-4">
                         <i class="bi bi-clock" style="font-size: 3rem; color: #10b981;"></i>
                         <h5 class="mt-3">Durasi Pemanduan 0</h5>
                         <p class="text-muted">
-                            Ditemukan <strong style="color: #10b981;">{{ number_format($durasiPemanduan0Count) }} transaksi</strong> 
+                            Ditemukan <strong style="color: #10b981;"><?php echo e(number_format($durasiPemanduan0Count)); ?> transaksi</strong> 
                             dengan Durasi Pemanduan (PND) = 00 : 00 atau kosong
                         </p>
-                        <a href="{{ route('dashboard', ['periode' => $selectedPeriode, 'cabang' => $selectedBranch, 'show_durasi_pemanduan_0' => 1]) }}#durasi-pemanduan-0-section" 
+                        <a href="<?php echo e(route('dashboard', ['periode' => $selectedPeriode, 'cabang' => $selectedBranch, 'show_durasi_pemanduan_0' => 1])); ?>#durasi-pemanduan-0-section" 
                            class="btn" style="background: linear-gradient(135deg, #10b981 0%, #059669 100%); color: white;">
                             <i class="bi bi-eye"></i> Tampilkan Data Durasi Pemanduan 0
                         </a>
                     </div>
-                    @else
+                    <?php else: ?>
                     <div class="card-header" style="background: linear-gradient(135deg, #10b981 0%, #059669 100%); color: white;" id="durasi-pemanduan-0-section">
                         <div class="d-flex justify-content-between align-items-center">
                             <h5 class="mb-0">
@@ -1509,11 +1520,11 @@
                                 Data Durasi Pemanduan 0 (PND = 00 : 00 atau kosong)
                             </h5>
                             <div>
-                                <a href="{{ route('export.durasi.pemanduan.0', ['periode' => $selectedPeriode, 'cabang' => $selectedBranch]) }}" 
+                                <a href="<?php echo e(route('export.durasi.pemanduan.0', ['periode' => $selectedPeriode, 'cabang' => $selectedBranch])); ?>" 
                                    class="btn btn-light btn-sm me-2">
                                     <i class="bi bi-file-earmark-excel"></i> Download Excel
                                 </a>
-                                <a href="{{ route('dashboard', ['periode' => $selectedPeriode, 'cabang' => $selectedBranch]) }}" 
+                                <a href="<?php echo e(route('dashboard', ['periode' => $selectedPeriode, 'cabang' => $selectedBranch])); ?>" 
                                    class="btn btn-light btn-sm">
                                     <i class="bi bi-x-circle"></i> Sembunyikan
                                 </a>
@@ -1523,13 +1534,13 @@
                     <div class="card-body">
                         <div class="alert alert-info mb-3">
                             <i class="bi bi-info-circle-fill"></i>
-                            <strong>{{ number_format($durasiPemanduan0Count) }} transaksi</strong> memiliki Durasi Pemanduan (PND) = 00 : 00 atau kosong (0 menit).
+                            <strong><?php echo e(number_format($durasiPemanduan0Count)); ?> transaksi</strong> memiliki Durasi Pemanduan (PND) = 00 : 00 atau kosong (0 menit).
                             <div class="mt-2">
                                 <small class="text-muted">Data diurutkan berdasarkan PPKB Code</small>
                             </div>
                         </div>
                         
-                        @if($durasiPemanduan0Data && $durasiPemanduan0Data->count() > 0)
+                        <?php if($durasiPemanduan0Data && $durasiPemanduan0Data->count() > 0): ?>
                         <div class="table-responsive">
                             <table class="table table-hover table-striped table-sm">
                                 <thead class="table-dark">
@@ -1554,80 +1565,82 @@
                                     </tr>
                                 </thead>
                                 <tbody>
-                                    @foreach($durasiPemanduan0Data as $index => $data)
+                                    <?php $__currentLoopData = $durasiPemanduan0Data; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $index => $data): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
                                     <tr>
-                                        <td>{{ $durasiPemanduan0Data->firstItem() + $index }}</td>
-                                        <td><span class="badge bg-secondary">{{ $data->PPKB_CODE ?? '-' }}</span></td>
-                                        <td><span class="badge bg-info">{{ $data->NO_UKK ?? '-' }}</span></td>
-                                        <td>{{ $data->NO_BKT_PANDU ?? '-' }}</td>
-                                        <td><strong>{{ $data->NM_KAPAL ?? '-' }}</strong></td>
-                                        <td>{{ $data->NM_PERS_PANDU ?? '-' }}</td>
-                                        <td>{{ $data->TGL_TIBA ?? '-' }}</td>
-                                        <td>{{ $data->JAM_TIBA ?? '-' }}</td>
-                                        <td>{{ $data->TGL_PMT ?? '-' }}</td>
-                                        <td>{{ $data->JAM_PMT ?? '-' }}</td>
-                                        <td>{{ $data->PNK ?? '-' }}</td>
-                                        <td>{{ $data->KB ?? '-' }}</td>
-                                        <td>{{ $data->MULAI_PELAKSANAAN ?? '-' }}</td>
-                                        <td>{{ $data->SELESAI_PELAKSANAAN ?? '-' }}</td>
+                                        <td><?php echo e($durasiPemanduan0Data->firstItem() + $index); ?></td>
+                                        <td><span class="badge bg-secondary"><?php echo e($data->PPKB_CODE ?? '-'); ?></span></td>
+                                        <td><span class="badge bg-info"><?php echo e($data->NO_UKK ?? '-'); ?></span></td>
+                                        <td><?php echo e($data->NO_BKT_PANDU ?? '-'); ?></td>
+                                        <td><strong><?php echo e($data->NM_KAPAL ?? '-'); ?></strong></td>
+                                        <td><?php echo e($data->NM_PERS_PANDU ?? '-'); ?></td>
+                                        <td><?php echo e($data->TGL_TIBA ?? '-'); ?></td>
+                                        <td><?php echo e($data->JAM_TIBA ?? '-'); ?></td>
+                                        <td><?php echo e($data->TGL_PMT ?? '-'); ?></td>
+                                        <td><?php echo e($data->JAM_PMT ?? '-'); ?></td>
+                                        <td><?php echo e($data->PNK ?? '-'); ?></td>
+                                        <td><?php echo e($data->KB ?? '-'); ?></td>
+                                        <td><?php echo e($data->MULAI_PELAKSANAAN ?? '-'); ?></td>
+                                        <td><?php echo e($data->SELESAI_PELAKSANAAN ?? '-'); ?></td>
                                         <td class="text-center">
-                                            <span class="badge bg-success">{{ $data->PND ?? '0' }}</span>
+                                            <span class="badge bg-success"><?php echo e($data->PND ?? '0'); ?></span>
                                         </td>
-                                        <td>{{ $data->PANDU_DARI ?? '-' }}</td>
-                                        <td>{{ $data->PANDU_KE ?? '-' }}</td>
+                                        <td><?php echo e($data->PANDU_DARI ?? '-'); ?></td>
+                                        <td><?php echo e($data->PANDU_KE ?? '-'); ?></td>
                                     </tr>
-                                    @endforeach
+                                    <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>
                                 </tbody>
                             </table>
                         </div>
                         
                         <!-- Pagination -->
-                        @if($durasiPemanduan0Data->hasPages())
+                        <?php if($durasiPemanduan0Data->hasPages()): ?>
                         <div class="d-flex justify-content-between align-items-center mt-3">
                             <div class="text-muted">
-                                Menampilkan {{ $durasiPemanduan0Data->firstItem() }} - {{ $durasiPemanduan0Data->lastItem() }} dari {{ $durasiPemanduan0Data->total() }} data
+                                Menampilkan <?php echo e($durasiPemanduan0Data->firstItem()); ?> - <?php echo e($durasiPemanduan0Data->lastItem()); ?> dari <?php echo e($durasiPemanduan0Data->total()); ?> data
                             </div>
                             <div>
-                                {{ $durasiPemanduan0Data->links('pagination::bootstrap-5') }}
+                                <?php echo e($durasiPemanduan0Data->links('pagination::bootstrap-5')); ?>
+
                             </div>
                         </div>
-                        @endif
-                        @else
+                        <?php endif; ?>
+                        <?php else: ?>
                         <div class="alert alert-secondary">
                             <i class="bi bi-info-circle"></i> Tidak ada data untuk ditampilkan
                         </div>
-                        @endif
+                        <?php endif; ?>
                     </div>
-                    @endif
+                    <?php endif; ?>
                 </div>
             </div>
         </div>
-        @endif
+        <?php endif; ?>
 
         <!-- Mismatch Section -->
-        @if($selectedPeriode != 'all' && $selectedBranch != 'all' && $mismatchCount > 0)
+        <?php if($selectedPeriode != 'all' && $selectedBranch != 'all' && $mismatchCount > 0): ?>
         <div class="row mb-4">
             <div class="col-12">
                 <div class="card stat-card">
-                    @if(!$showMismatch)
+                    <?php if(!$showMismatch): ?>
                     <div class="card-body text-center py-4">
-                        @if($mismatchDebugError)
+                        <?php if($mismatchDebugError): ?>
                         <div class="alert alert-danger text-start mb-3 small">
-                            <i class="bi bi-bug-fill"></i> <strong>Error:</strong> {{ $mismatchDebugError }}
+                            <i class="bi bi-bug-fill"></i> <strong>Error:</strong> <?php echo e($mismatchDebugError); ?>
+
                         </div>
-                        @endif
+                        <?php endif; ?>
                         <i class="bi bi-arrows-collapse" style="font-size: 3rem; color: #7c3aed;"></i>
                         <h5 class="mt-3">Mismatch PKK</h5>
                         <p class="text-muted">
-                            Ditemukan <strong style="color: #7c3aed;">{{ number_format($mismatchCount) }} record</strong>
+                            Ditemukan <strong style="color: #7c3aed;"><?php echo e(number_format($mismatchCount)); ?> record</strong>
                             pada no_pkk yang tidak memiliki movement_type <strong>"masuk"</strong> dan <strong>"keluar"</strong> sekaligus
                         </p>
-                        <a href="{{ route('dashboard', ['periode' => $selectedPeriode, 'cabang' => $selectedBranch, 'show_mismatch' => 1]) }}#mismatch-section"
+                        <a href="<?php echo e(route('dashboard', ['periode' => $selectedPeriode, 'cabang' => $selectedBranch, 'show_mismatch' => 1])); ?>#mismatch-section"
                            class="btn" style="background: linear-gradient(135deg, #7c3aed 0%, #5b21b6 100%); color: white;">
                             <i class="bi bi-eye"></i> Tampilkan Data Mismatch
                         </a>
                     </div>
-                    @else
+                    <?php else: ?>
                     <div class="card-header" style="background: linear-gradient(135deg, #7c3aed 0%, #5b21b6 100%); color: white;" id="mismatch-section">
                         <div class="d-flex justify-content-between align-items-center">
                             <h5 class="mb-0">
@@ -1635,11 +1648,11 @@
                                 Mismatch PKK — No. PKK tanpa pasangan "Masuk" / "Keluar"
                             </h5>
                             <div>
-                                <a href="{{ route('export.mismatch', ['periode' => $selectedPeriode, 'cabang' => $selectedBranch]) }}"
+                                <a href="<?php echo e(route('export.mismatch', ['periode' => $selectedPeriode, 'cabang' => $selectedBranch])); ?>"
                                    class="btn btn-light btn-sm me-2">
                                     <i class="bi bi-file-earmark-excel"></i> Download Excel
                                 </a>
-                                <a href="{{ route('dashboard', ['periode' => $selectedPeriode, 'cabang' => $selectedBranch]) }}"
+                                <a href="<?php echo e(route('dashboard', ['periode' => $selectedPeriode, 'cabang' => $selectedBranch])); ?>"
                                    class="btn btn-light btn-sm">
                                     <i class="bi bi-x-circle"></i> Sembunyikan
                                 </a>
@@ -1647,14 +1660,15 @@
                         </div>
                     </div>
                     <div class="card-body">
-                        @if($mismatchDebugError)
+                        <?php if($mismatchDebugError): ?>
                         <div class="alert alert-danger mb-3">
-                            <i class="bi bi-bug-fill"></i> <strong>Debug Error:</strong> {{ $mismatchDebugError }}
+                            <i class="bi bi-bug-fill"></i> <strong>Debug Error:</strong> <?php echo e($mismatchDebugError); ?>
+
                         </div>
-                        @endif
+                        <?php endif; ?>
                         <div class="alert mb-3" style="background: #ede9fe; border-left: 4px solid #7c3aed; color: #3b0764;">
                             <i class="bi bi-info-circle-fill"></i>
-                            Ditemukan <strong>{{ number_format($mismatchCount) }} record</strong> pada no_pkk yang tidak lengkap —
+                            Ditemukan <strong><?php echo e(number_format($mismatchCount)); ?> record</strong> pada no_pkk yang tidak lengkap —
                             setiap no_pkk seharusnya memiliki movement_type <strong>"masuk"</strong> dan <strong>"keluar"</strong>.
                             Data di bawah menampilkan semua baris dari no_pkk yang mismatch.
                             <div class="mt-2">
@@ -1662,7 +1676,7 @@
                             </div>
                         </div>
 
-                        @if($mismatchData && $mismatchData->count() > 0)
+                        <?php if($mismatchData && $mismatchData->count() > 0): ?>
                         <div class="table-responsive">
                             <table class="table table-hover table-striped table-sm">
                                 <thead class="table-dark">
@@ -1682,80 +1696,82 @@
                                     </tr>
                                 </thead>
                                 <tbody>
-                                    @php $prevPkk = null; @endphp
-                                    @foreach($mismatchData as $index => $row)
-                                    @if($prevPkk !== null && $prevPkk !== $row->no_pkk)
+                                    <?php $prevPkk = null; ?>
+                                    <?php $__currentLoopData = $mismatchData; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $index => $row): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
+                                    <?php if($prevPkk !== null && $prevPkk !== $row->no_pkk): ?>
                                     <tr style="height:3px; background:#7c3aed; padding:0; line-height:0;"><td colspan="12" style="padding:0; height:3px; background:#7c3aed;"></td></tr>
-                                    @endif
-                                    @php $prevPkk = $row->no_pkk; @endphp
+                                    <?php endif; ?>
+                                    <?php $prevPkk = $row->no_pkk; ?>
                                     <tr>
-                                        <td>{{ $mismatchData->firstItem() + $index }}</td>
-                                        <td class="text-nowrap small">{{ $row->pilot ?? '-' }}</td>
-                                        <td class="text-nowrap small">{{ $row->work_order ?? '-' }}</td>
-                                        <td class="text-nowrap small"><strong>{{ $row->vessel ?? '-' }}</strong></td>
-                                        <td class="text-nowrap small">{{ $row->flag ?? '-' }}</td>
-                                        <td class="text-nowrap small">{{ $row->location ?? '-' }}</td>
+                                        <td><?php echo e($mismatchData->firstItem() + $index); ?></td>
+                                        <td class="text-nowrap small"><?php echo e($row->pilot ?? '-'); ?></td>
+                                        <td class="text-nowrap small"><?php echo e($row->work_order ?? '-'); ?></td>
+                                        <td class="text-nowrap small"><strong><?php echo e($row->vessel ?? '-'); ?></strong></td>
+                                        <td class="text-nowrap small"><?php echo e($row->flag ?? '-'); ?></td>
+                                        <td class="text-nowrap small"><?php echo e($row->location ?? '-'); ?></td>
                                         <td class="text-center">
-                                            @php $mt = strtolower($row->movement_type ?? ''); @endphp
-                                            <span class="badge {{ $mt === 'masuk' ? 'bg-success' : ($mt === 'keluar' ? 'bg-warning text-dark' : 'bg-secondary') }}">
-                                                {{ strtoupper($row->movement_type ?? '-') }}
+                                            <?php $mt = strtolower($row->movement_type ?? ''); ?>
+                                            <span class="badge <?php echo e($mt === 'masuk' ? 'bg-success' : ($mt === 'keluar' ? 'bg-warning text-dark' : 'bg-secondary')); ?>">
+                                                <?php echo e(strtoupper($row->movement_type ?? '-')); ?>
+
                                             </span>
                                         </td>
                                         <td class="text-nowrap small">
-                                            <span class="badge" style="background:#7c3aed;">{{ $row->no_pkk ?? '-' }}</span>
+                                            <span class="badge" style="background:#7c3aed;"><?php echo e($row->no_pkk ?? '-'); ?></span>
                                         </td>
-                                        <td class="text-nowrap small">{{ $row->no_pkk_inaportnet ?? '-' }}</td>
-                                        <td class="text-nowrap small">{{ $row->ppkb_code ?? '-' }}</td>
-                                        <td class="text-nowrap small">{{ $row->name_branch ?? '-' }}</td>
-                                        <td class="text-nowrap small">{{ $row->delegation ?? '-' }}</td>
+                                        <td class="text-nowrap small"><?php echo e($row->no_pkk_inaportnet ?? '-'); ?></td>
+                                        <td class="text-nowrap small"><?php echo e($row->ppkb_code ?? '-'); ?></td>
+                                        <td class="text-nowrap small"><?php echo e($row->name_branch ?? '-'); ?></td>
+                                        <td class="text-nowrap small"><?php echo e($row->delegation ?? '-'); ?></td>
                                     </tr>
-                                    @endforeach
+                                    <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>
                                 </tbody>
                             </table>
                         </div>
 
                         <!-- Pagination -->
-                        @if($mismatchData->hasPages())
+                        <?php if($mismatchData->hasPages()): ?>
                         <div class="d-flex justify-content-between align-items-center mt-3">
                             <div class="text-muted">
-                                Menampilkan {{ $mismatchData->firstItem() }} - {{ $mismatchData->lastItem() }} dari {{ $mismatchData->total() }} data
+                                Menampilkan <?php echo e($mismatchData->firstItem()); ?> - <?php echo e($mismatchData->lastItem()); ?> dari <?php echo e($mismatchData->total()); ?> data
                             </div>
                             <div>
-                                {{ $mismatchData->links('pagination::bootstrap-5') }}
+                                <?php echo e($mismatchData->links('pagination::bootstrap-5')); ?>
+
                             </div>
                         </div>
-                        @endif
-                        @else
+                        <?php endif; ?>
+                        <?php else: ?>
                         <div class="alert alert-secondary">
                             <i class="bi bi-info-circle"></i> Tidak ada data untuk ditampilkan
                         </div>
-                        @endif
+                        <?php endif; ?>
                     </div>
-                    @endif
+                    <?php endif; ?>
                 </div>
             </div>
         </div>
-        @endif
+        <?php endif; ?>
 
         <!-- Pandu Set Not Realization Section -->
-        @if($selectedPeriode != 'all' && $selectedBranch != 'all' && $panduSetNotRealizationCount > 0)
+        <?php if($selectedPeriode != 'all' && $selectedBranch != 'all' && $panduSetNotRealizationCount > 0): ?>
         <div class="row mb-4">
             <div class="col-12">
                 <div class="card stat-card">
-                    @if(!$showPanduSetNotRealization)
+                    <?php if(!$showPanduSetNotRealization): ?>
                     <div class="card-body text-center py-4">
                         <i class="bi bi-exclamation-triangle-fill" style="font-size: 3rem; color: #0ea5e9;"></i>
                         <h5 class="mt-3">Pandu Set Not Realization</h5>
                         <p class="text-muted">
-                            Ditemukan <strong style="color: #0ea5e9;">{{ number_format($panduSetNotRealizationCount) }} record</strong>
+                            Ditemukan <strong style="color: #0ea5e9;"><?php echo e(number_format($panduSetNotRealizationCount)); ?> record</strong>
                             dengan Status Nota "Terbit Nota" namun Pendapatan Pandu kosong atau 0
                         </p>
-                        <a href="{{ route('dashboard', array_merge(request()->query(), ['show_pandu_set_not_realization' => 1])) }}#pandu-set-not-realization-section"
+                        <a href="<?php echo e(route('dashboard', array_merge(request()->query(), ['show_pandu_set_not_realization' => 1]))); ?>#pandu-set-not-realization-section"
                            class="btn" style="background: linear-gradient(135deg, #0ea5e9 0%, #0284c7 100%); color: white;">
                             <i class="bi bi-eye"></i> Tampilkan Data Pandu Set Not Realization
                         </a>
                     </div>
-                    @else
+                    <?php else: ?>
                     <div class="card-header" style="background: linear-gradient(135deg, #0ea5e9 0%, #0284c7 100%); color: white;" id="pandu-set-not-realization-section">
                         <div class="d-flex justify-content-between align-items-center">
                             <h5 class="mb-0">
@@ -1763,11 +1779,11 @@
                                 Pandu Set Not Realization
                             </h5>
                             <div>
-                                <a href="{{ route('export.pandu.set.not.realization', ['periode' => $selectedPeriode, 'cabang' => $selectedBranch]) }}"
+                                <a href="<?php echo e(route('export.pandu.set.not.realization', ['periode' => $selectedPeriode, 'cabang' => $selectedBranch])); ?>"
                                    class="btn btn-light btn-sm me-2">
                                     <i class="bi bi-file-earmark-excel"></i> Download Excel
                                 </a>
-                                <a href="{{ route('dashboard', array_merge(request()->query(), ['show_pandu_set_not_realization' => 0])) }}"
+                                <a href="<?php echo e(route('dashboard', array_merge(request()->query(), ['show_pandu_set_not_realization' => 0]))); ?>"
                                    class="btn btn-light btn-sm">
                                     <i class="bi bi-x-circle"></i> Sembunyikan
                                 </a>
@@ -1777,12 +1793,12 @@
                     <div class="card-body">
                         <div class="alert mb-3" style="background: #e0f2fe; border-left: 4px solid #0ea5e9; color: #0c4a6e;">
                             <i class="bi bi-info-circle-fill"></i>
-                            Ditemukan <strong>{{ number_format($panduSetNotRealizationCount) }} record</strong>
+                            Ditemukan <strong><?php echo e(number_format($panduSetNotRealizationCount)); ?> record</strong>
                             dengan kondisi: Status Nota = <strong>"Terbit Nota"</strong>, Pendapatan Pandu = <strong>kosong/0</strong>,
                             dan Jenis Kapal bukan <strong>"Abri"</strong>.
                         </div>
 
-                        @if($panduSetNotRealizationData && $panduSetNotRealizationData->count() > 0)
+                        <?php if($panduSetNotRealizationData && $panduSetNotRealizationData->count() > 0): ?>
                         <div class="table-responsive">
                             <table class="table table-hover table-striped table-sm">
                                 <thead class="table-dark">
@@ -1805,56 +1821,57 @@
                                     </tr>
                                 </thead>
                                 <tbody>
-                                    @foreach($panduSetNotRealizationData as $index => $row)
+                                    <?php $__currentLoopData = $panduSetNotRealizationData; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $index => $row): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
                                     <tr>
-                                        <td>{{ $panduSetNotRealizationData->firstItem() + $index }}</td>
-                                        <td class="text-nowrap small">{{ $row->NO_UKK ?? '-' }}</td>
-                                        <td class="text-nowrap small">{{ $row->NO_BKT_PANDU ?? '-' }}</td>
-                                        <td class="text-nowrap small"><strong>{{ $row->NM_KAPAL ?? '-' }}</strong></td>
-                                        <td class="text-nowrap small">{{ $row->JN_KAPAL ?? '-' }}</td>
-                                        <td class="text-nowrap small">{{ $row->KP_GRT ? number_format((float)$row->KP_GRT, 0, ',', '.') : '-' }}</td>
-                                        <td class="text-nowrap small">{{ $row->NM_PERS_PANDU ?? '-' }}</td>
-                                        <td class="text-nowrap small">{{ $row->MULAI_PELAKSANAAN ?? '-' }}</td>
-                                        <td class="text-nowrap small">{{ $row->SELESAI_PELAKSANAAN ?? '-' }}</td>
-                                        <td class="text-nowrap small">{{ $row->PANDU_DARI ?? '-' }}</td>
-                                        <td class="text-nowrap small">{{ $row->PANDU_KE ?? '-' }}</td>
+                                        <td><?php echo e($panduSetNotRealizationData->firstItem() + $index); ?></td>
+                                        <td class="text-nowrap small"><?php echo e($row->NO_UKK ?? '-'); ?></td>
+                                        <td class="text-nowrap small"><?php echo e($row->NO_BKT_PANDU ?? '-'); ?></td>
+                                        <td class="text-nowrap small"><strong><?php echo e($row->NM_KAPAL ?? '-'); ?></strong></td>
+                                        <td class="text-nowrap small"><?php echo e($row->JN_KAPAL ?? '-'); ?></td>
+                                        <td class="text-nowrap small"><?php echo e($row->KP_GRT ? number_format((float)$row->KP_GRT, 0, ',', '.') : '-'); ?></td>
+                                        <td class="text-nowrap small"><?php echo e($row->NM_PERS_PANDU ?? '-'); ?></td>
+                                        <td class="text-nowrap small"><?php echo e($row->MULAI_PELAKSANAAN ?? '-'); ?></td>
+                                        <td class="text-nowrap small"><?php echo e($row->SELESAI_PELAKSANAAN ?? '-'); ?></td>
+                                        <td class="text-nowrap small"><?php echo e($row->PANDU_DARI ?? '-'); ?></td>
+                                        <td class="text-nowrap small"><?php echo e($row->PANDU_KE ?? '-'); ?></td>
                                         <td class="text-nowrap small text-end">
-                                            <span class="text-danger fw-bold">{{ $row->PENDAPATAN_PANDU ?: '0' }}</span>
+                                            <span class="text-danger fw-bold"><?php echo e($row->PENDAPATAN_PANDU ?: '0'); ?></span>
                                         </td>
-                                        <td class="text-nowrap small">{{ $row->NO_PKK_INAPORTNET ?? '-' }}</td>
-                                        <td class="text-nowrap small">{{ $row->REALISAS_PILOT_VIA ?? '-' }}</td>
-                                        <td class="text-nowrap small">{{ $row->CREATED_BY ?? '-' }}</td>
+                                        <td class="text-nowrap small"><?php echo e($row->NO_PKK_INAPORTNET ?? '-'); ?></td>
+                                        <td class="text-nowrap small"><?php echo e($row->REALISAS_PILOT_VIA ?? '-'); ?></td>
+                                        <td class="text-nowrap small"><?php echo e($row->CREATED_BY ?? '-'); ?></td>
                                     </tr>
-                                    @endforeach
+                                    <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>
                                 </tbody>
                             </table>
                         </div>
 
                         <!-- Pagination -->
-                        @if($panduSetNotRealizationData->hasPages())
+                        <?php if($panduSetNotRealizationData->hasPages()): ?>
                         <div class="d-flex justify-content-between align-items-center mt-3">
                             <div class="text-muted">
-                                Menampilkan {{ $panduSetNotRealizationData->firstItem() }} - {{ $panduSetNotRealizationData->lastItem() }} dari {{ $panduSetNotRealizationData->total() }} data
+                                Menampilkan <?php echo e($panduSetNotRealizationData->firstItem()); ?> - <?php echo e($panduSetNotRealizationData->lastItem()); ?> dari <?php echo e($panduSetNotRealizationData->total()); ?> data
                             </div>
                             <div>
-                                {{ $panduSetNotRealizationData->links('pagination::bootstrap-5') }}
+                                <?php echo e($panduSetNotRealizationData->links('pagination::bootstrap-5')); ?>
+
                             </div>
                         </div>
-                        @endif
-                        @else
+                        <?php endif; ?>
+                        <?php else: ?>
                         <div class="alert alert-secondary">
                             <i class="bi bi-info-circle"></i> Tidak ada data untuk ditampilkan
                         </div>
-                        @endif
+                        <?php endif; ?>
                     </div>
-                    @endif
+                    <?php endif; ?>
                 </div>
             </div>
         </div>
-        @endif
+        <?php endif; ?>
 
         <!-- Ship Statistics by GT Range and Flag -->
-        @if(($selectedPeriode != 'all' || $selectedBranch != 'all') && $shipStatsByGT->count() > 0)
+        <?php if(($selectedPeriode != 'all' || $selectedBranch != 'all') && $shipStatsByGT->count() > 0): ?>
         <div class="row mb-4">
             <div class="col-12">
                 <div class="card stat-card">
@@ -1875,7 +1892,7 @@
                                     </tr>
                                 </thead>
                                 <tbody>
-                                    @php
+                                    <?php
                                         $currentGT = '';
                                         $totalPanduGlobal = 0;
                                         $totalTundaGlobal = 0;
@@ -1892,9 +1909,9 @@
                                         $totalTundaAsing = 0;
                                         $totalTransaksiAsing = 0;
                                         $totalPendapatanAsing = 0;
-                                    @endphp
-                                    @foreach($shipStatsByGT as $stat)
-                                        @php
+                                    ?>
+                                    <?php $__currentLoopData = $shipStatsByGT; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $stat): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
+                                        <?php
                                             $totalPanduGlobal += $stat->total_pendapatan_pandu;
                                             $totalTundaGlobal += $stat->total_pendapatan_tunda;
                                             $totalTransaksiGlobal += $stat->total_transaksi;
@@ -1913,47 +1930,48 @@
                                             }
                                             
                                             $rowspan = $shipStatsByGT->where('RANGE_GT', $stat->RANGE_GT)->count();
-                                        @endphp
+                                        ?>
                                         <tr>
-                                            @if($currentGT != $stat->RANGE_GT)
-                                                @php $currentGT = $stat->RANGE_GT; @endphp
-                                                <td rowspan="{{ $rowspan }}" class="align-middle">
-                                                    <span class="badge bg-primary">{{ str_replace(' GT', '', $stat->RANGE_GT) }}</span>
+                                            <?php if($currentGT != $stat->RANGE_GT): ?>
+                                                <?php $currentGT = $stat->RANGE_GT; ?>
+                                                <td rowspan="<?php echo e($rowspan); ?>" class="align-middle">
+                                                    <span class="badge bg-primary"><?php echo e(str_replace(' GT', '', $stat->RANGE_GT)); ?></span>
                                                 </td>
-                                            @endif
+                                            <?php endif; ?>
                                             <td>
-                                                <span class="badge {{ $stat->JENIS_KAPAL_DARI_BENDERA == 'KAPAL NASIONAL' ? 'bg-success' : 'bg-info' }}">
-                                                    {{ $stat->JENIS_KAPAL_DARI_BENDERA }}
+                                                <span class="badge <?php echo e($stat->JENIS_KAPAL_DARI_BENDERA == 'KAPAL NASIONAL' ? 'bg-success' : 'bg-info'); ?>">
+                                                    <?php echo e($stat->JENIS_KAPAL_DARI_BENDERA); ?>
+
                                                 </span>
                                             </td>
-                                            <td class="text-end">{{ number_format($stat->total_transaksi) }}</td>
-                                            <td class="text-end">Rp {{ number_format($stat->total_pendapatan_pandu, 0, ',', '.') }}</td>
-                                            <td class="text-end">Rp {{ number_format($stat->total_pendapatan_tunda, 0, ',', '.') }}</td>
-                                            <td class="text-end"><strong>Rp {{ number_format($stat->total_pendapatan, 0, ',', '.') }}</strong></td>
+                                            <td class="text-end"><?php echo e(number_format($stat->total_transaksi)); ?></td>
+                                            <td class="text-end">Rp <?php echo e(number_format($stat->total_pendapatan_pandu, 0, ',', '.')); ?></td>
+                                            <td class="text-end">Rp <?php echo e(number_format($stat->total_pendapatan_tunda, 0, ',', '.')); ?></td>
+                                            <td class="text-end"><strong>Rp <?php echo e(number_format($stat->total_pendapatan, 0, ',', '.')); ?></strong></td>
                                         </tr>
-                                    @endforeach
+                                    <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>
                                 </tbody>
                                 <tfoot>
                                     <tr class="table-success">
                                         <th colspan="2" class="text-end">Total Kapal Nasional:</th>
-                                        <th class="text-end">{{ number_format($totalTransaksiNasional) }}</th>
-                                        <th class="text-end">Rp {{ number_format($totalPanduNasional, 0, ',', '.') }}</th>
-                                        <th class="text-end">Rp {{ number_format($totalTundaNasional, 0, ',', '.') }}</th>
-                                        <th class="text-end"><strong>Rp {{ number_format($totalPendapatanNasional, 0, ',', '.') }}</strong></th>
+                                        <th class="text-end"><?php echo e(number_format($totalTransaksiNasional)); ?></th>
+                                        <th class="text-end">Rp <?php echo e(number_format($totalPanduNasional, 0, ',', '.')); ?></th>
+                                        <th class="text-end">Rp <?php echo e(number_format($totalTundaNasional, 0, ',', '.')); ?></th>
+                                        <th class="text-end"><strong>Rp <?php echo e(number_format($totalPendapatanNasional, 0, ',', '.')); ?></strong></th>
                                     </tr>
                                     <tr class="table-info">
                                         <th colspan="2" class="text-end">Total Kapal Asing:</th>
-                                        <th class="text-end">{{ number_format($totalTransaksiAsing) }}</th>
-                                        <th class="text-end">Rp {{ number_format($totalPanduAsing, 0, ',', '.') }}</th>
-                                        <th class="text-end">Rp {{ number_format($totalTundaAsing, 0, ',', '.') }}</th>
-                                        <th class="text-end"><strong>Rp {{ number_format($totalPendapatanAsing, 0, ',', '.') }}</strong></th>
+                                        <th class="text-end"><?php echo e(number_format($totalTransaksiAsing)); ?></th>
+                                        <th class="text-end">Rp <?php echo e(number_format($totalPanduAsing, 0, ',', '.')); ?></th>
+                                        <th class="text-end">Rp <?php echo e(number_format($totalTundaAsing, 0, ',', '.')); ?></th>
+                                        <th class="text-end"><strong>Rp <?php echo e(number_format($totalPendapatanAsing, 0, ',', '.')); ?></strong></th>
                                     </tr>
                                     <tr class="table-secondary">
                                         <th colspan="2" class="text-end">Total Keseluruhan:</th>
-                                        <th class="text-end">{{ number_format($totalTransaksiGlobal) }}</th>
-                                        <th class="text-end">Rp {{ number_format($totalPanduGlobal, 0, ',', '.') }}</th>
-                                        <th class="text-end">Rp {{ number_format($totalTundaGlobal, 0, ',', '.') }}</th>
-                                        <th class="text-end"><strong>Rp {{ number_format($totalPendapatanGlobal, 0, ',', '.') }}</strong></th>
+                                        <th class="text-end"><?php echo e(number_format($totalTransaksiGlobal)); ?></th>
+                                        <th class="text-end">Rp <?php echo e(number_format($totalPanduGlobal, 0, ',', '.')); ?></th>
+                                        <th class="text-end">Rp <?php echo e(number_format($totalTundaGlobal, 0, ',', '.')); ?></th>
+                                        <th class="text-end"><strong>Rp <?php echo e(number_format($totalPendapatanGlobal, 0, ',', '.')); ?></strong></th>
                                     </tr>
                                 </tfoot>
                             </table>
@@ -1962,10 +1980,10 @@
                 </div>
             </div>
         </div>
-        @endif
+        <?php endif; ?>
 
         <!-- Ship Statistics Charts by GT Range -->
-        @if(false && ($selectedPeriode != 'all' || $selectedBranch != 'all') && $shipStatsByGT->count() > 0)
+        <?php if(false && ($selectedPeriode != 'all' || $selectedBranch != 'all') && $shipStatsByGT->count() > 0): ?>
         <div class="row mb-4">
             <div class="col-12 mb-3">
                 <div class="card stat-card">
@@ -1977,45 +1995,46 @@
                             <i class="bi bi-info-circle"></i> Setiap chart menampilkan distribusi transaksi kapal nasional dan asing untuk masing-masing range GT
                         </p>
                         <div class="row">
-                            @php
+                            <?php
                                 $gtRanges = $shipStatsByGT->pluck('RANGE_GT')->unique();
-                            @endphp
-                            @foreach($gtRanges as $gtRange)
-                                @php
+                            ?>
+                            <?php $__currentLoopData = $gtRanges; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $gtRange): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
+                                <?php
                                     $gtData = $shipStatsByGT->where('RANGE_GT', $gtRange);
                                     $nasional = $gtData->where('JENIS_KAPAL_DARI_BENDERA', 'KAPAL NASIONAL')->first();
                                     $asing = $gtData->where('JENIS_KAPAL_DARI_BENDERA', 'KAPAL ASING')->first();
                                     $chartId = 'gtChart' . str_replace([' ', '-', '>', '<'], '', $gtRange);
-                                @endphp
+                                ?>
                                 <div class="col-md-4 mb-4">
                                     <div class="card" style="border: 2px solid #8b5cf6;">
                                         <div class="card-header bg-light">
                                             <h6 class="mb-0 text-center">
-                                                <i class="bi bi-ship"></i> {{ str_replace(' GT', '', $gtRange) }}
+                                                <i class="bi bi-ship"></i> <?php echo e(str_replace(' GT', '', $gtRange)); ?>
+
                                             </h6>
                                         </div>
                                         <div class="card-body">
-                                            <canvas id="{{ $chartId }}" style="max-height: 250px;"></canvas>
+                                            <canvas id="<?php echo e($chartId); ?>" style="max-height: 250px;"></canvas>
                                             <div class="mt-3">
                                                 <!-- Kapal Nasional -->
                                                 <div class="mb-3 p-3" style="background: #dcfce7; border-radius: 8px; border-left: 4px solid #22c55e;">
                                                     <div class="d-flex justify-content-between align-items-center mb-2">
                                                         <span class="badge bg-success"><i class="bi bi-flag-fill"></i> Kapal Nasional</span>
-                                                        <strong>{{ $nasional ? number_format($nasional->total_transaksi) : 0 }} transaksi</strong>
+                                                        <strong><?php echo e($nasional ? number_format($nasional->total_transaksi) : 0); ?> transaksi</strong>
                                                     </div>
                                                     <div class="row text-center mt-2">
                                                         <div class="col-6">
                                                             <small class="text-muted d-block">Pendapatan Pandu</small>
-                                                            <strong class="text-success">Rp {{ $nasional ? number_format($nasional->total_pendapatan_pandu, 0, ',', '.') : 0 }}</strong>
+                                                            <strong class="text-success">Rp <?php echo e($nasional ? number_format($nasional->total_pendapatan_pandu, 0, ',', '.') : 0); ?></strong>
                                                         </div>
                                                         <div class="col-6">
                                                             <small class="text-muted d-block">Pendapatan Tunda</small>
-                                                            <strong class="text-success">Rp {{ $nasional ? number_format($nasional->total_pendapatan_tunda, 0, ',', '.') : 0 }}</strong>
+                                                            <strong class="text-success">Rp <?php echo e($nasional ? number_format($nasional->total_pendapatan_tunda, 0, ',', '.') : 0); ?></strong>
                                                         </div>
                                                     </div>
                                                     <div class="text-center mt-2 pt-2" style="border-top: 1px solid #86efac;">
                                                         <small class="text-muted">Total Pendapatan:</small>
-                                                        <div><strong class="text-success">Rp {{ $nasional ? number_format($nasional->total_pendapatan, 0, ',', '.') : 0 }}</strong></div>
+                                                        <div><strong class="text-success">Rp <?php echo e($nasional ? number_format($nasional->total_pendapatan, 0, ',', '.') : 0); ?></strong></div>
                                                     </div>
                                                 </div>
                                                 
@@ -2023,71 +2042,74 @@
                                                 <div class="p-3" style="background: #dbeafe; border-radius: 8px; border-left: 4px solid #3b82f6;">
                                                     <div class="d-flex justify-content-between align-items-center mb-2">
                                                         <span class="badge bg-info"><i class="bi bi-globe"></i> Kapal Asing</span>
-                                                        <strong>{{ $asing ? number_format($asing->total_transaksi) : 0 }} transaksi</strong>
+                                                        <strong><?php echo e($asing ? number_format($asing->total_transaksi) : 0); ?> transaksi</strong>
                                                     </div>
                                                     <div class="row text-center mt-2">
                                                         <div class="col-6">
                                                             <small class="text-muted d-block">Pendapatan Pandu</small>
-                                                            <strong class="text-info">Rp {{ $asing ? number_format($asing->total_pendapatan_pandu, 0, ',', '.') : 0 }}</strong>
+                                                            <strong class="text-info">Rp <?php echo e($asing ? number_format($asing->total_pendapatan_pandu, 0, ',', '.') : 0); ?></strong>
                                                         </div>
                                                         <div class="col-6">
                                                             <small class="text-muted d-block">Pendapatan Tunda</small>
-                                                            <strong class="text-info">Rp {{ $asing ? number_format($asing->total_pendapatan_tunda, 0, ',', '.') : 0 }}</strong>
+                                                            <strong class="text-info">Rp <?php echo e($asing ? number_format($asing->total_pendapatan_tunda, 0, ',', '.') : 0); ?></strong>
                                                         </div>
                                                     </div>
                                                     <div class="text-center mt-2 pt-2" style="border-top: 1px solid #93c5fd;">
                                                         <small class="text-muted">Total Pendapatan:</small>
-                                                        <div><strong class="text-info">Rp {{ $asing ? number_format($asing->total_pendapatan, 0, ',', '.') : 0 }}</strong></div>
+                                                        <div><strong class="text-info">Rp <?php echo e($asing ? number_format($asing->total_pendapatan, 0, ',', '.') : 0); ?></strong></div>
                                                     </div>
                                                 </div>
                                             </div>
                                         </div>
                                     </div>
                                 </div>
-                            @endforeach
+                            <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>
                         </div>
                     </div>
                 </div>
             </div>
         </div>
-        @endif
+        <?php endif; ?>
         <!-- Pilot Cards -->
-        @if($selectedPeriode != 'all' && $selectedBranch != 'all')
+        <?php if($selectedPeriode != 'all' && $selectedBranch != 'all'): ?>
         <div class="row">
-            @foreach($statistics as $stat)
+            <?php $__currentLoopData = $statistics; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $stat): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
                 <div class="col-md-4 mb-4">
                     <div class="card stat-card">
                         <div class="card-body">
                             <div class="d-flex justify-content-between align-items-center mb-3">
                                 <h5 class="card-title text-primary mb-0">
-                                    <i class="bi bi-person-badge"></i> {{ $stat->NM_PERS_PANDU }}
+                                    <i class="bi bi-person-badge"></i> <?php echo e($stat->NM_PERS_PANDU); ?>
+
                                 </h5>
                                 <span class="grt-gerak-badge">
-                                    <i class="bi bi-speedometer2"></i> GRT | GERAK: {{ number_format($stat->total_grt, 0, ',', '.') }} | {{ $stat->total_transaksi }}
+                                    <i class="bi bi-speedometer2"></i> GRT | GERAK: <?php echo e(number_format($stat->total_grt, 0, ',', '.')); ?> | <?php echo e($stat->total_transaksi); ?>
+
                                 </span>
                             </div>
                             <div class="mb-2">
                                 <span class="badge bg-info">
-                                    <i class="bi bi-clock-history"></i> Rata-Rata WT: {{ number_format($stat->rata_rata_wt, 2) }}
+                                    <i class="bi bi-clock-history"></i> Rata-Rata WT: <?php echo e(number_format($stat->rata_rata_wt, 2)); ?>
+
                                 </span>
                                 <span class="badge bg-warning text-dark">
-                                    <i class="bi bi-clock"></i> WT > 00:30: {{ $stat->transaksi_wt_di_atas_30 }} kali
+                                    <i class="bi bi-clock"></i> WT > 00:30: <?php echo e($stat->transaksi_wt_di_atas_30); ?> kali
                                 </span>
                             </div>
                             <hr>
                             <div class="row">
                                 <div class="col-6">
                                     <p class="text-muted mb-1">Pendapatan Pandu</p>
-                                    <h6 class="text-success">Rp {{ number_format($stat->total_pendapatan_pandu, 0, ',', '.') }}</h6>
+                                    <h6 class="text-success">Rp <?php echo e(number_format($stat->total_pendapatan_pandu, 0, ',', '.')); ?></h6>
                                 </div>
                                 <div class="col-6">
                                     <p class="text-muted mb-1">Pendapatan Tunda</p>
-                                    <h6 class="text-info">Rp {{ number_format($stat->total_pendapatan_tunda, 0, ',', '.') }}</h6>
+                                    <h6 class="text-info">Rp <?php echo e(number_format($stat->total_pendapatan_tunda, 0, ',', '.')); ?></h6>
                                 </div>
                             </div>
                             <hr>
                             <div class="mb-2">
-                                <i class="bi bi-bar-chart"></i> Total Transaksi: <strong>{{ $stat->total_transaksi }}</strong>
+                                <i class="bi bi-bar-chart"></i> Total Transaksi: <strong><?php echo e($stat->total_transaksi); ?></strong>
                             </div>
                             
                             <!-- Realisasi Via Mobile/Web -->
@@ -2095,45 +2117,45 @@
                                 <p class="text-muted mb-2"><i class="bi bi-device-ssd"></i> Realisasi Via:</p>
                                 <div>
                                     <span class="via-badge via-mobile">
-                                        <i class="bi bi-phone"></i> Mobile: <strong>{{ $stat->via_mobile }}</strong>
+                                        <i class="bi bi-phone"></i> Mobile: <strong><?php echo e($stat->via_mobile); ?></strong>
                                     </span>
                                     <span class="via-badge via-web">
-                                        <i class="bi bi-laptop"></i> Web: <strong>{{ $stat->via_web }}</strong>
+                                        <i class="bi bi-laptop"></i> Web: <strong><?php echo e($stat->via_web); ?></strong>
                                     </span>
-                                    @if($stat->via_partial > 0)
+                                    <?php if($stat->via_partial > 0): ?>
                                         <span class="via-badge">
-                                            <i class="bi bi-puzzle"></i> Partial: <strong>{{ $stat->via_partial }}</strong>
+                                            <i class="bi bi-puzzle"></i> Partial: <strong><?php echo e($stat->via_partial); ?></strong>
                                         </span>
-                                    @endif
+                                    <?php endif; ?>
                                 </div>
                             </div>
 
-                            @if($stat->ship_types && count($stat->ship_types) > 0)
+                            <?php if($stat->ship_types && count($stat->ship_types) > 0): ?>
                                 <div class="mt-3">
-                                    <button class="btn btn-sm btn-outline-primary" type="button" data-bs-toggle="collapse" data-bs-target="#ship-types-{{ $loop->index }}">
-                                        <i class="bi bi-ship"></i> Jenis Kapal Yang Dilayani ({{ count($stat->ship_types) }})
+                                    <button class="btn btn-sm btn-outline-primary" type="button" data-bs-toggle="collapse" data-bs-target="#ship-types-<?php echo e($loop->index); ?>">
+                                        <i class="bi bi-ship"></i> Jenis Kapal Yang Dilayani (<?php echo e(count($stat->ship_types)); ?>)
                                     </button>
                                     
-                                    <div class="collapse mt-3" id="ship-types-{{ $loop->index }}">
+                                    <div class="collapse mt-3" id="ship-types-<?php echo e($loop->index); ?>">
                                         <div class="ship-types-container">
                                             <p class="text-muted mb-2"><i class="bi bi-ship"></i> Jenis Kapal:</p>
                                             <div>
-                                                @foreach($stat->ship_types as $shipType)
+                                                <?php $__currentLoopData = $stat->ship_types; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $shipType): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
                                                     <span class="ship-type-badge">
-                                                        {{ $shipType->JN_KAPAL }} <strong>({{ $shipType->jumlah }})</strong>
+                                                        <?php echo e($shipType->JN_KAPAL); ?> <strong>(<?php echo e($shipType->jumlah); ?>)</strong>
                                                     </span>
-                                                @endforeach
+                                                <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>
                                             </div>
                                         </div>
                                     </div>
                                 </div>
-                            @endif
+                            <?php endif; ?>
                         </div>
                     </div>
                 </div>
-            @endforeach
+            <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>
         </div>
-        @endif
+        <?php endif; ?>
 
         <!-- CSV Upload Section -->
         <div class="row mb-4">
@@ -2141,8 +2163,8 @@
                 <div class="card stat-card">
                     <div class="card-body">
                         <h5 class="card-title"><i class="bi bi-upload"></i> Upload File CSV</h5>
-                        <form action="{{ route('upload.csv') }}" method="POST" enctype="multipart/form-data">
-                            @csrf
+                        <form action="<?php echo e(route('upload.csv')); ?>" method="POST" enctype="multipart/form-data">
+                            <?php echo csrf_field(); ?>
                             <div class="row align-items-end">
                                 <div class="col-md-8">
                                     <input type="file" name="csv_file" class="form-control" accept=".csv,.txt" required>
@@ -2152,53 +2174,54 @@
                                     <button type="submit" class="btn btn-primary w-100"><i class="bi bi-upload"></i> Upload</button>
                                 </div>
                                 <div class="col-md-2">
-                                    <a href="{{ route('clear.data') }}" class="btn btn-danger w-100" onclick="return confirm('Yakin ingin menghapus semua data?')">
+                                    <a href="<?php echo e(route('clear.data')); ?>" class="btn btn-danger w-100" onclick="return confirm('Yakin ingin menghapus semua data?')">
                                         <i class="bi bi-trash"></i> Clear Data
                                     </a>
                                 </div>
                             </div>
                         </form>
                         
-                        @if(session('success'))
+                        <?php if(session('success')): ?>
                             <div class="alert alert-success mt-3">
-                                <i class="bi bi-check-circle-fill"></i> {{ session('success') }}
+                                <i class="bi bi-check-circle-fill"></i> <?php echo e(session('success')); ?>
+
                             </div>
-                        @endif
+                        <?php endif; ?>
                         
-                        @if($errors->any())
+                        <?php if($errors->any()): ?>
                             <div class="alert alert-danger mt-3">
                                 <i class="bi bi-exclamation-triangle-fill"></i>
                                 <strong>Error:</strong>
                                 <ul class="mb-0 mt-2">
-                                    @foreach($errors->all() as $error)
-                                        <li>{{ $error }}</li>
-                                    @endforeach
+                                    <?php $__currentLoopData = $errors->all(); $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $error): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
+                                        <li><?php echo e($error); ?></li>
+                                    <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>
                                 </ul>
                             </div>
-                        @endif
+                        <?php endif; ?>
                         
-                        @if(session('import_errors') && count(session('import_errors')) > 0)
+                        <?php if(session('import_errors') && count(session('import_errors')) > 0): ?>
                             <div class="alert alert-warning mt-3">
                                 <i class="bi bi-info-circle-fill"></i>
                                 <strong>Warning pada beberapa baris:</strong>
                                 <ul class="mb-0 mt-2">
-                                    @foreach(session('import_errors') as $error)
-                                        <li>{{ $error }}</li>
-                                    @endforeach
+                                    <?php $__currentLoopData = session('import_errors'); $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $error): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
+                                        <li><?php echo e($error); ?></li>
+                                    <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>
                                 </ul>
                             </div>
-                        @endif
+                        <?php endif; ?>
                     </div>
                 </div>
             </div>
         </div>
     </div>
-    @endif
+    <?php endif; ?>
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js" integrity="sha384-geWF76RCwLtnZ8qwWowPQNguL3RmwHVBC9FhGdlKrxdiJJigb/j/68SIy3Te4Bkz" crossorigin="anonymous"></script>
     <script>
         // Prepare data for charts
-        const chartData = @json($chartData ?? []);
+        const chartData = <?php echo json_encode($chartData ?? [], 15, 512) ?>;
         
         // Only create charts if data exists
         if (chartData && chartData.length > 0) {
@@ -2248,7 +2271,7 @@
         }
 
         // Ship Statistics by GT Range Charts
-        const shipStatsByGT = @json($shipStatsByGT ?? []);
+        const shipStatsByGT = <?php echo json_encode($shipStatsByGT ?? [], 15, 512) ?>;
         
         if (shipStatsByGT && shipStatsByGT.length > 0) {
             // Group data by GT Range
@@ -2352,10 +2375,10 @@
         }
         // Nota Summary donut (minimal)
         (function(){
-            const terbit = {{ $totalOverall['total_nota'] ?? 0 }};
-            const batal = {{ $totalOverall['nota_batal'] ?? 0 }};
-            const menunggu = {{ $totalOverall['menunggu_nota'] ?? 0 }};
-            const belum = {{ $totalOverall['belum_verifikasi'] ?? 0 }};
+            const terbit = <?php echo e($totalOverall['total_nota'] ?? 0); ?>;
+            const batal = <?php echo e($totalOverall['nota_batal'] ?? 0); ?>;
+            const menunggu = <?php echo e($totalOverall['menunggu_nota'] ?? 0); ?>;
+            const belum = <?php echo e($totalOverall['belum_verifikasi'] ?? 0); ?>;
             const total = terbit + batal + menunggu + belum;
 
             const notaCtxEl = document.getElementById('notaSummaryChart');
@@ -2411,7 +2434,7 @@
 
         // Custom semicircular gauge for Kecepatan Terbit (Bentuk 3)
         // Move data to canvas attributes and use external JS module for rendering/animation
-        const speedVal = {{ $totalOverall['kecepatan_terbit_nota'] ?? 0 }};
+        const speedVal = <?php echo e($totalOverall['kecepatan_terbit_nota'] ?? 0); ?>;
         const speedCanvas = document.getElementById('speedometerChart');
         if (speedCanvas) {
             speedCanvas.setAttribute('data-speed-value', speedVal);
@@ -2476,46 +2499,6 @@
             });
         });
     </script>
-
-    {{-- Capture lokasi GPS pengunjung (butuh izin browser) dan kirim ke server --}}
-    <script>
-        (function () {
-            function sendLocation(payload) {
-                var csrfToken = document.querySelector('meta[name="csrf-token"]');
-                fetch("{{ route('visitors.api.location') }}", {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'X-CSRF-TOKEN': csrfToken ? csrfToken.content : '',
-                        'Accept': 'application/json',
-                    },
-                    body: JSON.stringify(payload),
-                }).catch(function () {
-                    // Abaikan error jaringan, jangan ganggu pengalaman user
-                });
-            }
-
-            if (!('geolocation' in navigator)) {
-                sendLocation({ status: 'unsupported' });
-                return;
-            }
-
-            navigator.geolocation.getCurrentPosition(
-                function (position) {
-                    sendLocation({
-                        status: 'granted',
-                        latitude: position.coords.latitude,
-                        longitude: position.coords.longitude,
-                        accuracy: position.coords.accuracy,
-                    });
-                },
-                function (error) {
-                    // error.code 1 = PERMISSION_DENIED, 2 = POSITION_UNAVAILABLE, 3 = TIMEOUT
-                    sendLocation({ status: error.code === 1 ? 'denied' : 'error' });
-                },
-                { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 }
-            );
-        })();
-    </script>
 </body>
 </html>
+<?php /**PATH /Users/irwan/Downloads/project ai/lhgk/resources/views/dashboard.blade.php ENDPATH**/ ?>

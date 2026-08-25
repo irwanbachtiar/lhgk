@@ -252,6 +252,38 @@ class VisitorController extends Controller
     }
 
     /**
+     * Terima koordinat GPS dari browser pengunjung (dipanggil via fetch()
+     * setelah user mengizinkan akses lokasi lewat prompt bawaan browser)
+     * dan simpan ke record visitor yang bersangkutan.
+     */
+    public function storeLocation(Request $request)
+    {
+        $request->validate([
+            'status' => 'required|string|in:granted,denied,unsupported,error',
+            'latitude' => 'nullable|numeric|between:-90,90',
+            'longitude' => 'nullable|numeric|between:-180,180',
+            'accuracy' => 'nullable|numeric',
+        ]);
+
+        $visitorId = $request->session()->get('visitor_track_id');
+
+        if ($visitorId) {
+            $visitor = Visitor::find($visitorId);
+
+            if ($visitor) {
+                $visitor->update([
+                    'latitude' => $request->input('latitude'),
+                    'longitude' => $request->input('longitude'),
+                    'location_accuracy' => $request->input('accuracy'),
+                    'location_status' => $request->input('status'),
+                ]);
+            }
+        }
+
+        return response()->json(['success' => true]);
+    }
+
+    /**
      * Export data visitor ke CSV
      */
     public function export(Request $request)
@@ -281,7 +313,10 @@ class VisitorController extends Controller
                 'Device',
                 'Device Name',
                 'Halaman',
-                'Waktu Kunjungan'
+                'Waktu Kunjungan',
+                'Latitude',
+                'Longitude',
+                'Status Lokasi'
             ]);
 
             foreach ($visitors as $visitor) {
@@ -293,6 +328,9 @@ class VisitorController extends Controller
                     $visitor->device_name ?? '-',
                     $visitor->page_url ?? '-',
                     $visitor->visited_at->format('Y-m-d H:i:s'),
+                    $visitor->latitude ?? '-',
+                    $visitor->longitude ?? '-',
+                    $visitor->location_status ?? '-',
                 ]);
             }
 
