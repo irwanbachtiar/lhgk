@@ -90,4 +90,4 @@
         </div>
     </nav>
 <?php endif; ?>
-<?php /**PATH D:\project ai\lhgk\vendor\laravel\framework\src\Illuminate\Pagination/resources/views/bootstrap-5.blade.php ENDPATH**/ ?>
+<?php /**PATH /Users/irwan/Downloads/project ai/lhgk/vendor/laravel/framework/src/Illuminate/Pagination/resources/views/bootstrap-5.blade.php ENDPATH**/ ?>

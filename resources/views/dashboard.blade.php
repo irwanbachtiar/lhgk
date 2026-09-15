@@ -784,7 +784,7 @@
                     <div class="card-body">
                         <div class="alert alert-warning mb-3">
                             <i class="bi bi-info-circle-fill"></i>
-                            <strong>{{ number_format($pkkManualCount) }} transaksi</strong> memiliki nilai kolom <code>NO_PKK_INAPORTNET</code> yang tidak dimulai dengan format <strong>PKK</strong> (kemungkinan diinput manual).
+                            <strong>{{ number_format($pkkManualCount) }} transaksi</strong> memiliki kolom <code>NO_PKK_INAPORTNET</code> yang kosong (belum diisi via Inaportnet) atau tidak berformat <strong>PKK</strong> (kemungkinan diinput manual menggunakan <code>NO_PKK</code> internal).
                         </div>
 
                         @if($pkkManualData && $pkkManualData->count() > 0)
@@ -795,12 +795,13 @@
                                         <th>No</th>
                                         <th>No. UKK</th>
                                         <th>Nama Kapal</th>
+                                        <th>Jenis Kapal</th>
                                         <th>Nama Pandu</th>
-                                        <th>Cabang</th>
                                         <th>Gerakan</th>
                                         <th>Mulai Pelaksanaan</th>
                                         <th>Selesai Pelaksanaan</th>
                                         <th>No. PKK Inaportnet</th>
+                                        <th>No. PKK (Manual)</th>
                                         <th class="text-end">Pendapatan Pandu</th>
                                         <th class="text-end">Pendapatan Tunda</th>
                                     </tr>
@@ -811,8 +812,8 @@
                                         <td>{{ $pkkManualData->firstItem() + $index }}</td>
                                         <td><span class="badge bg-secondary">{{ $data->NO_UKK }}</span></td>
                                         <td><strong>{{ $data->NM_KAPAL }}</strong></td>
+                                        <td>{{ $data->JN_KAPAL ?: '-' }}</td>
                                         <td>{{ $data->NM_PERS_PANDU }}</td>
-                                        <td>{{ $data->NM_BRANCH }}</td>
                                         <td>
                                             <span class="badge {{ strtoupper($data->GERAKAN) == 'DEPARTURE' ? 'bg-danger' : 'bg-primary' }}">
                                                 {{ strtoupper($data->GERAKAN) }}
@@ -821,7 +822,14 @@
                                         <td>{{ $data->MULAI_PELAKSANAAN }}</td>
                                         <td>{{ $data->SELESAI_PELAKSANAAN }}</td>
                                         <td>
-                                            <span class="badge bg-warning text-dark">{{ $data->NO_PKK_INAPORTNET }}</span>
+                                            @if($data->NO_PKK_INAPORTNET)
+                                                <span class="badge bg-warning text-dark">{{ $data->NO_PKK_INAPORTNET }}</span>
+                                            @else
+                                                <span class="text-muted">Kosong</span>
+                                            @endif
+                                        </td>
+                                        <td>
+                                            <span class="badge bg-info text-dark">{{ $data->NO_PKK ?: '-' }}</span>
                                         </td>
                                         <td class="text-end">Rp {{ number_format($data->PENDAPATAN_PANDU, 0, ',', '.') }}</td>
                                         <td class="text-end">Rp {{ number_format($data->PENDAPATAN_TUNDA, 0, ',', '.') }}</td>

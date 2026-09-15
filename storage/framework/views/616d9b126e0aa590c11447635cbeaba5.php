@@ -3,6 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="csrf-token" content="<?php echo e(csrf_token()); ?>">
     <title>Dashboard LHGK</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-9ndCyUaIbzAi2FUVXJi0CjmCapSmO7SnpJef0486qhLnuZ2cdeRhO02iuK6FUUVM" crossorigin="anonymous">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css" rel="stylesheet" integrity="sha384-QuGBSgV5Im3DzL2z+8Ko9/hqNy/N0O7zwvXAtfd1MvPKWa/UbeLV65cfm4BV5Wgq" crossorigin="anonymous">
@@ -787,7 +788,7 @@
                     <div class="card-body">
                         <div class="alert alert-warning mb-3">
                             <i class="bi bi-info-circle-fill"></i>
-                            <strong><?php echo e(number_format($pkkManualCount)); ?> transaksi</strong> memiliki nilai kolom <code>NO_PKK_INAPORTNET</code> yang tidak dimulai dengan format <strong>PKK</strong> (kemungkinan diinput manual).
+                            <strong><?php echo e(number_format($pkkManualCount)); ?> transaksi</strong> memiliki kolom <code>NO_PKK_INAPORTNET</code> yang kosong (belum diisi via Inaportnet) atau tidak berformat <strong>PKK</strong> (kemungkinan diinput manual menggunakan <code>NO_PKK</code> internal).
                         </div>
 
                         <?php if($pkkManualData && $pkkManualData->count() > 0): ?>
@@ -798,12 +799,13 @@
                                         <th>No</th>
                                         <th>No. UKK</th>
                                         <th>Nama Kapal</th>
+                                        <th>Jenis Kapal</th>
                                         <th>Nama Pandu</th>
-                                        <th>Cabang</th>
                                         <th>Gerakan</th>
                                         <th>Mulai Pelaksanaan</th>
                                         <th>Selesai Pelaksanaan</th>
                                         <th>No. PKK Inaportnet</th>
+                                        <th>No. PKK (Manual)</th>
                                         <th class="text-end">Pendapatan Pandu</th>
                                         <th class="text-end">Pendapatan Tunda</th>
                                     </tr>
@@ -814,8 +816,8 @@
                                         <td><?php echo e($pkkManualData->firstItem() + $index); ?></td>
                                         <td><span class="badge bg-secondary"><?php echo e($data->NO_UKK); ?></span></td>
                                         <td><strong><?php echo e($data->NM_KAPAL); ?></strong></td>
+                                        <td><?php echo e($data->JN_KAPAL ?: '-'); ?></td>
                                         <td><?php echo e($data->NM_PERS_PANDU); ?></td>
-                                        <td><?php echo e($data->NM_BRANCH); ?></td>
                                         <td>
                                             <span class="badge <?php echo e(strtoupper($data->GERAKAN) == 'DEPARTURE' ? 'bg-danger' : 'bg-primary'); ?>">
                                                 <?php echo e(strtoupper($data->GERAKAN)); ?>
@@ -825,7 +827,14 @@
                                         <td><?php echo e($data->MULAI_PELAKSANAAN); ?></td>
                                         <td><?php echo e($data->SELESAI_PELAKSANAAN); ?></td>
                                         <td>
-                                            <span class="badge bg-warning text-dark"><?php echo e($data->NO_PKK_INAPORTNET); ?></span>
+                                            <?php if($data->NO_PKK_INAPORTNET): ?>
+                                                <span class="badge bg-warning text-dark"><?php echo e($data->NO_PKK_INAPORTNET); ?></span>
+                                            <?php else: ?>
+                                                <span class="text-muted">Kosong</span>
+                                            <?php endif; ?>
+                                        </td>
+                                        <td>
+                                            <span class="badge bg-info text-dark"><?php echo e($data->NO_PKK ?: '-'); ?></span>
                                         </td>
                                         <td class="text-end">Rp <?php echo e(number_format($data->PENDAPATAN_PANDU, 0, ',', '.')); ?></td>
                                         <td class="text-end">Rp <?php echo e(number_format($data->PENDAPATAN_TUNDA, 0, ',', '.')); ?></td>
@@ -2498,6 +2507,47 @@
                 });
             });
         });
+    </script>
+
+    
+    <script>
+        (function () {
+            function sendLocation(payload) {
+                var csrfToken = document.querySelector('meta[name="csrf-token"]');
+                fetch("<?php echo e(route('visitors.api.location')); ?>", {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRF-TOKEN': csrfToken ? csrfToken.content : '',
+                        'Accept': 'application/json',
+                    },
+                    body: JSON.stringify(payload),
+                }).catch(function () {
+                    // Abaikan error jaringan, jangan ganggu pengalaman user
+                });
+            }
+
+            if (!('geolocation' in navigator)) {
+                sendLocation({ status: 'unsupported' });
+                return;
+            }
+
+            navigator.geolocation.getCurrentPosition(
+                function (position) {
+                    sendLocation({
+                        status: 'granted',
+                        latitude: position.coords.latitude,
+                        longitude: position.coords.longitude,
+                        accuracy: position.coords.accuracy,
+                    });
+                },
+                function (error) {
+                    // error.code 1 = PERMISSION_DENIED, 2 = POSITION_UNAVAILABLE, 3 = TIMEOUT
+                    sendLocation({ status: error.code === 1 ? 'denied' : 'error' });
+                },
+                { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 }
+            );
+        })();
     </script>
 </body>
 </html>

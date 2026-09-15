@@ -425,10 +425,17 @@ class DashboardController extends Controller
                     ->appends(request()->query());
             }
 
-            // PKK Manual count
-            $pkkManualCount = Lhgk::whereNotNull('NO_PKK_INAPORTNET')
-                ->where('NO_PKK_INAPORTNET', '!=', '')
-                ->whereRaw("NO_PKK_INAPORTNET NOT LIKE 'PKK%'")
+            // PKK Manual: NO_PKK_INAPORTNET kosong/null (belum diisi via Inaportnet)
+            // ATAU terisi tapi tidak berformat standar "PKK...." -> kemungkinan diinput manual
+            $pkkManualFilter = function ($query) {
+                return $query->where(function ($q) {
+                    $q->whereNull('NO_PKK_INAPORTNET')
+                        ->orWhere('NO_PKK_INAPORTNET', '')
+                        ->orWhereRaw("NO_PKK_INAPORTNET NOT LIKE 'PKK%'");
+                });
+            };
+
+            $pkkManualCount = $pkkManualFilter(Lhgk::query())
                 ->where('PERIODE', $selectedPeriode)
                 ->where('NM_BRANCH', $selectedBranch)
                 ->count();
@@ -436,21 +443,19 @@ class DashboardController extends Controller
             // Load PKK manual data only if requested
             $pkkManualData = null;
             if ($showPkkManual && $pkkManualCount > 0) {
-                $pkkManualData = Lhgk::select(
+                $pkkManualData = $pkkManualFilter(Lhgk::select(
                         'NO_UKK',
                         'NM_KAPAL',
+                        'JN_KAPAL',
                         'NM_PERS_PANDU',
-                        'NM_BRANCH',
                         'GERAKAN',
                         'MULAI_PELAKSANAAN',
                         'SELESAI_PELAKSANAAN',
                         'NO_PKK_INAPORTNET',
+                        'NO_PKK',
                         'PENDAPATAN_PANDU',
                         'PENDAPATAN_TUNDA'
-                    )
-                    ->whereNotNull('NO_PKK_INAPORTNET')
-                    ->where('NO_PKK_INAPORTNET', '!=', '')
-                    ->whereRaw("NO_PKK_INAPORTNET NOT LIKE 'PKK%'")
+                    ))
                     ->where('PERIODE', $selectedPeriode)
                     ->where('NM_BRANCH', $selectedBranch)
                     ->orderBy('MULAI_PELAKSANAAN', 'desc')
