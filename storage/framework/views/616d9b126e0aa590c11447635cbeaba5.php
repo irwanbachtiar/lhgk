@@ -1879,6 +1879,128 @@
         </div>
         <?php endif; ?>
 
+        <!-- Siklus Pelayanan Section -->
+        <?php if($selectedPeriode != 'all' && $selectedBranch != 'all'): ?>
+        <div class="row mb-4">
+            <div class="col-12">
+                <div class="card stat-card">
+                    <?php if($siklusPelayananCount == 0): ?>
+                    <div class="card-body text-center py-4">
+                        <i class="bi bi-check-circle text-success" style="font-size: 3rem;"></i>
+                        <h5 class="mt-3">Siklus Pelayanan</h5>
+                        <p class="text-muted">
+                            <strong class="text-success">Tidak ada</strong> siklus pelayanan pandu yang terputus.
+                            Urutan Pandu Dari - Pandu Ke pada setiap No. UKK sudah berantai dengan benar.
+                        </p>
+                    </div>
+                    <?php elseif(!$showSiklusPelayanan): ?>
+                    <div class="card-body text-center py-4">
+                        <i class="bi bi-exclamation-triangle text-warning" style="font-size: 3rem;"></i>
+                        <h5 class="mt-3">Siklus Pelayanan</h5>
+                        <p class="text-muted">
+                            Ditemukan <strong class="text-warning"><?php echo e(number_format($siklusPelayananCount)); ?> No. UKK</strong>
+                            dengan siklus pelayanan pandu yang terputus (Pandu Ke tahap sebelumnya tidak sama dengan Pandu Dari tahap berikutnya)
+                        </p>
+                        <a href="<?php echo e(route('dashboard', array_merge(request()->query(), ['show_siklus_pelayanan' => 1]))); ?>#siklus-pelayanan-section"
+                           class="btn btn-warning">
+                            <i class="bi bi-eye"></i> Tampilkan Data Siklus Pelayanan
+                        </a>
+                    </div>
+                    <?php else: ?>
+                    <div class="card-header" style="background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%); color: white;" id="siklus-pelayanan-section">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <h5 class="mb-0">
+                                <i class="bi bi-arrow-repeat"></i>
+                                Siklus Pelayanan - Rangkaian Pandu Dari/Ke Terputus
+                            </h5>
+                            <div>
+                                <a href="<?php echo e(route('export.siklus.pelayanan', ['periode' => $selectedPeriode, 'cabang' => $selectedBranch])); ?>"
+                                   class="btn btn-light btn-sm me-2">
+                                    <i class="bi bi-file-earmark-excel"></i> Download Excel
+                                </a>
+                                <a href="<?php echo e(route('dashboard', array_merge(request()->query(), ['show_siklus_pelayanan' => 0]))); ?>"
+                                   class="btn btn-light btn-sm">
+                                    <i class="bi bi-x-circle"></i> Sembunyikan
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="card-body">
+                        <div class="alert alert-warning mb-3">
+                            <i class="bi bi-info-circle-fill"></i>
+                            <strong><?php echo e(number_format($siklusPelayananCount)); ?> No. UKK</strong> memiliki rangkaian pandu yang terputus:
+                            nilai <code>PANDU_KE</code> di urutan <code>PPKB_KE</code> sebelumnya tidak sama dengan <code>PANDU_DARI</code>
+                            pada urutan berikutnya (contoh: PPKB_KE 1 Pandu Ke = Dermaga, tapi PPKB_KE 2 Pandu Dari ≠ Dermaga).
+                            Seluruh tahapan (PPKB_KE) dari No. UKK yang bersangkutan ditampilkan agar rangkaiannya terlihat utuh —
+                            baris yang <span class="badge bg-danger">merah</span> adalah titik putusnya.
+                        </div>
+
+                        <?php if($siklusPelayananData && $siklusPelayananData->count() > 0): ?>
+                        <div class="table-responsive">
+                            <table class="table table-hover table-striped table-sm">
+                                <thead class="table-dark">
+                                    <tr>
+                                        <th style="width:48px">No</th>
+                                        <th>PPKB Code</th>
+                                        <th>No. UKK</th>
+                                        <th>Nama Kapal</th>
+                                        <th>PPKB Ke</th>
+                                        <th>Mulai Pelaksanaan</th>
+                                        <th>Selesai Pelaksanaan</th>
+                                        <th>Pandu Dari</th>
+                                        <th>Pandu Ke</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <?php $__currentLoopData = $siklusPelayananData; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $index => $row): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
+                                    <tr class="<?php echo e($row->IS_MISMATCH ? 'table-danger' : ''); ?>">
+                                        <td><?php echo e($siklusPelayananData->firstItem() + $index); ?></td>
+                                        <td class="text-nowrap small"><?php echo e($row->PPKB_CODE ?? '-'); ?></td>
+                                        <td class="text-nowrap small"><span class="badge bg-secondary"><?php echo e($row->NO_UKK ?? '-'); ?></span></td>
+                                        <td class="text-nowrap small"><strong><?php echo e($row->NM_KAPAL ?? '-'); ?></strong></td>
+                                        <td class="text-nowrap small"><?php echo e($row->PPKB_KE ?? '-'); ?></td>
+                                        <td class="text-nowrap small"><?php echo e($row->MULAI_PELAKSANAAN ?? '-'); ?></td>
+                                        <td class="text-nowrap small"><?php echo e($row->SELESAI_PELAKSANAAN ?? '-'); ?></td>
+                                        <td class="text-nowrap small">
+                                            <?php if($row->IS_MISMATCH): ?>
+                                                <span class="badge bg-danger"><?php echo e($row->PANDU_DARI ?? '-'); ?></span>
+                                                <div class="text-muted" style="font-size:0.75rem;">seharusnya: <?php echo e($row->PREV_PANDU_KE ?? '-'); ?></div>
+                                            <?php else: ?>
+                                                <?php echo e($row->PANDU_DARI ?? '-'); ?>
+
+                                            <?php endif; ?>
+                                        </td>
+                                        <td class="text-nowrap small"><?php echo e($row->PANDU_KE ?? '-'); ?></td>
+                                    </tr>
+                                    <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>
+                                </tbody>
+                            </table>
+                        </div>
+
+                        <!-- Pagination -->
+                        <?php if($siklusPelayananData->hasPages()): ?>
+                        <div class="d-flex justify-content-between align-items-center mt-3">
+                            <div class="text-muted">
+                                Menampilkan <?php echo e($siklusPelayananData->firstItem()); ?> - <?php echo e($siklusPelayananData->lastItem()); ?> dari <?php echo e($siklusPelayananData->total()); ?> data
+                            </div>
+                            <div>
+                                <?php echo e($siklusPelayananData->links('pagination::bootstrap-5')); ?>
+
+                            </div>
+                        </div>
+                        <?php endif; ?>
+                        <?php else: ?>
+                        <div class="alert alert-secondary">
+                            <i class="bi bi-info-circle"></i> Tidak ada data untuk ditampilkan
+                        </div>
+                        <?php endif; ?>
+                    </div>
+                    <?php endif; ?>
+                </div>
+            </div>
+        </div>
+        <?php endif; ?>
+
         <!-- Ship Statistics by GT Range and Flag -->
         <?php if(($selectedPeriode != 'all' || $selectedBranch != 'all') && $shipStatsByGT->count() > 0): ?>
         <div class="row mb-4">

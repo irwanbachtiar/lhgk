@@ -309,6 +309,7 @@ class DashboardController extends Controller
             $showDurasiPemanduan0 = $request->get('show_durasi_pemanduan_0', 0);
             $showMismatch = $request->get('show_mismatch', 0);
             $showPanduSetNotRealization = $request->get('show_pandu_set_not_realization', 0);
+            $showSiklusPelayanan = $request->get('show_siklus_pelayanan', 0);
             $filterStatusNota = $request->get('filter_status_nota', 'all');
             
             // Count queries for section visibility
@@ -745,6 +746,22 @@ class DashboardController extends Controller
                     ->paginate(15)
                     ->appends(request()->query());
             }
+
+            // Siklus Pelayanan: dalam satu NO_UKK, urutan pergerakan pandu (PPKB_KE)
+            // harus berantai -> PANDU_KE baris sebelumnya harus sama dengan
+            // PANDU_DARI baris berikutnya. Kalau satu NO_UKK punya baris yang tidak
+            // nyambung, tampilkan SELURUH baris NO_UKK itu (bukan hanya baris yang putus)
+            // supaya rangkaian pandu dari awal sampai akhir kelihatan utuh.
+            $siklusPelayananCount = DB::query()
+                ->fromSub($this->siklusPelayananAffectedUkkQuery($selectedPeriode, $selectedBranch), 'x')
+                ->count();
+
+            $siklusPelayananData = null;
+            if ($showSiklusPelayanan && $siklusPelayananCount > 0) {
+                $siklusPelayananData = $this->siklusPelayananDataQuery($selectedPeriode, $selectedBranch)
+                    ->paginate(30)
+                    ->appends(request()->query());
+            }
         } else {
             $showDeparture = false;
             $departureDelayCount = 0;
@@ -780,10 +797,59 @@ class DashboardController extends Controller
             $showPanduSetNotRealization = false;
             $panduSetNotRealizationCount = 0;
             $panduSetNotRealizationData = null;
+            $showSiklusPelayanan = false;
+            $siklusPelayananCount = 0;
+            $siklusPelayananData = null;
         }
 
         // Show main dashboard view with filters, but without data until filters are selected
-        return view('dashboard', compact('statistics', 'chartData', 'totalOverall', 'periods', 'selectedPeriode', 'regionalGroups', 'allBranches', 'selectedBranch', 'topPilot', 'shipStatsByGT', 'showDeparture', 'departureDelayCount', 'departureDelayData', 'showStatusNota', 'statusNotaCount', 'statusNotaData', 'filterStatusNota', 'showWaitingTime', 'waitingTimeCount', 'waitingTimeData', 'showPkkManual', 'pkkManualCount', 'pkkManualData', 'showBackdate', 'backdateCount', 'backdateData', 'showRealisasiWeb', 'realisasiWebCount', 'realisasiWebData', 'realisasiPandu', 'realisasiTunda', 'totalTundaDistinct', 'showAnomali', 'anomaliCount', 'anomaliData', 'showDurasiPemanduan0', 'durasiPemanduan0Count', 'durasiPemanduan0Data', 'showMismatch', 'mismatchCount', 'mismatchData', 'mismatchDebugError', 'mismatchColumns', 'mismatchPkkInaportnetCol', 'showPanduSetNotRealization', 'panduSetNotRealizationCount', 'panduSetNotRealizationData'));
+        return view('dashboard', compact('statistics', 'chartData', 'totalOverall', 'periods', 'selectedPeriode', 'regionalGroups', 'allBranches', 'selectedBranch', 'topPilot', 'shipStatsByGT', 'showDeparture', 'departureDelayCount', 'departureDelayData', 'showStatusNota', 'statusNotaCount', 'statusNotaData', 'filterStatusNota', 'showWaitingTime', 'waitingTimeCount', 'waitingTimeData', 'showPkkManual', 'pkkManualCount', 'pkkManualData', 'showBackdate', 'backdateCount', 'backdateData', 'showRealisasiWeb', 'realisasiWebCount', 'realisasiWebData', 'realisasiPandu', 'realisasiTunda', 'totalTundaDistinct', 'showAnomali', 'anomaliCount', 'anomaliData', 'showDurasiPemanduan0', 'durasiPemanduan0Count', 'durasiPemanduan0Data', 'showMismatch', 'mismatchCount', 'mismatchData', 'mismatchDebugError', 'mismatchColumns', 'mismatchPkkInaportnetCol', 'showPanduSetNotRealization', 'panduSetNotRealizationCount', 'panduSetNotRealizationData', 'showSiklusPelayanan', 'siklusPelayananCount', 'siklusPelayananData'));
+    }
+
+    /**
+     * Query dasar: setiap baris lhgk (per NO_UKK, diurutkan PPKB_KE) beserta
+     * PANDU_KE dari baris sebelumnya (PREV_PANDU_KE) untuk NO_UKK yang sama.
+     */
+    private function siklusPelayananSequenceQuery($periode, $branch)
+    {
+        return DB::table('lhgk')
+            ->select('PPKB_CODE', 'NO_UKK', 'NM_KAPAL', 'PPKB_KE', 'MULAI_PELAKSANAAN', 'SELESAI_PELAKSANAAN', 'PANDU_DARI', 'PANDU_KE')
+            ->selectRaw('LAG(PANDU_KE) OVER (PARTITION BY NO_UKK ORDER BY PPKB_KE) as PREV_PANDU_KE')
+            ->where('PERIODE', $periode)
+            ->where('NM_BRANCH', $branch)
+            ->whereNotNull('PPKB_KE')
+            ->whereNotNull('NO_UKK')
+            ->where('NO_UKK', '!=', '');
+    }
+
+    /**
+     * NO_UKK yang punya minimal satu baris siklus pelayanan yang terputus
+     * (PANDU_DARI baris ini tidak sama dengan PANDU_KE baris sebelumnya).
+     */
+    private function siklusPelayananAffectedUkkQuery($periode, $branch)
+    {
+        return DB::query()
+            ->fromSub($this->siklusPelayananSequenceQuery($periode, $branch), 't')
+            ->whereNotNull('PREV_PANDU_KE')
+            ->whereRaw('UPPER(TRIM(PREV_PANDU_KE)) <> UPPER(TRIM(PANDU_DARI))')
+            ->select('NO_UKK')
+            ->distinct();
+    }
+
+    /**
+     * Seluruh baris (semua PPKB_KE) milik NO_UKK yang terdeteksi bermasalah,
+     * diurutkan berdasarkan NO_UKK lalu PPKB_KE, dengan flag IS_MISMATCH
+     * untuk menandai baris yang jadi titik putusnya.
+     */
+    private function siklusPelayananDataQuery($periode, $branch)
+    {
+        return DB::query()
+            ->fromSub($this->siklusPelayananSequenceQuery($periode, $branch), 't')
+            ->select('t.*')
+            ->selectRaw('CASE WHEN PREV_PANDU_KE IS NOT NULL AND UPPER(TRIM(PREV_PANDU_KE)) <> UPPER(TRIM(PANDU_DARI)) THEN 1 ELSE 0 END as IS_MISMATCH')
+            ->whereIn('NO_UKK', $this->siklusPelayananAffectedUkkQuery($periode, $branch))
+            ->orderBy('NO_UKK')
+            ->orderBy('PPKB_KE');
     }
 
     private function getRegionalGroups()
@@ -1995,6 +2061,53 @@ class DashboardController extends Controller
                     $row->NO_PKK_INAPORTNET ?? '',
                     $row->REALISAS_PILOT_VIA ?? '',
                     $row->CREATED_BY ?? '',
+                ]);
+            }
+            fclose($file);
+        };
+
+        return response()->stream($callback, 200, $headers);
+    }
+
+    public function exportSiklusPelayanan(Request $request)
+    {
+        $selectedPeriode = $request->get('periode');
+        $selectedBranch  = $request->get('cabang');
+
+        if (!$selectedPeriode || !$selectedBranch) {
+            return redirect()->back()->with('error', 'Pilih periode dan cabang terlebih dahulu');
+        }
+
+        try {
+            $data = $this->siklusPelayananDataQuery($selectedPeriode, $selectedBranch)->get();
+        } catch (\Exception $e) {
+            return redirect()->back()->with('error', 'Gagal mengambil data: ' . $e->getMessage());
+        }
+
+        $filename = 'siklus_pelayanan_' . $selectedPeriode . '_' . str_replace(' ', '_', $selectedBranch) . '.csv';
+
+        $headers = [
+            'Content-Type'        => 'text/csv; charset=UTF-8',
+            'Content-Disposition' => 'attachment; filename="' . $filename . '"',
+        ];
+
+        $callback = function () use ($data) {
+            $file = fopen('php://output', 'w');
+            fprintf($file, chr(0xEF) . chr(0xBB) . chr(0xBF));
+            fputcsv($file, ['No', 'PPKB Code', 'No UKK', 'Nama Kapal', 'PPKB Ke', 'Mulai Pelaksanaan', 'Selesai Pelaksanaan', 'Pandu Dari', 'Pandu Ke', 'Keterangan']);
+            $no = 1;
+            foreach ($data as $row) {
+                fputcsv($file, [
+                    $no++,
+                    $row->PPKB_CODE ?? '',
+                    $row->NO_UKK ?? '',
+                    $row->NM_KAPAL ?? '',
+                    $row->PPKB_KE ?? '',
+                    $row->MULAI_PELAKSANAAN ?? '',
+                    $row->SELESAI_PELAKSANAAN ?? '',
+                    $row->PANDU_DARI ?? '',
+                    $row->PANDU_KE ?? '',
+                    $row->IS_MISMATCH ? 'Siklus terputus (seharusnya Pandu Dari = ' . ($row->PREV_PANDU_KE ?? '-') . ')' : '',
                 ]);
             }
             fclose($file);
