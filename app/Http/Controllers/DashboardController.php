@@ -310,6 +310,7 @@ class DashboardController extends Controller
             $showMismatch = $request->get('show_mismatch', 0);
             $showPanduSetNotRealization = $request->get('show_pandu_set_not_realization', 0);
             $showSiklusPelayanan = $request->get('show_siklus_pelayanan', 0);
+            $showDeployVsRealisasi = $request->get('show_deploy_vs_realisasi', 0);
             $filterStatusNota = $request->get('filter_status_nota', 'all');
             
             // Count queries for section visibility
@@ -366,6 +367,12 @@ class DashboardController extends Controller
                 ->where('PERIODE', $selectedPeriode)
                 ->where('NM_BRANCH', $selectedBranch)
                 ->count();
+
+            // Total PPKB pada periode & cabang terpilih, untuk pembanding persentase backdate
+            $totalPpkbCount = Lhgk::where('PERIODE', $selectedPeriode)
+                ->where('NM_BRANCH', $selectedBranch)
+                ->count();
+            $backdatePercentage = $totalPpkbCount > 0 ? round(($backdateCount / $totalPpkbCount) * 100, 2) : 0;
 
             // Realisasi Web: REALISAS_PILOT_VIA = 'WEB'
             $realisasiWebCount = Lhgk::whereRaw("UPPER(REALISAS_PILOT_VIA) = 'WEB'")
@@ -734,6 +741,8 @@ class DashboardController extends Controller
                         'NO_BKT_PANDU',
                         'NM_KAPAL',
                         'NM_PERS_PANDU',
+                        'PPKB_SUBMIT',
+                        'MULAI_PELAKSANAAN',
                         'PANDU_DARI',
                         'PANDU_KE',
                         'REALISAS_PILOT_VIA',
@@ -762,6 +771,37 @@ class DashboardController extends Controller
                     ->paginate(30)
                     ->appends(request()->query());
             }
+
+            // Deploy vs Realisasi: PILOT_DEPLOY seharusnya tercatat lebih awal dari
+            // MULAI_PELAKSANAAN (pandu di-deploy dulu baru pekerjaan dimulai).
+            // Dianggap anomali kalau PILOT_DEPLOY lebih telat dari MULAI_PELAKSANAAN.
+            $deployVsRealisasiCount = $this->deployVsRealisasiBaseQuery($selectedPeriode, $selectedBranch)->count();
+
+            $deployVsRealisasiData = null;
+            if ($showDeployVsRealisasi && $deployVsRealisasiCount > 0) {
+                $deployVsRealisasiData = $this->deployVsRealisasiBaseQuery($selectedPeriode, $selectedBranch)
+                    ->select(
+                        'PPKB_CODE',
+                        'PPKB_SUBMIT',
+                        'NO_UKK',
+                        'NO_BKT_PANDU',
+                        'NM_KAPAL',
+                        'JN_KAPAL',
+                        'KP_GRT',
+                        'KP_LOA',
+                        'NM_PERS_PANDU',
+                        'MULAI_PELAKSANAAN',
+                        'SELESAI_PELAKSANAAN',
+                        'PANDU_DARI',
+                        'PANDU_KE',
+                        'NO_PKK_INAPORTNET',
+                        'PILOT_DEPLOY'
+                    )
+                    ->selectRaw($this->deployVsRealisasiSelisihExpr())
+                    ->orderBy('MULAI_PELAKSANAAN', 'desc')
+                    ->paginate(15)
+                    ->appends(request()->query());
+            }
         } else {
             $showDeparture = false;
             $departureDelayCount = 0;
@@ -779,6 +819,8 @@ class DashboardController extends Controller
             $showBackdate = false;
             $backdateCount = 0;
             $backdateData = null;
+            $totalPpkbCount = 0;
+            $backdatePercentage = 0;
             $showRealisasiWeb = false;
             $realisasiWebCount = 0;
             $realisasiWebData = null;
@@ -800,10 +842,13 @@ class DashboardController extends Controller
             $showSiklusPelayanan = false;
             $siklusPelayananCount = 0;
             $siklusPelayananData = null;
+            $showDeployVsRealisasi = false;
+            $deployVsRealisasiCount = 0;
+            $deployVsRealisasiData = null;
         }
 
         // Show main dashboard view with filters, but without data until filters are selected
-        return view('dashboard', compact('statistics', 'chartData', 'totalOverall', 'periods', 'selectedPeriode', 'regionalGroups', 'allBranches', 'selectedBranch', 'topPilot', 'shipStatsByGT', 'showDeparture', 'departureDelayCount', 'departureDelayData', 'showStatusNota', 'statusNotaCount', 'statusNotaData', 'filterStatusNota', 'showWaitingTime', 'waitingTimeCount', 'waitingTimeData', 'showPkkManual', 'pkkManualCount', 'pkkManualData', 'showBackdate', 'backdateCount', 'backdateData', 'showRealisasiWeb', 'realisasiWebCount', 'realisasiWebData', 'realisasiPandu', 'realisasiTunda', 'totalTundaDistinct', 'showAnomali', 'anomaliCount', 'anomaliData', 'showDurasiPemanduan0', 'durasiPemanduan0Count', 'durasiPemanduan0Data', 'showMismatch', 'mismatchCount', 'mismatchData', 'mismatchDebugError', 'mismatchColumns', 'mismatchPkkInaportnetCol', 'showPanduSetNotRealization', 'panduSetNotRealizationCount', 'panduSetNotRealizationData', 'showSiklusPelayanan', 'siklusPelayananCount', 'siklusPelayananData'));
+        return view('dashboard', compact('statistics', 'chartData', 'totalOverall', 'periods', 'selectedPeriode', 'regionalGroups', 'allBranches', 'selectedBranch', 'topPilot', 'shipStatsByGT', 'showDeparture', 'departureDelayCount', 'departureDelayData', 'showStatusNota', 'statusNotaCount', 'statusNotaData', 'filterStatusNota', 'showWaitingTime', 'waitingTimeCount', 'waitingTimeData', 'showPkkManual', 'pkkManualCount', 'pkkManualData', 'showBackdate', 'backdateCount', 'backdateData', 'totalPpkbCount', 'backdatePercentage', 'showRealisasiWeb', 'realisasiWebCount', 'realisasiWebData', 'realisasiPandu', 'realisasiTunda', 'totalTundaDistinct', 'showAnomali', 'anomaliCount', 'anomaliData', 'showDurasiPemanduan0', 'durasiPemanduan0Count', 'durasiPemanduan0Data', 'showMismatch', 'mismatchCount', 'mismatchData', 'mismatchDebugError', 'mismatchColumns', 'mismatchPkkInaportnetCol', 'showPanduSetNotRealization', 'panduSetNotRealizationCount', 'panduSetNotRealizationData', 'showSiklusPelayanan', 'siklusPelayananCount', 'siklusPelayananData', 'showDeployVsRealisasi', 'deployVsRealisasiCount', 'deployVsRealisasiData'));
     }
 
     /**
@@ -850,6 +895,45 @@ class DashboardController extends Controller
             ->whereIn('NO_UKK', $this->siklusPelayananAffectedUkkQuery($periode, $branch))
             ->orderBy('NO_UKK')
             ->orderBy('PPKB_KE');
+    }
+
+    /**
+     * Deploy vs Realisasi: baris dianggap anomali kalau PILOT_DEPLOY tercatat
+     * lebih telat (>) dari MULAI_PELAKSANAAN -- idealnya pandu di-deploy
+     * terlebih dahulu sebelum pekerjaan pemanduan dimulai.
+     */
+    private function deployVsRealisasiBaseQuery($periode, $branch)
+    {
+        return Lhgk::whereNotNull('PILOT_DEPLOY')
+            ->where('PILOT_DEPLOY', '!=', '')
+            ->whereNotNull('MULAI_PELAKSANAAN')
+            ->where('MULAI_PELAKSANAAN', '!=', '')
+            ->whereRaw("STR_TO_DATE(PILOT_DEPLOY, '%d-%m-%Y %H:%i') > STR_TO_DATE(MULAI_PELAKSANAAN, '%d-%m-%Y %H:%i')")
+            ->where('PERIODE', $periode)
+            ->where('NM_BRANCH', $branch);
+    }
+
+    /**
+     * Ekspresi SQL selisih (dalam menit) antara PILOT_DEPLOY dan MULAI_PELAKSANAAN,
+     * dipakai untuk kolom "Selisih" di tabel maupun export Deploy vs Realisasi.
+     */
+    private function deployVsRealisasiSelisihExpr()
+    {
+        return "TIMESTAMPDIFF(MINUTE, STR_TO_DATE(MULAI_PELAKSANAAN, '%d-%m-%Y %H:%i'), STR_TO_DATE(PILOT_DEPLOY, '%d-%m-%Y %H:%i')) as SELISIH_MENIT";
+    }
+
+    /**
+     * Format selisih menit jadi string "Xj Ym" / "Ym" yang gampang dibaca.
+     */
+    private function formatSelisihMenit($menit)
+    {
+        if ($menit === null) {
+            return '-';
+        }
+        $menit = (int) $menit;
+        $jam = intdiv($menit, 60);
+        $sisaMenit = $menit % 60;
+        return $jam > 0 ? "{$jam}j {$sisaMenit}m" : "{$sisaMenit}m";
     }
 
     private function getRegionalGroups()
@@ -2116,6 +2200,84 @@ class DashboardController extends Controller
         return response()->stream($callback, 200, $headers);
     }
 
+    public function exportDeployVsRealisasi(Request $request)
+    {
+        $selectedPeriode = $request->get('periode');
+        $selectedBranch  = $request->get('cabang');
+
+        if (!$selectedPeriode || !$selectedBranch) {
+            return redirect()->back()->with('error', 'Pilih periode dan cabang terlebih dahulu');
+        }
+
+        try {
+            $data = $this->deployVsRealisasiBaseQuery($selectedPeriode, $selectedBranch)
+                ->select(
+                    'PPKB_CODE',
+                    'PPKB_SUBMIT',
+                    'NO_UKK',
+                    'NO_BKT_PANDU',
+                    'NM_KAPAL',
+                    'JN_KAPAL',
+                    'KP_GRT',
+                    'KP_LOA',
+                    'NM_PERS_PANDU',
+                    'MULAI_PELAKSANAAN',
+                    'SELESAI_PELAKSANAAN',
+                    'PANDU_DARI',
+                    'PANDU_KE',
+                    'NO_PKK_INAPORTNET',
+                    'PILOT_DEPLOY'
+                )
+                ->selectRaw($this->deployVsRealisasiSelisihExpr())
+                ->orderBy('MULAI_PELAKSANAAN', 'desc')
+                ->get();
+        } catch (\Exception $e) {
+            return redirect()->back()->with('error', 'Gagal mengambil data: ' . $e->getMessage());
+        }
+
+        $filename = 'Deploy_vs_Realisasi_' . str_replace(' ', '_', $selectedBranch) . '_' . str_replace('-', '', $selectedPeriode) . '_' . date('YmdHis') . '.csv';
+
+        $headers = [
+            'Content-Type'        => 'text/csv; charset=UTF-8',
+            'Content-Disposition' => 'attachment; filename="' . $filename . '"',
+        ];
+
+        $callback = function () use ($data) {
+            $file = fopen('php://output', 'w');
+            fprintf($file, chr(0xEF) . chr(0xBB) . chr(0xBF));
+            fputcsv($file, [
+                'No', 'PPKB Code', 'PPKB Submit', 'No UKK', 'No Bukti Pandu', 'Nama Kapal', 'Jenis Kapal',
+                'GRT', 'LOA', 'Nama Personil Pandu', 'Mulai Pelaksanaan', 'Selesai Pelaksanaan',
+                'Pandu Dari', 'Pandu Ke', 'No PKK Inaportnet', 'Pilot Deploy', 'Selisih'
+            ]);
+            $no = 1;
+            foreach ($data as $row) {
+                fputcsv($file, [
+                    $no++,
+                    $row->PPKB_CODE ?? '',
+                    $row->PPKB_SUBMIT ?? '',
+                    $row->NO_UKK ?? '',
+                    $row->NO_BKT_PANDU ?? '',
+                    $row->NM_KAPAL ?? '',
+                    $row->JN_KAPAL ?? '',
+                    $row->KP_GRT ?? '',
+                    $row->KP_LOA ?? '',
+                    $row->NM_PERS_PANDU ?? '',
+                    $row->MULAI_PELAKSANAAN ?? '',
+                    $row->SELESAI_PELAKSANAAN ?? '',
+                    $row->PANDU_DARI ?? '',
+                    $row->PANDU_KE ?? '',
+                    $row->NO_PKK_INAPORTNET ?? '',
+                    $row->PILOT_DEPLOY ?? '',
+                    $this->formatSelisihMenit($row->SELISIH_MENIT ?? null),
+                ]);
+            }
+            fclose($file);
+        };
+
+        return response()->stream($callback, 200, $headers);
+    }
+
     public function exportDurasiPemanduan0(Request $request)
     {
         $selectedPeriode = $request->get('periode');
@@ -2513,6 +2675,8 @@ class DashboardController extends Controller
                 'NO_BKT_PANDU',
                 'NM_KAPAL',
                 'NM_PERS_PANDU',
+                'PPKB_SUBMIT',
+                'MULAI_PELAKSANAAN',
                 'PANDU_DARI',
                 'PANDU_KE',
                 'REALISAS_PILOT_VIA',
@@ -2552,6 +2716,8 @@ class DashboardController extends Controller
                 'No. Bukti Pandu',
                 'Nama Kapal',
                 'Nama Pandu',
+                'PPKB Submit',
+                'Mulai Pelaksanaan',
                 'Pandu Dari',
                 'Pandu Ke',
                 'Realisasi Pilot Via',
@@ -2567,6 +2733,8 @@ class DashboardController extends Controller
                     $row->NO_BKT_PANDU       ?? '-',
                     $row->NM_KAPAL           ?? '-',
                     $row->NM_PERS_PANDU      ?? '-',
+                    $row->PPKB_SUBMIT        ?? '-',
+                    $row->MULAI_PELAKSANAAN  ?? '-',
                     $row->PANDU_DARI         ?? '-',
                     $row->PANDU_KE           ?? '-',
                     $row->REALISAS_PILOT_VIA ?? '-',

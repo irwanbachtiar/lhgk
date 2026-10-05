@@ -28,6 +28,7 @@ Route::get('/export-anomali', [DashboardController::class, 'exportAnomali'])->na
 Route::get('/export-mismatch', [DashboardController::class, 'exportMismatch'])->name('export.mismatch');
 Route::get('/export-pandu-set-not-realization', [DashboardController::class, 'exportPanduSetNotRealization'])->name('export.pandu.set.not.realization');
 Route::get('/export-siklus-pelayanan', [DashboardController::class, 'exportSiklusPelayanan'])->name('export.siklus.pelayanan');
+Route::get('/export-deploy-vs-realisasi', [DashboardController::class, 'exportDeployVsRealisasi'])->name('export.deploy.vs.realisasi');
 Route::get('/export-backdate', [DashboardController::class, 'exportBackdate'])->name('export.backdate');
 Route::get('/export-realisasi-web', [DashboardController::class, 'exportRealisasiWeb'])->name('export.realisasi.web');
 

@@ -1017,6 +1017,8 @@
                         <p class="text-muted">
                             Ditemukan <strong class="text-danger">{{ number_format($backdateCount) }} transaksi</strong>
                             dengan tanggal mulai pelaksanaan lebih awal dari tanggal PPKB Submit (backdate)
+                            dari total <strong>{{ number_format($totalPpkbCount) }} PPKB</strong>
+                            (<strong class="text-danger">{{ number_format($backdatePercentage, 2) }}%</strong>)
                         </p>
                         <a href="{{ route('dashboard', ['periode' => $selectedPeriode, 'cabang' => $selectedBranch, 'show_backdate' => 1]) }}#backdate-section"
                            class="btn btn-danger">
@@ -1046,9 +1048,34 @@
                         <div class="alert alert-danger mb-3">
                             <i class="bi bi-exclamation-triangle-fill"></i>
                             <strong>{{ number_format($backdateCount) }} transaksi</strong> terdeteksi sebagai backdate —
-                            tanggal <strong>Mulai Pelaksanaan</strong> lebih awal dari tanggal <strong>PPKB Submit</strong>.
+                            tanggal <strong>Mulai Pelaksanaan</strong> lebih awal dari tanggal <strong>PPKB Submit</strong>,
+                            dari total <strong>{{ number_format($totalPpkbCount) }} PPKB</strong> pada periode & cabang ini.
                             <div class="mt-2">
                                 <small class="text-muted">Data diurutkan berdasarkan mulai pelaksanaan terbaru</small>
+                            </div>
+                        </div>
+
+                        <div class="row mb-3">
+                            <div class="col-md-4 mb-2">
+                                <div class="p-3 rounded" style="background:#fee2e2;">
+                                    <div class="text-muted small">Total PPKB</div>
+                                    <div class="fs-4 fw-bold">{{ number_format($totalPpkbCount) }}</div>
+                                </div>
+                            </div>
+                            <div class="col-md-4 mb-2">
+                                <div class="p-3 rounded" style="background:#fee2e2;">
+                                    <div class="text-muted small">PPKB Backdate</div>
+                                    <div class="fs-4 fw-bold text-danger">{{ number_format($backdateCount) }}</div>
+                                </div>
+                            </div>
+                            <div class="col-md-4 mb-2">
+                                <div class="p-3 rounded" style="background:#fee2e2;">
+                                    <div class="text-muted small">Persentase Backdate</div>
+                                    <div class="fs-4 fw-bold text-danger">{{ number_format($backdatePercentage, 2) }}%</div>
+                                    <div class="progress mt-1" style="height:6px;">
+                                        <div class="progress-bar bg-danger" style="width: {{ min($backdatePercentage, 100) }}%"></div>
+                                    </div>
+                                </div>
                             </div>
                         </div>
 
@@ -1190,6 +1217,8 @@
                                         <th style="width:150px">No. Bukti Pandu</th>
                                         <th style="width:220px">Nama Kapal</th>
                                         <th style="width:180px">Nama Pandu</th>
+                                        <th style="width:150px">PPKB Submit</th>
+                                        <th style="width:150px">Mulai Pelaksanaan</th>
                                         <th style="width:180px">Pandu Dari</th>
                                         <th style="width:180px">Pandu Ke</th>
                                         <th class="text-center" style="width:130px">Realisasi Via</th>
@@ -1205,6 +1234,8 @@
                                         <td class="text-nowrap small">{{ $row->NO_BKT_PANDU ?? '-' }}</td>
                                         <td class="nm-kapal"><strong title="{{ $row->NM_KAPAL }}">{{ Str::limit($row->NM_KAPAL, 35) }}</strong></td>
                                         <td class="text-nowrap small">{{ $row->NM_PERS_PANDU ?? '-' }}</td>
+                                        <td class="text-nowrap small">{{ $row->PPKB_SUBMIT ?? '-' }}</td>
+                                        <td class="text-nowrap small">{{ $row->MULAI_PELAKSANAAN ?? '-' }}</td>
                                         <td class="text-nowrap small">{{ $row->PANDU_DARI ?? '-' }}</td>
                                         <td class="text-nowrap small">{{ $row->PANDU_KE ?? '-' }}</td>
                                         <td class="text-center">
@@ -1966,6 +1997,151 @@
                             </div>
                             <div>
                                 {{ $siklusPelayananData->links('pagination::bootstrap-5') }}
+                            </div>
+                        </div>
+                        @endif
+                        @else
+                        <div class="alert alert-secondary">
+                            <i class="bi bi-info-circle"></i> Tidak ada data untuk ditampilkan
+                        </div>
+                        @endif
+                    </div>
+                    @endif
+                </div>
+            </div>
+        </div>
+        @endif
+
+        <!-- Deploy vs Realisasi Section -->
+        @if($selectedPeriode != 'all' && $selectedBranch != 'all')
+        <div class="row mb-4">
+            <div class="col-12">
+                <div class="card stat-card">
+                    @if($deployVsRealisasiCount == 0)
+                    <div class="card-body text-center py-4">
+                        <i class="bi bi-check-circle text-success" style="font-size: 3rem;"></i>
+                        <h5 class="mt-3">Deploy vs Realisasi</h5>
+                        <p class="text-muted">
+                            <strong class="text-success">Tidak ada</strong> anomali Pilot Deploy.
+                            Seluruh Pilot Deploy tercatat lebih awal dari Mulai Pelaksanaan.
+                        </p>
+                    </div>
+                    @elseif(!$showDeployVsRealisasi)
+                    <div class="card-body text-center py-4">
+                        <i class="bi bi-exclamation-triangle text-warning" style="font-size: 3rem;"></i>
+                        <h5 class="mt-3">Deploy vs Realisasi</h5>
+                        <p class="text-muted">
+                            Ditemukan <strong class="text-warning">{{ number_format($deployVsRealisasiCount) }} transaksi</strong>
+                            dengan Pilot Deploy lebih telat dari Mulai Pelaksanaan
+                        </p>
+                        <a href="{{ route('dashboard', array_merge(request()->query(), ['show_deploy_vs_realisasi' => 1])) }}#deploy-vs-realisasi-section"
+                           class="btn btn-warning">
+                            <i class="bi bi-eye"></i> Tampilkan Data Deploy vs Realisasi
+                        </a>
+                    </div>
+                    @else
+                    <div class="card-header" style="background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%); color: white;" id="deploy-vs-realisasi-section">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <h5 class="mb-0">
+                                <i class="bi bi-person-badge"></i>
+                                Deploy vs Realisasi - Pilot Deploy Terlambat
+                            </h5>
+                            <div>
+                                <a href="{{ route('export.deploy.vs.realisasi', ['periode' => $selectedPeriode, 'cabang' => $selectedBranch]) }}"
+                                   class="btn btn-light btn-sm me-2">
+                                    <i class="bi bi-file-earmark-excel"></i> Download Excel
+                                </a>
+                                <a href="{{ route('dashboard', array_merge(request()->query(), ['show_deploy_vs_realisasi' => 0])) }}"
+                                   class="btn btn-light btn-sm">
+                                    <i class="bi bi-x-circle"></i> Sembunyikan
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="card-body">
+                        <div class="alert alert-warning mb-3">
+                            <i class="bi bi-info-circle-fill"></i>
+                            <strong>{{ number_format($deployVsRealisasiCount) }} transaksi</strong> di mana <code>PILOT_DEPLOY</code>
+                            tercatat lebih telat dari <code>MULAI_PELAKSANAAN</code> — seharusnya pandu
+                            di-deploy terlebih dahulu sebelum pekerjaan pemanduan dimulai.
+                            <div class="mt-2">
+                                <small class="text-muted">
+                                    Dua nilai yang dibandingkan untuk hitung kolom Selisih ditandai badge:
+                                    <span class="badge bg-primary">Mulai Pelaksanaan</span>
+                                    <span class="badge bg-danger">Pilot Deploy</span>
+                                </small>
+                            </div>
+                        </div>
+
+                        @if($deployVsRealisasiData && $deployVsRealisasiData->count() > 0)
+                        <div class="table-responsive">
+                            <table class="table table-hover table-striped table-sm">
+                                <thead class="table-dark">
+                                    <tr>
+                                        <th style="width:48px">No</th>
+                                        <th>PPKB Code</th>
+                                        <th>PPKB Submit</th>
+                                        <th>No. UKK</th>
+                                        <th>No. Bukti Pandu</th>
+                                        <th>Nama Kapal</th>
+                                        <th>Jenis Kapal</th>
+                                        <th>GRT</th>
+                                        <th>LOA</th>
+                                        <th>Nama Personil Pandu</th>
+                                        <th>Mulai Pelaksanaan</th>
+                                        <th>Selesai Pelaksanaan</th>
+                                        <th>Pandu Dari</th>
+                                        <th>Pandu Ke</th>
+                                        <th>No. PKK Inaportnet</th>
+                                        <th>Pilot Deploy</th>
+                                        <th>Selisih</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    @foreach($deployVsRealisasiData as $index => $row)
+                                    <tr>
+                                        <td>{{ $deployVsRealisasiData->firstItem() + $index }}</td>
+                                        <td class="text-nowrap small">{{ $row->PPKB_CODE ?? '-' }}</td>
+                                        <td class="text-nowrap small">{{ $row->PPKB_SUBMIT ?? '-' }}</td>
+                                        <td class="text-nowrap small"><span class="badge bg-secondary">{{ $row->NO_UKK ?? '-' }}</span></td>
+                                        <td class="text-nowrap small">{{ $row->NO_BKT_PANDU ?? '-' }}</td>
+                                        <td class="text-nowrap small"><strong>{{ $row->NM_KAPAL ?? '-' }}</strong></td>
+                                        <td class="text-nowrap small">{{ $row->JN_KAPAL ?? '-' }}</td>
+                                        <td class="text-nowrap small">{{ $row->KP_GRT ? number_format((float)$row->KP_GRT, 0, ',', '.') : '-' }}</td>
+                                        <td class="text-nowrap small">{{ $row->KP_LOA ?? '-' }}</td>
+                                        <td class="text-nowrap small">{{ $row->NM_PERS_PANDU ?? '-' }}</td>
+                                        <td class="text-nowrap small">
+                                            <span class="badge bg-primary" title="Nilai yang dibandingkan untuk hitung selisih">{{ $row->MULAI_PELAKSANAAN ?? '-' }}</span>
+                                        </td>
+                                        <td class="text-nowrap small">{{ $row->SELESAI_PELAKSANAAN ?? '-' }}</td>
+                                        <td class="text-nowrap small">{{ $row->PANDU_DARI ?? '-' }}</td>
+                                        <td class="text-nowrap small">{{ $row->PANDU_KE ?? '-' }}</td>
+                                        <td class="text-nowrap small">{{ $row->NO_PKK_INAPORTNET ?? '-' }}</td>
+                                        <td class="text-nowrap small">
+                                            <span class="badge bg-danger" title="Nilai yang dibandingkan untuk hitung selisih">{{ $row->PILOT_DEPLOY ?? '-' }}</span>
+                                        </td>
+                                        <td class="text-nowrap small">
+                                            @php
+                                                $selisihMenit = (int) ($row->SELISIH_MENIT ?? 0);
+                                                $selisihJam = intdiv($selisihMenit, 60);
+                                                $selisihSisaMenit = $selisihMenit % 60;
+                                            @endphp
+                                            <span class="badge bg-danger">{{ $selisihJam > 0 ? $selisihJam.'j '.$selisihSisaMenit.'m' : $selisihSisaMenit.'m' }}</span>
+                                        </td>
+                                    </tr>
+                                    @endforeach
+                                </tbody>
+                            </table>
+                        </div>
+
+                        <!-- Pagination -->
+                        @if($deployVsRealisasiData->hasPages())
+                        <div class="d-flex justify-content-between align-items-center mt-3">
+                            <div class="text-muted">
+                                Menampilkan {{ $deployVsRealisasiData->firstItem() }} - {{ $deployVsRealisasiData->lastItem() }} dari {{ $deployVsRealisasiData->total() }} data
+                            </div>
+                            <div>
+                                {{ $deployVsRealisasiData->links('pagination::bootstrap-5') }}
                             </div>
                         </div>
                         @endif
