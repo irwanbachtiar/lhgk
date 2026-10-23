@@ -417,8 +417,14 @@
         <div class="row mb-4">
             <div class="col-12">
                 <div class="card stat-card">
-                    <div class="card-header" style="background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%); color: white;">
+                    <div class="card-header d-flex justify-content-between align-items-center" style="background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%); color: white;">
                         <h5 class="mb-0"><i class="bi bi-building"></i> Top 10 Shipping Agent (Total Pendapatan)</h5>
+                        @if($topShippingAgents->count() > 0)
+                        <a href="{{ route('export.top.shipping.agent', ['periode' => $selectedPeriode, 'cabang' => $selectedBranch]) }}"
+                           class="btn btn-light btn-sm">
+                            <i class="bi bi-file-earmark-excel"></i> Download Excel
+                        </a>
+                        @endif
                     </div>
                     <div class="card-body">
                         @if($topShippingAgents->count() > 0)

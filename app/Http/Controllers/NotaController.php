@@ -299,29 +299,7 @@ class NotaController extends Controller
             
             // Get top 10 shipping agents (combined pandu + tunda revenue)
             try {
-                $topShippingAgents = DB::connection('dashboard_phinnisi')
-                    ->table(DB::raw('(
-                        SELECT SHIPPING_AGENT, SUM(REVENUE) as total_revenue
-                        FROM dashboard_phinnisi.pandu_prod
-                        WHERE SHIPPING_AGENT IS NOT NULL AND SHIPPING_AGENT != ""
-                        ' . ($selectedPeriode != 'all' ? 'AND DATE_FORMAT(STR_TO_DATE(INVOICE_DATE, \'%d-%m-%Y\'), \'%m-%Y\') = "' . $selectedPeriode . '"' : '') . '
-                        ' . ($selectedBranch != 'all' ? 'AND NAME_BRANCH = "' . $selectedBranch . '"' : '') . '
-                        GROUP BY SHIPPING_AGENT
-                        
-                        UNION ALL
-                        
-                        SELECT SHIPPING_AGENT, SUM(REVENUE) as total_revenue
-                        FROM dashboard_phinnisi.tunda_prod
-                        WHERE SHIPPING_AGENT IS NOT NULL AND SHIPPING_AGENT != ""
-                        ' . ($selectedPeriode != 'all' ? 'AND DATE_FORMAT(STR_TO_DATE(INVOICE_DATE, \'%d-%m-%Y\'), \'%m-%Y\') = "' . $selectedPeriode . '"' : '') . '
-                        ' . ($selectedBranch != 'all' ? 'AND NAME_BRANCH = "' . $selectedBranch . '"' : '') . '
-                        GROUP BY SHIPPING_AGENT
-                    ) as combined'))
-                    ->select('SHIPPING_AGENT', DB::raw('SUM(total_revenue) as total_revenue'))
-                    ->groupBy('SHIPPING_AGENT')
-                    ->orderByDesc('total_revenue')
-                    ->limit(10)
-                    ->get();
+                $topShippingAgents = $this->topShippingAgentsQuery($selectedPeriode, $selectedBranch, 10)->get();
             } catch (\Exception $e) {
                 $topShippingAgents = collect();
             }
@@ -1112,6 +1090,89 @@ class NotaController extends Controller
                 ]);
             }
             
+            fclose($file);
+        };
+
+        return response()->stream($callback, 200, $headers);
+    }
+
+    /**
+     * Query top shipping agent berdasarkan total pendapatan gabungan
+     * (pandu_prod + tunda_prod), dipakai bersama oleh halaman monitoring
+     * nota dan fitur export Excel-nya.
+     */
+    private function topShippingAgentsQuery($periode, $branch, $limit = 10)
+    {
+        $filterByPeriodeBranch = function ($q) use ($periode, $branch) {
+            return $q->when($periode != 'all', function ($q) use ($periode) {
+                    return $q->whereRaw('DATE_FORMAT(STR_TO_DATE(INVOICE_DATE, \'%d-%m-%Y\'), \'%m-%Y\') = ?', [$periode]);
+                })
+                ->when($branch != 'all', function ($q) use ($branch) {
+                    return $q->where('NAME_BRANCH', $branch);
+                });
+        };
+
+        $panduAgents = $filterByPeriodeBranch(
+            DB::connection('dashboard_phinnisi')->table('pandu_prod')
+                ->select('SHIPPING_AGENT', DB::raw('SUM(REVENUE) as total_revenue'))
+                ->whereNotNull('SHIPPING_AGENT')
+                ->where('SHIPPING_AGENT', '!=', '')
+        )->groupBy('SHIPPING_AGENT');
+
+        $combined = $filterByPeriodeBranch(
+            DB::connection('dashboard_phinnisi')->table('tunda_prod')
+                ->select('SHIPPING_AGENT', DB::raw('SUM(REVENUE) as total_revenue'))
+                ->whereNotNull('SHIPPING_AGENT')
+                ->where('SHIPPING_AGENT', '!=', '')
+        )->groupBy('SHIPPING_AGENT')
+            ->unionAll($panduAgents);
+
+        return DB::connection('dashboard_phinnisi')
+            ->query()
+            ->fromSub($combined, 'combined')
+            ->select('SHIPPING_AGENT', DB::raw('SUM(total_revenue) as total_revenue'))
+            ->groupBy('SHIPPING_AGENT')
+            ->orderByDesc('total_revenue')
+            ->limit($limit);
+    }
+
+    /**
+     * Export Top 10 Shipping Agent ke Excel (CSV)
+     */
+    public function exportTopShippingAgents(Request $request)
+    {
+        $selectedPeriode = $request->get('periode', 'all');
+        $selectedBranch = $request->get('cabang', 'all');
+
+        try {
+            $data = $this->topShippingAgentsQuery($selectedPeriode, $selectedBranch, 10)->get();
+        } catch (\Exception $e) {
+            return redirect()->back()->with('error', 'Gagal mengambil data: ' . $e->getMessage());
+        }
+
+        $filename = 'top_shipping_agent_' . ($selectedBranch != 'all' ? $selectedBranch . '_' : '') .
+                    ($selectedPeriode != 'all' ? $selectedPeriode . '_' : '') .
+                    date('Ymd_His') . '.csv';
+
+        $headers = [
+            'Content-Type' => 'text/csv; charset=UTF-8',
+            'Content-Disposition' => 'attachment; filename="' . $filename . '"',
+        ];
+
+        $callback = function () use ($data) {
+            $file = fopen('php://output', 'w');
+            fprintf($file, chr(0xEF) . chr(0xBB) . chr(0xBF));
+            fputcsv($file, ['Rank', 'Shipping Agent', 'Total Pendapatan (Pandu + Tunda)']);
+
+            $rank = 1;
+            foreach ($data as $agent) {
+                fputcsv($file, [
+                    $rank++,
+                    $agent->SHIPPING_AGENT,
+                    $agent->total_revenue,
+                ]);
+            }
+
             fclose($file);
         };
 

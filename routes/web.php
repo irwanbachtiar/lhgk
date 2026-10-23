@@ -38,6 +38,7 @@ Route::post('/upload-nota-csv', [NotaController::class, 'uploadCsv'])->name('upl
 Route::post('/upload-tunda-csv', [NotaController::class, 'uploadTundaCsv'])->name('upload.tunda.csv');
 Route::get('/get-nota-batal-data', [NotaController::class, 'getNotaBatalData'])->name('get.nota.batal.data');
 Route::get('/export-nota-batal', [NotaController::class, 'exportNotaBatal'])->name('export.nota.batal');
+Route::get('/export-top-shipping-agent', [NotaController::class, 'exportTopShippingAgents'])->name('export.top.shipping.agent');
 // Pendapatan SAP
 Route::get('/pendapatan-sap', [NotaController::class, 'pendapatanSap'])->name('pendapatan.sap');
 
