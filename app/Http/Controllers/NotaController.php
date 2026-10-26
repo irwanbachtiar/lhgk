@@ -152,7 +152,9 @@ class NotaController extends Controller
         $totalPendapatanTundaBatal = 0;
         $revenuePerPandu = collect();
         $revenuePerTunda = collect();
-        
+        $pemanduanLokasiSummary = collect();
+        $tundaLokasiSummary = collect();
+
         // Only load data if at least one filter is selected (not 'all')
         if ($selectedPeriode != 'all' || $selectedBranch != 'all') {
             // Build query
@@ -303,6 +305,22 @@ class NotaController extends Controller
             } catch (\Exception $e) {
                 $topShippingAgents = collect();
             }
+
+            // Ringkasan pendapatan pemanduan per Nama Lokasi & Jenis (TUKS/Derum)
+            try {
+                $pemanduanLokasiSummary = $this->pemanduanLokasiSummaryQuery($selectedPeriode, $selectedBranch)->get();
+            } catch (\Exception $e) {
+                \Log::error('Error getting pemanduan lokasi summary: ' . $e->getMessage());
+                $pemanduanLokasiSummary = collect();
+            }
+
+            // Ringkasan pendapatan tunda per Nama Lokasi & Jenis (TUKS/Derum)
+            try {
+                $tundaLokasiSummary = $this->pemanduanLokasiSummaryQuery($selectedPeriode, $selectedBranch, 'tunda_prod')->get();
+            } catch (\Exception $e) {
+                \Log::error('Error getting tunda lokasi summary: ' . $e->getMessage());
+                $tundaLokasiSummary = collect();
+            }
         } else {
             $topShippingAgents = collect();
         }
@@ -323,7 +341,9 @@ class NotaController extends Controller
             'totalPendapatanTundaBatal',
             'revenuePerPandu',
             'revenuePerTunda',
-            'topShippingAgents'
+            'topShippingAgents',
+            'pemanduanLokasiSummary',
+            'tundaLokasiSummary'
         ));
     }
 
@@ -1134,6 +1154,157 @@ class NotaController extends Controller
             ->groupBy('SHIPPING_AGENT')
             ->orderByDesc('total_revenue')
             ->limit($limit);
+    }
+
+    /**
+     * Ekspresi SQL untuk menentukan nama lokasi dari FROM_LOCATION/TO_LOCATION:
+     * ambil salah satu yang bukan istilah umum (LAUT, REDE, LABUH).
+     */
+    private function pemanduanNamaLokasiExpr()
+    {
+        return "CASE
+            WHEN FROM_LOCATION NOT LIKE '%LAUT%' AND FROM_LOCATION NOT LIKE '%REDE%' AND FROM_LOCATION NOT LIKE '%LABUH%' THEN FROM_LOCATION
+            WHEN TO_LOCATION NOT LIKE '%LAUT%' AND TO_LOCATION NOT LIKE '%REDE%' AND TO_LOCATION NOT LIKE '%LABUH%' THEN TO_LOCATION
+            ELSE NULL
+        END";
+    }
+
+    /**
+     * Ekspresi SQL untuk menentukan jenis pemanduan dari 2 digit pertama
+     * REVENUE_ACCOUNT: "40" => Derum, "41" => TUKS.
+     */
+    private function pemanduanJenisExpr()
+    {
+        return "CASE
+            WHEN LEFT(REVENUE_ACCOUNT, 2) = '40' THEN 'Derum'
+            WHEN LEFT(REVENUE_ACCOUNT, 2) = '41' THEN 'TUKS'
+            ELSE NULL
+        END";
+    }
+
+    /**
+     * Ringkasan pendapatan pemanduan/tundaan (pandu_prod atau tunda_prod)
+     * dikelompokkan berdasarkan Nama Lokasi, jenis (Derum/TUKS), dan
+     * Delegation, dipakai bersama oleh halaman monitoring nota dan fitur
+     * export Excel-nya.
+     */
+    private function pemanduanLokasiSummaryQuery($periode, $branch, $table = 'pandu_prod')
+    {
+        $namaLokasiExpr = $this->pemanduanNamaLokasiExpr();
+        $jenisExpr = $this->pemanduanJenisExpr();
+
+        return DB::connection('dashboard_phinnisi')->table($table)
+            ->whereRaw("({$namaLokasiExpr}) IS NOT NULL")
+            ->whereRaw("({$jenisExpr}) IS NOT NULL")
+            ->when($periode != 'all', function ($q) use ($periode) {
+                return $q->whereRaw('DATE_FORMAT(STR_TO_DATE(INVOICE_DATE, \'%d-%m-%Y\'), \'%m-%Y\') = ?', [$periode]);
+            })
+            ->when($branch != 'all', function ($q) use ($branch) {
+                return $q->where('NAME_BRANCH', $branch);
+            })
+            ->selectRaw("({$namaLokasiExpr}) as NAMA_LOKASI")
+            ->selectRaw("({$jenisExpr}) as JENIS")
+            ->addSelect('DELEGATION')
+            ->selectRaw('COUNT(*) as TOTAL_TRANSAKSI')
+            ->selectRaw('SUM(REVENUE) as TOTAL_PENDAPATAN')
+            ->groupBy(DB::raw($namaLokasiExpr))
+            ->groupBy(DB::raw($jenisExpr))
+            ->groupBy('DELEGATION')
+            ->orderBy('NAMA_LOKASI')
+            ->orderBy('JENIS')
+            ->orderBy('DELEGATION');
+    }
+
+    /**
+     * Export Ringkasan Pendapatan Pemanduan per Lokasi (TUKS/Derum) ke Excel (CSV)
+     */
+    public function exportPemanduanLokasiSummary(Request $request)
+    {
+        $selectedPeriode = $request->get('periode', 'all');
+        $selectedBranch = $request->get('cabang', 'all');
+
+        try {
+            $data = $this->pemanduanLokasiSummaryQuery($selectedPeriode, $selectedBranch)->get();
+        } catch (\Exception $e) {
+            return redirect()->back()->with('error', 'Gagal mengambil data: ' . $e->getMessage());
+        }
+
+        $filename = 'pendapatan_pemanduan_per_lokasi_' . ($selectedBranch != 'all' ? $selectedBranch . '_' : '') .
+                    ($selectedPeriode != 'all' ? $selectedPeriode . '_' : '') .
+                    date('Ymd_His') . '.csv';
+
+        $headers = [
+            'Content-Type' => 'text/csv; charset=UTF-8',
+            'Content-Disposition' => 'attachment; filename="' . $filename . '"',
+        ];
+
+        $callback = function () use ($data) {
+            $file = fopen('php://output', 'w');
+            fprintf($file, chr(0xEF) . chr(0xBB) . chr(0xBF));
+            fputcsv($file, ['No', 'Nama Lokasi', 'Jenis', 'Delegation', 'Total Transaksi', 'Total Pendapatan']);
+
+            $no = 1;
+            foreach ($data as $row) {
+                fputcsv($file, [
+                    $no++,
+                    $row->NAMA_LOKASI,
+                    $row->JENIS,
+                    $row->DELEGATION,
+                    $row->TOTAL_TRANSAKSI,
+                    $row->TOTAL_PENDAPATAN,
+                ]);
+            }
+
+            fclose($file);
+        };
+
+        return response()->stream($callback, 200, $headers);
+    }
+
+    /**
+     * Export Ringkasan Pendapatan Tunda per Lokasi (TUKS/Derum) ke Excel (CSV)
+     */
+    public function exportTundaLokasiSummary(Request $request)
+    {
+        $selectedPeriode = $request->get('periode', 'all');
+        $selectedBranch = $request->get('cabang', 'all');
+
+        try {
+            $data = $this->pemanduanLokasiSummaryQuery($selectedPeriode, $selectedBranch, 'tunda_prod')->get();
+        } catch (\Exception $e) {
+            return redirect()->back()->with('error', 'Gagal mengambil data: ' . $e->getMessage());
+        }
+
+        $filename = 'pendapatan_tunda_per_lokasi_' . ($selectedBranch != 'all' ? $selectedBranch . '_' : '') .
+                    ($selectedPeriode != 'all' ? $selectedPeriode . '_' : '') .
+                    date('Ymd_His') . '.csv';
+
+        $headers = [
+            'Content-Type' => 'text/csv; charset=UTF-8',
+            'Content-Disposition' => 'attachment; filename="' . $filename . '"',
+        ];
+
+        $callback = function () use ($data) {
+            $file = fopen('php://output', 'w');
+            fprintf($file, chr(0xEF) . chr(0xBB) . chr(0xBF));
+            fputcsv($file, ['No', 'Nama Lokasi', 'Jenis', 'Delegation', 'Total Transaksi', 'Total Pendapatan']);
+
+            $no = 1;
+            foreach ($data as $row) {
+                fputcsv($file, [
+                    $no++,
+                    $row->NAMA_LOKASI,
+                    $row->JENIS,
+                    $row->DELEGATION,
+                    $row->TOTAL_TRANSAKSI,
+                    $row->TOTAL_PENDAPATAN,
+                ]);
+            }
+
+            fclose($file);
+        };
+
+        return response()->stream($callback, 200, $headers);
     }
 
     /**

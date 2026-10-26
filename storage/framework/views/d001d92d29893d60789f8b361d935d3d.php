@@ -469,6 +469,148 @@
         </div>
         <?php endif; ?>
 
+        <?php if($selectedPeriode != 'all' || $selectedBranch != 'all'): ?>
+        <!-- Ringkasan Pendapatan Pemanduan per Lokasi (TUKS / Derum) -->
+        <div class="row mb-4">
+            <div class="col-12">
+                <div class="card stat-card">
+                    <div class="card-header d-flex justify-content-between align-items-center" style="background: linear-gradient(135deg, #14b8a6 0%, #0d9488 100%); color: white;">
+                        <h5 class="mb-0"><i class="bi bi-geo-alt-fill"></i> Ringkasan Pendapatan Pemanduan per Lokasi (TUKS / Derum)</h5>
+                        <?php if($pemanduanLokasiSummary->count() > 0): ?>
+                        <a href="<?php echo e(route('export.pemanduan.lokasi.summary', ['periode' => $selectedPeriode, 'cabang' => $selectedBranch])); ?>"
+                           class="btn btn-light btn-sm">
+                            <i class="bi bi-file-earmark-excel"></i> Download Excel
+                        </a>
+                        <?php endif; ?>
+                    </div>
+                    <div class="card-body">
+                        <?php if($pemanduanLokasiSummary->count() > 0): ?>
+                            <div class="table-responsive">
+                                <table class="table table-hover table-striped table-sm">
+                                    <thead class="table-dark">
+                                        <tr>
+                                            <th style="width:48px">No</th>
+                                            <th>Nama Lokasi</th>
+                                            <th>Jenis</th>
+                                            <th>Delegation</th>
+                                            <th class="text-end">Total Transaksi</th>
+                                            <th class="text-end">Total Pendapatan</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        <?php
+                                            $grandTotalTransaksiPemanduan = 0;
+                                            $grandTotalPendapatanPemanduan = 0;
+                                        ?>
+                                        <?php $__currentLoopData = $pemanduanLokasiSummary; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $index => $row): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
+                                            <?php
+                                                $grandTotalTransaksiPemanduan += (int) $row->TOTAL_TRANSAKSI;
+                                                $grandTotalPendapatanPemanduan += (float) $row->TOTAL_PENDAPATAN;
+                                            ?>
+                                            <tr>
+                                                <td><?php echo e($index + 1); ?></td>
+                                                <td class="text-nowrap small"><span class="badge bg-success"><?php echo e($row->NAMA_LOKASI); ?></span></td>
+                                                <td class="text-nowrap small">
+                                                    <span class="badge <?php echo e($row->JENIS == 'TUKS' ? 'bg-primary' : 'bg-secondary'); ?>"><?php echo e($row->JENIS); ?></span>
+                                                </td>
+                                                <td class="text-nowrap small"><?php echo e($row->DELEGATION ?? '-'); ?></td>
+                                                <td class="text-end"><?php echo e(number_format($row->TOTAL_TRANSAKSI)); ?></td>
+                                                <td class="text-end"><strong class="text-success">Rp <?php echo e(number_format($row->TOTAL_PENDAPATAN, 0, ',', '.')); ?></strong></td>
+                                            </tr>
+                                        <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>
+                                    </tbody>
+                                    <tfoot>
+                                        <tr class="table-light">
+                                            <th colspan="4" class="text-end">Total</th>
+                                            <th class="text-end"><?php echo e(number_format($grandTotalTransaksiPemanduan)); ?></th>
+                                            <th class="text-end">Rp <?php echo e(number_format($grandTotalPendapatanPemanduan, 0, ',', '.')); ?></th>
+                                        </tr>
+                                    </tfoot>
+                                </table>
+                            </div>
+                        <?php else: ?>
+                            <div class="text-center text-muted py-4">
+                                <i class="bi bi-inbox fs-1"></i>
+                                <p class="mt-2">Tidak ada data pendapatan pemanduan per lokasi</p>
+                            </div>
+                        <?php endif; ?>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <?php endif; ?>
+
+        <?php if($selectedPeriode != 'all' || $selectedBranch != 'all'): ?>
+        <!-- Ringkasan Pendapatan Tunda per Lokasi (TUKS / Derum) -->
+        <div class="row mb-4">
+            <div class="col-12">
+                <div class="card stat-card">
+                    <div class="card-header d-flex justify-content-between align-items-center" style="background: linear-gradient(135deg, #0ea5e9 0%, #0284c7 100%); color: white;">
+                        <h5 class="mb-0"><i class="bi bi-geo-alt-fill"></i> Ringkasan Pendapatan Tunda per Lokasi (TUKS / Derum)</h5>
+                        <?php if($tundaLokasiSummary->count() > 0): ?>
+                        <a href="<?php echo e(route('export.tunda.lokasi.summary', ['periode' => $selectedPeriode, 'cabang' => $selectedBranch])); ?>"
+                           class="btn btn-light btn-sm">
+                            <i class="bi bi-file-earmark-excel"></i> Download Excel
+                        </a>
+                        <?php endif; ?>
+                    </div>
+                    <div class="card-body">
+                        <?php if($tundaLokasiSummary->count() > 0): ?>
+                            <div class="table-responsive">
+                                <table class="table table-hover table-striped table-sm">
+                                    <thead class="table-dark">
+                                        <tr>
+                                            <th style="width:48px">No</th>
+                                            <th>Nama Lokasi</th>
+                                            <th>Jenis</th>
+                                            <th>Delegation</th>
+                                            <th class="text-end">Total Transaksi</th>
+                                            <th class="text-end">Total Pendapatan</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        <?php
+                                            $grandTotalTransaksiTunda = 0;
+                                            $grandTotalPendapatanTunda = 0;
+                                        ?>
+                                        <?php $__currentLoopData = $tundaLokasiSummary; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $index => $row): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
+                                            <?php
+                                                $grandTotalTransaksiTunda += (int) $row->TOTAL_TRANSAKSI;
+                                                $grandTotalPendapatanTunda += (float) $row->TOTAL_PENDAPATAN;
+                                            ?>
+                                            <tr>
+                                                <td><?php echo e($index + 1); ?></td>
+                                                <td class="text-nowrap small"><span class="badge bg-success"><?php echo e($row->NAMA_LOKASI); ?></span></td>
+                                                <td class="text-nowrap small">
+                                                    <span class="badge <?php echo e($row->JENIS == 'TUKS' ? 'bg-primary' : 'bg-secondary'); ?>"><?php echo e($row->JENIS); ?></span>
+                                                </td>
+                                                <td class="text-nowrap small"><?php echo e($row->DELEGATION ?? '-'); ?></td>
+                                                <td class="text-end"><?php echo e(number_format($row->TOTAL_TRANSAKSI)); ?></td>
+                                                <td class="text-end"><strong class="text-success">Rp <?php echo e(number_format($row->TOTAL_PENDAPATAN, 0, ',', '.')); ?></strong></td>
+                                            </tr>
+                                        <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>
+                                    </tbody>
+                                    <tfoot>
+                                        <tr class="table-light">
+                                            <th colspan="4" class="text-end">Total</th>
+                                            <th class="text-end"><?php echo e(number_format($grandTotalTransaksiTunda)); ?></th>
+                                            <th class="text-end">Rp <?php echo e(number_format($grandTotalPendapatanTunda, 0, ',', '.')); ?></th>
+                                        </tr>
+                                    </tfoot>
+                                </table>
+                            </div>
+                        <?php else: ?>
+                            <div class="text-center text-muted py-4">
+                                <i class="bi bi-inbox fs-1"></i>
+                                <p class="mt-2">Tidak ada data pendapatan tunda per lokasi</p>
+                            </div>
+                        <?php endif; ?>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <?php endif; ?>
+
         <!-- Upload CSV Section -->
         <div class="upload-section">
             <h5 class="mb-3"><i class="bi bi-upload"></i> Upload Data CSV</h5>

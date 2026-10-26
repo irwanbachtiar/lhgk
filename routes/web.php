@@ -29,6 +29,8 @@ Route::get('/export-mismatch', [DashboardController::class, 'exportMismatch'])->
 Route::get('/export-pandu-set-not-realization', [DashboardController::class, 'exportPanduSetNotRealization'])->name('export.pandu.set.not.realization');
 Route::get('/export-siklus-pelayanan', [DashboardController::class, 'exportSiklusPelayanan'])->name('export.siklus.pelayanan');
 Route::get('/export-deploy-vs-realisasi', [DashboardController::class, 'exportDeployVsRealisasi'])->name('export.deploy.vs.realisasi');
+Route::get('/export-pendapatan-dermaga', [DashboardController::class, 'exportPendapatanDermaga'])->name('export.pendapatan.dermaga');
+Route::get('/export-pendapatan-dermaga-summary', [DashboardController::class, 'exportPendapatanDermagaSummary'])->name('export.pendapatan.dermaga.summary');
 Route::get('/export-backdate', [DashboardController::class, 'exportBackdate'])->name('export.backdate');
 Route::get('/export-realisasi-web', [DashboardController::class, 'exportRealisasiWeb'])->name('export.realisasi.web');
 
@@ -39,6 +41,8 @@ Route::post('/upload-tunda-csv', [NotaController::class, 'uploadTundaCsv'])->nam
 Route::get('/get-nota-batal-data', [NotaController::class, 'getNotaBatalData'])->name('get.nota.batal.data');
 Route::get('/export-nota-batal', [NotaController::class, 'exportNotaBatal'])->name('export.nota.batal');
 Route::get('/export-top-shipping-agent', [NotaController::class, 'exportTopShippingAgents'])->name('export.top.shipping.agent');
+Route::get('/export-pemanduan-lokasi-summary', [NotaController::class, 'exportPemanduanLokasiSummary'])->name('export.pemanduan.lokasi.summary');
+Route::get('/export-tunda-lokasi-summary', [NotaController::class, 'exportTundaLokasiSummary'])->name('export.tunda.lokasi.summary');
 // Pendapatan SAP
 Route::get('/pendapatan-sap', [NotaController::class, 'pendapatanSap'])->name('pendapatan.sap');
 

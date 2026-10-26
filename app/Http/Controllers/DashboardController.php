@@ -311,6 +311,7 @@ class DashboardController extends Controller
             $showPanduSetNotRealization = $request->get('show_pandu_set_not_realization', 0);
             $showSiklusPelayanan = $request->get('show_siklus_pelayanan', 0);
             $showDeployVsRealisasi = $request->get('show_deploy_vs_realisasi', 0);
+            $showPendapatanDermaga = $request->get('show_pendapatan_dermaga', 0);
             $filterStatusNota = $request->get('filter_status_nota', 'all');
             
             // Count queries for section visibility
@@ -802,6 +803,45 @@ class DashboardController extends Controller
                     ->paginate(15)
                     ->appends(request()->query());
             }
+
+            // Pendapatan Pandu & Tunda per Dermaga: REDE_TYPE TUKS/UMUM,
+            // nama lokasi dermaga diambil dari PANDU_DARI/PANDU_KE yang bukan
+            // istilah umum (LAUT/REDE/LABUH).
+            $pendapatanDermagaCount = $this->pendapatanDermagaBaseQuery($selectedPeriode, $selectedBranch)->count();
+
+            $pendapatanDermagaData = null;
+            if ($showPendapatanDermaga && $pendapatanDermagaCount > 0) {
+                $pendapatanDermagaData = $this->pendapatanDermagaBaseQuery($selectedPeriode, $selectedBranch)
+                    ->select(
+                        'PPKB_CODE',
+                        'PERIODE',
+                        'NO_UKK',
+                        'NO_BKT_PANDU',
+                        'NM_KAPAL',
+                        'JN_KAPAL',
+                        'KP_GRT',
+                        'KP_LOA',
+                        'KD_BENDERA',
+                        'PANDU_DARI',
+                        'PANDU_KE',
+                        'REDE_TYPE',
+                        'NM_AGEN',
+                        'PENDAPATAN_PANDU',
+                        'PENDAPATAN_TUNDA',
+                        'ZONE',
+                        'DELEGATION'
+                    )
+                    ->selectRaw("({$this->dermagaNamaLokasiExpr()}) as NAMA_LOKASI")
+                    ->orderBy('NAMA_LOKASI')
+                    ->orderBy('REDE_TYPE')
+                    ->orderBy('PPKB_CODE')
+                    ->paginate(30)
+                    ->appends(request()->query());
+            }
+
+            // Ringkasan Pendapatan per Dermaga: total pendapatan pandu & tunda
+            // dikelompokkan berdasarkan Nama Lokasi dan Rede Type.
+            $pendapatanDermagaSummary = $this->pendapatanDermagaSummaryQuery($selectedPeriode, $selectedBranch)->get();
         } else {
             $showDeparture = false;
             $departureDelayCount = 0;
@@ -845,10 +885,14 @@ class DashboardController extends Controller
             $showDeployVsRealisasi = false;
             $deployVsRealisasiCount = 0;
             $deployVsRealisasiData = null;
+            $showPendapatanDermaga = false;
+            $pendapatanDermagaCount = 0;
+            $pendapatanDermagaData = null;
+            $pendapatanDermagaSummary = collect();
         }
 
         // Show main dashboard view with filters, but without data until filters are selected
-        return view('dashboard', compact('statistics', 'chartData', 'totalOverall', 'periods', 'selectedPeriode', 'regionalGroups', 'allBranches', 'selectedBranch', 'topPilot', 'shipStatsByGT', 'showDeparture', 'departureDelayCount', 'departureDelayData', 'showStatusNota', 'statusNotaCount', 'statusNotaData', 'filterStatusNota', 'showWaitingTime', 'waitingTimeCount', 'waitingTimeData', 'showPkkManual', 'pkkManualCount', 'pkkManualData', 'showBackdate', 'backdateCount', 'backdateData', 'totalPpkbCount', 'backdatePercentage', 'showRealisasiWeb', 'realisasiWebCount', 'realisasiWebData', 'realisasiPandu', 'realisasiTunda', 'totalTundaDistinct', 'showAnomali', 'anomaliCount', 'anomaliData', 'showDurasiPemanduan0', 'durasiPemanduan0Count', 'durasiPemanduan0Data', 'showMismatch', 'mismatchCount', 'mismatchData', 'mismatchDebugError', 'mismatchColumns', 'mismatchPkkInaportnetCol', 'showPanduSetNotRealization', 'panduSetNotRealizationCount', 'panduSetNotRealizationData', 'showSiklusPelayanan', 'siklusPelayananCount', 'siklusPelayananData', 'showDeployVsRealisasi', 'deployVsRealisasiCount', 'deployVsRealisasiData'));
+        return view('dashboard', compact('statistics', 'chartData', 'totalOverall', 'periods', 'selectedPeriode', 'regionalGroups', 'allBranches', 'selectedBranch', 'topPilot', 'shipStatsByGT', 'showDeparture', 'departureDelayCount', 'departureDelayData', 'showStatusNota', 'statusNotaCount', 'statusNotaData', 'filterStatusNota', 'showWaitingTime', 'waitingTimeCount', 'waitingTimeData', 'showPkkManual', 'pkkManualCount', 'pkkManualData', 'showBackdate', 'backdateCount', 'backdateData', 'totalPpkbCount', 'backdatePercentage', 'showRealisasiWeb', 'realisasiWebCount', 'realisasiWebData', 'realisasiPandu', 'realisasiTunda', 'totalTundaDistinct', 'showAnomali', 'anomaliCount', 'anomaliData', 'showDurasiPemanduan0', 'durasiPemanduan0Count', 'durasiPemanduan0Data', 'showMismatch', 'mismatchCount', 'mismatchData', 'mismatchDebugError', 'mismatchColumns', 'mismatchPkkInaportnetCol', 'showPanduSetNotRealization', 'panduSetNotRealizationCount', 'panduSetNotRealizationData', 'showSiklusPelayanan', 'siklusPelayananCount', 'siklusPelayananData', 'showDeployVsRealisasi', 'deployVsRealisasiCount', 'deployVsRealisasiData', 'showPendapatanDermaga', 'pendapatanDermagaCount', 'pendapatanDermagaData', 'pendapatanDermagaSummary'));
     }
 
     /**
@@ -934,6 +978,52 @@ class DashboardController extends Controller
         $jam = intdiv($menit, 60);
         $sisaMenit = $menit % 60;
         return $jam > 0 ? "{$jam}j {$sisaMenit}m" : "{$sisaMenit}m";
+    }
+
+    /**
+     * Ekspresi SQL untuk menentukan nama lokasi dermaga dari PANDU_DARI/PANDU_KE:
+     * ambil salah satu yang bukan istilah umum (LAUT, REDE, LABUH). Dipakai
+     * untuk menyaring baris "Pendapatan per Dermaga" supaya hanya baris yang
+     * benar-benar menyebut sebuah dermaga yang ditampilkan.
+     */
+    private function dermagaNamaLokasiExpr()
+    {
+        return "CASE
+            WHEN PANDU_DARI NOT LIKE '%LAUT%' AND PANDU_DARI NOT LIKE '%REDE%' AND PANDU_DARI NOT LIKE '%LABUH%' THEN PANDU_DARI
+            WHEN PANDU_KE NOT LIKE '%LAUT%' AND PANDU_KE NOT LIKE '%REDE%' AND PANDU_KE NOT LIKE '%LABUH%' THEN PANDU_KE
+            ELSE NULL
+        END";
+    }
+
+    /**
+     * Pendapatan Pandu & Tunda per Dermaga: dikelompokkan berdasarkan REDE_TYPE
+     * (TUKS/UMUM), hanya baris yang PANDU_DARI/PANDU_KE-nya menyebut dermaga
+     * nyata (bukan LAUT/REDE/LABUH saja).
+     */
+    private function pendapatanDermagaBaseQuery($periode, $branch)
+    {
+        return Lhgk::whereIn('REDE_TYPE', ['TUKS', 'UMUM'])
+            ->whereRaw("({$this->dermagaNamaLokasiExpr()}) IS NOT NULL")
+            ->where('PERIODE', $periode)
+            ->where('NM_BRANCH', $branch);
+    }
+
+    /**
+     * Ringkasan pendapatan pandu & tunda per Nama Lokasi + Rede Type,
+     * dipakai bersama oleh section ringkasan di dashboard dan export Excel-nya.
+     */
+    private function pendapatanDermagaSummaryQuery($periode, $branch)
+    {
+        return $this->pendapatanDermagaBaseQuery($periode, $branch)
+            ->selectRaw("({$this->dermagaNamaLokasiExpr()}) as NAMA_LOKASI")
+            ->addSelect('REDE_TYPE')
+            ->selectRaw('COUNT(*) as TOTAL_TRANSAKSI')
+            ->selectRaw('SUM(PENDAPATAN_PANDU) as TOTAL_PENDAPATAN_PANDU')
+            ->selectRaw('SUM(PENDAPATAN_TUNDA) as TOTAL_PENDAPATAN_TUNDA')
+            ->groupBy(DB::raw($this->dermagaNamaLokasiExpr()))
+            ->groupBy('REDE_TYPE')
+            ->orderBy('NAMA_LOKASI')
+            ->orderBy('REDE_TYPE');
     }
 
     private function getRegionalGroups()
@@ -2270,6 +2360,137 @@ class DashboardController extends Controller
                     $row->NO_PKK_INAPORTNET ?? '',
                     $row->PILOT_DEPLOY ?? '',
                     $this->formatSelisihMenit($row->SELISIH_MENIT ?? null),
+                ]);
+            }
+            fclose($file);
+        };
+
+        return response()->stream($callback, 200, $headers);
+    }
+
+    public function exportPendapatanDermaga(Request $request)
+    {
+        $selectedPeriode = $request->get('periode');
+        $selectedBranch  = $request->get('cabang');
+
+        if (!$selectedPeriode || !$selectedBranch) {
+            return redirect()->back()->with('error', 'Pilih periode dan cabang terlebih dahulu');
+        }
+
+        try {
+            $data = $this->pendapatanDermagaBaseQuery($selectedPeriode, $selectedBranch)
+                ->select(
+                    'PPKB_CODE',
+                    'PERIODE',
+                    'NO_UKK',
+                    'NO_BKT_PANDU',
+                    'NM_KAPAL',
+                    'JN_KAPAL',
+                    'KP_GRT',
+                    'KP_LOA',
+                    'KD_BENDERA',
+                    'PANDU_DARI',
+                    'PANDU_KE',
+                    'REDE_TYPE',
+                    'NM_AGEN',
+                    'PENDAPATAN_PANDU',
+                    'PENDAPATAN_TUNDA',
+                    'ZONE',
+                    'DELEGATION'
+                )
+                ->selectRaw("({$this->dermagaNamaLokasiExpr()}) as NAMA_LOKASI")
+                ->orderBy('NAMA_LOKASI')
+                ->orderBy('REDE_TYPE')
+                ->orderBy('PPKB_CODE')
+                ->get();
+        } catch (\Exception $e) {
+            return redirect()->back()->with('error', 'Gagal mengambil data: ' . $e->getMessage());
+        }
+
+        $filename = 'Pendapatan_per_Dermaga_' . str_replace(' ', '_', $selectedBranch) . '_' . str_replace('-', '', $selectedPeriode) . '_' . date('YmdHis') . '.csv';
+
+        $headers = [
+            'Content-Type'        => 'text/csv; charset=UTF-8',
+            'Content-Disposition' => 'attachment; filename="' . $filename . '"',
+        ];
+
+        $callback = function () use ($data) {
+            $file = fopen('php://output', 'w');
+            fprintf($file, chr(0xEF) . chr(0xBB) . chr(0xBF));
+            fputcsv($file, [
+                'No', 'PPKB Code', 'Periode', 'No UKK', 'No Bukti Pandu', 'Nama Kapal', 'Jenis Kapal',
+                'GRT', 'LOA', 'Bendera', 'Nama Lokasi', 'Pandu Dari', 'Pandu Ke', 'Rede Type', 'Nama Agen',
+                'Pendapatan Pandu', 'Pendapatan Tunda', 'Zone', 'Delegation'
+            ]);
+            $no = 1;
+            foreach ($data as $row) {
+                fputcsv($file, [
+                    $no++,
+                    $row->PPKB_CODE ?? '',
+                    $row->PERIODE ?? '',
+                    $row->NO_UKK ?? '',
+                    $row->NO_BKT_PANDU ?? '',
+                    $row->NM_KAPAL ?? '',
+                    $row->JN_KAPAL ?? '',
+                    $row->KP_GRT ?? '',
+                    $row->KP_LOA ?? '',
+                    $row->KD_BENDERA ?? '',
+                    $row->NAMA_LOKASI ?? '',
+                    $row->PANDU_DARI ?? '',
+                    $row->PANDU_KE ?? '',
+                    $row->REDE_TYPE ?? '',
+                    $row->NM_AGEN ?? '',
+                    $row->PENDAPATAN_PANDU ?? '',
+                    $row->PENDAPATAN_TUNDA ?? '',
+                    $row->ZONE ?? '',
+                    $row->DELEGATION ?? '',
+                ]);
+            }
+            fclose($file);
+        };
+
+        return response()->stream($callback, 200, $headers);
+    }
+
+    public function exportPendapatanDermagaSummary(Request $request)
+    {
+        $selectedPeriode = $request->get('periode');
+        $selectedBranch  = $request->get('cabang');
+
+        if (!$selectedPeriode || !$selectedBranch) {
+            return redirect()->back()->with('error', 'Pilih periode dan cabang terlebih dahulu');
+        }
+
+        try {
+            $data = $this->pendapatanDermagaSummaryQuery($selectedPeriode, $selectedBranch)->get();
+        } catch (\Exception $e) {
+            return redirect()->back()->with('error', 'Gagal mengambil data: ' . $e->getMessage());
+        }
+
+        $filename = 'Ringkasan_Pendapatan_per_Dermaga_' . str_replace(' ', '_', $selectedBranch) . '_' . str_replace('-', '', $selectedPeriode) . '_' . date('YmdHis') . '.csv';
+
+        $headers = [
+            'Content-Type'        => 'text/csv; charset=UTF-8',
+            'Content-Disposition' => 'attachment; filename="' . $filename . '"',
+        ];
+
+        $callback = function () use ($data) {
+            $file = fopen('php://output', 'w');
+            fprintf($file, chr(0xEF) . chr(0xBB) . chr(0xBF));
+            fputcsv($file, [
+                'No', 'Nama Lokasi', 'Rede Type', 'Total Transaksi',
+                'Total Pendapatan Pandu', 'Total Pendapatan Tunda', 'Total Pendapatan'
+            ]);
+            $no = 1;
+            foreach ($data as $row) {
+                fputcsv($file, [
+                    $no++,
+                    $row->NAMA_LOKASI ?? '',
+                    $row->REDE_TYPE ?? '',
+                    $row->TOTAL_TRANSAKSI ?? 0,
+                    $row->TOTAL_PENDAPATAN_PANDU ?? 0,
+                    $row->TOTAL_PENDAPATAN_TUNDA ?? 0,
+                    (float) ($row->TOTAL_PENDAPATAN_PANDU ?? 0) + (float) ($row->TOTAL_PENDAPATAN_TUNDA ?? 0),
                 ]);
             }
             fclose($file);

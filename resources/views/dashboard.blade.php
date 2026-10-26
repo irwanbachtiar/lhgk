@@ -2268,6 +2268,211 @@
         </div>
         @endif
 
+        <!-- Pendapatan Pandu & Tunda per Dermaga Section -->
+        @if($selectedPeriode != 'all' && $selectedBranch != 'all')
+        <div class="row mb-4">
+            <div class="col-12">
+                <div class="card stat-card">
+                    @if($pendapatanDermagaCount == 0)
+                    <div class="card-body text-center py-4">
+                        <i class="bi bi-info-circle text-muted" style="font-size: 3rem;"></i>
+                        <h5 class="mt-3">Pendapatan Pandu & Tunda per Dermaga</h5>
+                        <p class="text-muted">Tidak ada data transaksi dermaga (TUKS/UMUM) untuk filter ini.</p>
+                    </div>
+                    @elseif(!$showPendapatanDermaga)
+                    <div class="card-body text-center py-4">
+                        <i class="bi bi-geo-alt text-info" style="font-size: 3rem;"></i>
+                        <h5 class="mt-3">Pendapatan Pandu & Tunda per Dermaga</h5>
+                        <p class="text-muted">
+                            Ditemukan <strong class="text-info">{{ number_format($pendapatanDermagaCount) }} transaksi</strong>
+                            di dermaga TUKS/UMUM
+                        </p>
+                        <a href="{{ route('dashboard', array_merge(request()->query(), ['show_pendapatan_dermaga' => 1])) }}#pendapatan-dermaga-section"
+                           class="btn btn-info text-white">
+                            <i class="bi bi-eye"></i> Tampilkan Data Pendapatan per Dermaga
+                        </a>
+                    </div>
+                    @else
+                    <div class="card-header" style="background: linear-gradient(135deg, #0ea5e9 0%, #0284c7 100%); color: white;" id="pendapatan-dermaga-section">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <h5 class="mb-0">
+                                <i class="bi bi-geo-alt-fill"></i>
+                                Pendapatan Pandu & Tunda per Dermaga
+                            </h5>
+                            <div>
+                                <a href="{{ route('export.pendapatan.dermaga', ['periode' => $selectedPeriode, 'cabang' => $selectedBranch]) }}"
+                                   class="btn btn-light btn-sm me-2">
+                                    <i class="bi bi-file-earmark-excel"></i> Download Excel
+                                </a>
+                                <a href="{{ route('dashboard', array_merge(request()->query(), ['show_pendapatan_dermaga' => 0])) }}"
+                                   class="btn btn-light btn-sm">
+                                    <i class="bi bi-x-circle"></i> Sembunyikan
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="card-body">
+                        <div class="alert alert-info mb-3">
+                            <i class="bi bi-info-circle-fill"></i>
+                            <strong>{{ number_format($pendapatanDermagaCount) }} transaksi</strong> pemanduan/tundaan di dermaga
+                            dengan <code>REDE_TYPE</code> <span class="badge bg-primary">TUKS</span> atau <span class="badge bg-secondary">UMUM</span> —
+                            lokasi dermaga diambil dari <code>PANDU_DARI</code>/<code>PANDU_KE</code> yang bukan sekadar "LAUT", "REDE", atau "LABUH".
+                        </div>
+
+                        @if($pendapatanDermagaData && $pendapatanDermagaData->count() > 0)
+                        <div class="table-responsive">
+                            <table class="table table-hover table-striped table-sm">
+                                <thead class="table-dark">
+                                    <tr>
+                                        <th style="width:48px">No</th>
+                                        <th>PPKB Code</th>
+                                        <th>Periode</th>
+                                        <th>No. UKK</th>
+                                        <th>No. Bukti Pandu</th>
+                                        <th>Nama Kapal</th>
+                                        <th>Jenis Kapal</th>
+                                        <th>GRT</th>
+                                        <th>LOA</th>
+                                        <th>Bendera</th>
+                                        <th>Nama Lokasi</th>
+                                        <th>Pandu Dari</th>
+                                        <th>Pandu Ke</th>
+                                        <th>Rede Type</th>
+                                        <th>Nama Agen</th>
+                                        <th>Pendapatan Pandu</th>
+                                        <th>Pendapatan Tunda</th>
+                                        <th>Zone</th>
+                                        <th>Delegation</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    @foreach($pendapatanDermagaData as $index => $row)
+                                    <tr>
+                                        <td>{{ $pendapatanDermagaData->firstItem() + $index }}</td>
+                                        <td class="text-nowrap small">{{ $row->PPKB_CODE ?? '-' }}</td>
+                                        <td class="text-nowrap small">{{ $row->PERIODE ?? '-' }}</td>
+                                        <td class="text-nowrap small"><span class="badge bg-secondary">{{ $row->NO_UKK ?? '-' }}</span></td>
+                                        <td class="text-nowrap small">{{ $row->NO_BKT_PANDU ?? '-' }}</td>
+                                        <td class="text-nowrap small"><strong>{{ $row->NM_KAPAL ?? '-' }}</strong></td>
+                                        <td class="text-nowrap small">{{ $row->JN_KAPAL ?? '-' }}</td>
+                                        <td class="text-nowrap small">{{ $row->KP_GRT ? number_format((float)$row->KP_GRT, 0, ',', '.') : '-' }}</td>
+                                        <td class="text-nowrap small">{{ $row->KP_LOA ?? '-' }}</td>
+                                        <td class="text-nowrap small">{{ $row->KD_BENDERA ?? '-' }}</td>
+                                        <td class="text-nowrap small">
+                                            <span class="badge bg-success">{{ $row->NAMA_LOKASI ?? '-' }}</span>
+                                        </td>
+                                        <td class="text-nowrap small">{{ $row->PANDU_DARI ?? '-' }}</td>
+                                        <td class="text-nowrap small">{{ $row->PANDU_KE ?? '-' }}</td>
+                                        <td class="text-nowrap small">
+                                            <span class="badge {{ $row->REDE_TYPE == 'TUKS' ? 'bg-primary' : 'bg-secondary' }}">{{ $row->REDE_TYPE ?? '-' }}</span>
+                                        </td>
+                                        <td class="text-nowrap small">{{ $row->NM_AGEN ?? '-' }}</td>
+                                        <td class="text-nowrap small">Rp {{ number_format((float)($row->PENDAPATAN_PANDU ?? 0), 0, ',', '.') }}</td>
+                                        <td class="text-nowrap small">Rp {{ number_format((float)($row->PENDAPATAN_TUNDA ?? 0), 0, ',', '.') }}</td>
+                                        <td class="text-nowrap small">{{ $row->ZONE ?? '-' }}</td>
+                                        <td class="text-nowrap small">{{ $row->DELEGATION ?? '-' }}</td>
+                                    </tr>
+                                    @endforeach
+                                </tbody>
+                            </table>
+                        </div>
+
+                        <!-- Pagination -->
+                        @if($pendapatanDermagaData->hasPages())
+                        <div class="d-flex justify-content-between align-items-center mt-3">
+                            <div class="text-muted">
+                                Menampilkan {{ $pendapatanDermagaData->firstItem() }} - {{ $pendapatanDermagaData->lastItem() }} dari {{ $pendapatanDermagaData->total() }} data
+                            </div>
+                            <div>
+                                {{ $pendapatanDermagaData->links('pagination::bootstrap-5') }}
+                            </div>
+                        </div>
+                        @endif
+                        @else
+                        <div class="alert alert-secondary">
+                            <i class="bi bi-info-circle"></i> Tidak ada data untuk ditampilkan
+                        </div>
+                        @endif
+                    </div>
+                    @endif
+                </div>
+            </div>
+        </div>
+        @endif
+
+        <!-- Ringkasan Pendapatan per Dermaga Section -->
+        @if($selectedPeriode != 'all' && $selectedBranch != 'all' && $pendapatanDermagaSummary->count() > 0)
+        <div class="row mb-4">
+            <div class="col-12">
+                <div class="card stat-card">
+                    <div class="card-header d-flex justify-content-between align-items-center" style="background: linear-gradient(135deg, #14b8a6 0%, #0d9488 100%); color: white;">
+                        <h5 class="mb-0"><i class="bi bi-bar-chart-line-fill"></i> Ringkasan Pendapatan Pandu & Tunda per Dermaga</h5>
+                        <a href="{{ route('export.pendapatan.dermaga.summary', ['periode' => $selectedPeriode, 'cabang' => $selectedBranch]) }}"
+                           class="btn btn-light btn-sm">
+                            <i class="bi bi-file-earmark-excel"></i> Download Excel
+                        </a>
+                    </div>
+                    <div class="card-body">
+                        <p class="text-muted mb-3">
+                            <i class="bi bi-info-circle"></i> Total pendapatan pandu dan tunda dikelompokkan berdasarkan Nama Lokasi dan Rede Type (TUKS/UMUM).
+                        </p>
+                        <div class="table-responsive">
+                            <table class="table table-hover table-striped table-sm">
+                                <thead class="table-dark">
+                                    <tr>
+                                        <th style="width:48px">No</th>
+                                        <th>Nama Lokasi</th>
+                                        <th>Rede Type</th>
+                                        <th class="text-end">Total Transaksi</th>
+                                        <th class="text-end">Total Pendapatan Pandu</th>
+                                        <th class="text-end">Total Pendapatan Tunda</th>
+                                        <th class="text-end">Total Pendapatan</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    @php
+                                        $grandTotalTransaksi = 0;
+                                        $grandTotalPandu = 0;
+                                        $grandTotalTunda = 0;
+                                    @endphp
+                                    @foreach($pendapatanDermagaSummary as $index => $row)
+                                        @php
+                                            $totalPandu = (float) ($row->TOTAL_PENDAPATAN_PANDU ?? 0);
+                                            $totalTunda = (float) ($row->TOTAL_PENDAPATAN_TUNDA ?? 0);
+                                            $grandTotalTransaksi += (int) $row->TOTAL_TRANSAKSI;
+                                            $grandTotalPandu += $totalPandu;
+                                            $grandTotalTunda += $totalTunda;
+                                        @endphp
+                                        <tr>
+                                            <td>{{ $index + 1 }}</td>
+                                            <td class="text-nowrap small"><span class="badge bg-success">{{ $row->NAMA_LOKASI ?? '-' }}</span></td>
+                                            <td class="text-nowrap small">
+                                                <span class="badge {{ $row->REDE_TYPE == 'TUKS' ? 'bg-primary' : 'bg-secondary' }}">{{ $row->REDE_TYPE ?? '-' }}</span>
+                                            </td>
+                                            <td class="text-end">{{ number_format($row->TOTAL_TRANSAKSI) }}</td>
+                                            <td class="text-end">Rp {{ number_format($totalPandu, 0, ',', '.') }}</td>
+                                            <td class="text-end">Rp {{ number_format($totalTunda, 0, ',', '.') }}</td>
+                                            <td class="text-end"><strong>Rp {{ number_format($totalPandu + $totalTunda, 0, ',', '.') }}</strong></td>
+                                        </tr>
+                                    @endforeach
+                                </tbody>
+                                <tfoot>
+                                    <tr class="table-light">
+                                        <th colspan="3" class="text-end">Total</th>
+                                        <th class="text-end">{{ number_format($grandTotalTransaksi) }}</th>
+                                        <th class="text-end">Rp {{ number_format($grandTotalPandu, 0, ',', '.') }}</th>
+                                        <th class="text-end">Rp {{ number_format($grandTotalTunda, 0, ',', '.') }}</th>
+                                        <th class="text-end">Rp {{ number_format($grandTotalPandu + $grandTotalTunda, 0, ',', '.') }}</th>
+                                    </tr>
+                                </tfoot>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        @endif
+
         <!-- Ship Statistics Charts by GT Range -->
         @if(false && ($selectedPeriode != 'all' || $selectedBranch != 'all') && $shipStatsByGT->count() > 0)
         <div class="row mb-4">
