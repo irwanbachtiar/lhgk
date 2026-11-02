@@ -796,7 +796,8 @@ class DashboardController extends Controller
                         'PANDU_DARI',
                         'PANDU_KE',
                         'NO_PKK_INAPORTNET',
-                        'PILOT_DEPLOY'
+                        'PILOT_DEPLOY',
+                        'REALISAS_PILOT_VIA'
                     )
                     ->selectRaw($this->deployVsRealisasiSelisihExpr())
                     ->orderBy('MULAI_PELAKSANAAN', 'desc')
@@ -2316,7 +2317,8 @@ class DashboardController extends Controller
                     'PANDU_DARI',
                     'PANDU_KE',
                     'NO_PKK_INAPORTNET',
-                    'PILOT_DEPLOY'
+                    'PILOT_DEPLOY',
+                    'REALISAS_PILOT_VIA'
                 )
                 ->selectRaw($this->deployVsRealisasiSelisihExpr())
                 ->orderBy('MULAI_PELAKSANAAN', 'desc')
@@ -2338,7 +2340,7 @@ class DashboardController extends Controller
             fputcsv($file, [
                 'No', 'PPKB Code', 'PPKB Submit', 'No UKK', 'No Bukti Pandu', 'Nama Kapal', 'Jenis Kapal',
                 'GRT', 'LOA', 'Nama Personil Pandu', 'Mulai Pelaksanaan', 'Selesai Pelaksanaan',
-                'Pandu Dari', 'Pandu Ke', 'No PKK Inaportnet', 'Pilot Deploy', 'Selisih'
+                'Pandu Dari', 'Pandu Ke', 'No PKK Inaportnet', 'Pilot Deploy', 'Realisasi Via', 'Selisih'
             ]);
             $no = 1;
             foreach ($data as $row) {
@@ -2359,6 +2361,7 @@ class DashboardController extends Controller
                     $row->PANDU_KE ?? '',
                     $row->NO_PKK_INAPORTNET ?? '',
                     $row->PILOT_DEPLOY ?? '',
+                    $row->REALISAS_PILOT_VIA ?? '',
                     $this->formatSelisihMenit($row->SELISIH_MENIT ?? null),
                 ]);
             }

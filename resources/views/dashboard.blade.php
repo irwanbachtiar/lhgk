@@ -2094,6 +2094,7 @@
                                         <th>Pandu Ke</th>
                                         <th>No. PKK Inaportnet</th>
                                         <th>Pilot Deploy</th>
+                                        <th>Realisasi Via</th>
                                         <th>Selisih</th>
                                     </tr>
                                 </thead>
@@ -2120,6 +2121,7 @@
                                         <td class="text-nowrap small">
                                             <span class="badge bg-danger" title="Nilai yang dibandingkan untuk hitung selisih">{{ $row->PILOT_DEPLOY ?? '-' }}</span>
                                         </td>
+                                        <td class="text-nowrap small">{{ $row->REALISAS_PILOT_VIA ?? '-' }}</td>
                                         <td class="text-nowrap small">
                                             @php
                                                 $selisihMenit = (int) ($row->SELISIH_MENIT ?? 0);
