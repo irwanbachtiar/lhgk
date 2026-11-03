@@ -13,6 +13,7 @@ use App\Http\Controllers\SarprasController;
 use App\Http\Controllers\AnperController;
 use App\Http\Controllers\SapController;
 use App\Http\Controllers\VisitorController;
+use App\Http\Controllers\GpsController;
 use App\Models\Lhgk;
 
 Route::get('/', [DashboardController::class, 'index'])->name('dashboard');
@@ -43,6 +44,8 @@ Route::get('/export-nota-batal', [NotaController::class, 'exportNotaBatal'])->na
 Route::get('/export-top-shipping-agent', [NotaController::class, 'exportTopShippingAgents'])->name('export.top.shipping.agent');
 Route::get('/export-pemanduan-lokasi-summary', [NotaController::class, 'exportPemanduanLokasiSummary'])->name('export.pemanduan.lokasi.summary');
 Route::get('/export-tunda-lokasi-summary', [NotaController::class, 'exportTundaLokasiSummary'])->name('export.tunda.lokasi.summary');
+Route::get('/gps', [GpsController::class, 'index'])->name('gps');
+Route::get('/export-gps', [GpsController::class, 'exportGrid'])->name('export.gps');
 // Pendapatan SAP
 Route::get('/pendapatan-sap', [NotaController::class, 'pendapatanSap'])->name('pendapatan.sap');
 
