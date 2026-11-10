@@ -175,9 +175,9 @@ Route::get('/debug-periods', function() {
 });
 
 // Route untuk clear semua data (gunakan dengan hati-hati!)
+// Dinonaktifkan: lihat permintaan non-aktifkan tombol Clear Data di section upload CSV.
 Route::get('/clear-data', function() {
-    Lhgk::truncate();
-    return redirect('/')->with('success', 'Semua data berhasil dihapus');
+    return redirect('/')->with('error', 'Fitur Clear Data sedang dinonaktifkan.');
 })->name('clear.data');
 
 // Route untuk clear data corrupt (NM_BRANCH yang panjangnya lebih dari 100 karakter)

@@ -2279,116 +2279,6 @@
         </div>
         @endif
 
-        <!-- Ship Statistics by GT Range and Flag -->
-        @if(($selectedPeriode != 'all' || $selectedBranch != 'all') && $shipStatsByGT->count() > 0)
-        <div class="row mb-4">
-            <div class="col-12">
-                <div class="card stat-card">
-                    <div class="card-header" style="background: linear-gradient(135deg, #06b6d4 0%, #0891b2 100%); color: white;">
-                        <h5 class="mb-0"><i class="bi bi-ship"></i> Statistik Kapal Berdasarkan Range GT dan Bendera</h5>
-                    </div>
-                    <div class="card-body">
-                        <div class="table-responsive">
-                            <table class="table table-hover">
-                                <thead class="table-light">
-                                    <tr>
-                                        <th>Range GT</th>
-                                        <th>Jenis Kapal</th>
-                                        <th class="text-end">Total Transaksi</th>
-                                        <th class="text-end">Pendapatan Pandu</th>
-                                        <th class="text-end">Pendapatan Tunda</th>
-                                        <th class="text-end">Total Pendapatan</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    @php
-                                        $currentGT = '';
-                                        $totalPanduGlobal = 0;
-                                        $totalTundaGlobal = 0;
-                                        $totalTransaksiGlobal = 0;
-                                        $totalPendapatanGlobal = 0;
-                                        
-                                        // Calculate totals by flag
-                                        $totalPanduNasional = 0;
-                                        $totalTundaNasional = 0;
-                                        $totalTransaksiNasional = 0;
-                                        $totalPendapatanNasional = 0;
-                                        
-                                        $totalPanduAsing = 0;
-                                        $totalTundaAsing = 0;
-                                        $totalTransaksiAsing = 0;
-                                        $totalPendapatanAsing = 0;
-                                    @endphp
-                                    @foreach($shipStatsByGT as $stat)
-                                        @php
-                                            $totalPanduGlobal += $stat->total_pendapatan_pandu;
-                                            $totalTundaGlobal += $stat->total_pendapatan_tunda;
-                                            $totalTransaksiGlobal += $stat->total_transaksi;
-                                            $totalPendapatanGlobal += $stat->total_pendapatan;
-                                            
-                                            if ($stat->JENIS_KAPAL_DARI_BENDERA == 'KAPAL NASIONAL') {
-                                                $totalPanduNasional += $stat->total_pendapatan_pandu;
-                                                $totalTundaNasional += $stat->total_pendapatan_tunda;
-                                                $totalTransaksiNasional += $stat->total_transaksi;
-                                                $totalPendapatanNasional += $stat->total_pendapatan;
-                                            } else {
-                                                $totalPanduAsing += $stat->total_pendapatan_pandu;
-                                                $totalTundaAsing += $stat->total_pendapatan_tunda;
-                                                $totalTransaksiAsing += $stat->total_transaksi;
-                                                $totalPendapatanAsing += $stat->total_pendapatan;
-                                            }
-                                            
-                                            $rowspan = $shipStatsByGT->where('RANGE_GT', $stat->RANGE_GT)->count();
-                                        @endphp
-                                        <tr>
-                                            @if($currentGT != $stat->RANGE_GT)
-                                                @php $currentGT = $stat->RANGE_GT; @endphp
-                                                <td rowspan="{{ $rowspan }}" class="align-middle">
-                                                    <span class="badge bg-primary">{{ str_replace(' GT', '', $stat->RANGE_GT) }}</span>
-                                                </td>
-                                            @endif
-                                            <td>
-                                                <span class="badge {{ $stat->JENIS_KAPAL_DARI_BENDERA == 'KAPAL NASIONAL' ? 'bg-success' : 'bg-info' }}">
-                                                    {{ $stat->JENIS_KAPAL_DARI_BENDERA }}
-                                                </span>
-                                            </td>
-                                            <td class="text-end">{{ number_format($stat->total_transaksi) }}</td>
-                                            <td class="text-end">Rp {{ number_format($stat->total_pendapatan_pandu, 0, ',', '.') }}</td>
-                                            <td class="text-end">Rp {{ number_format($stat->total_pendapatan_tunda, 0, ',', '.') }}</td>
-                                            <td class="text-end"><strong>Rp {{ number_format($stat->total_pendapatan, 0, ',', '.') }}</strong></td>
-                                        </tr>
-                                    @endforeach
-                                </tbody>
-                                <tfoot>
-                                    <tr class="table-success">
-                                        <th colspan="2" class="text-end">Total Kapal Nasional:</th>
-                                        <th class="text-end">{{ number_format($totalTransaksiNasional) }}</th>
-                                        <th class="text-end">Rp {{ number_format($totalPanduNasional, 0, ',', '.') }}</th>
-                                        <th class="text-end">Rp {{ number_format($totalTundaNasional, 0, ',', '.') }}</th>
-                                        <th class="text-end"><strong>Rp {{ number_format($totalPendapatanNasional, 0, ',', '.') }}</strong></th>
-                                    </tr>
-                                    <tr class="table-info">
-                                        <th colspan="2" class="text-end">Total Kapal Asing:</th>
-                                        <th class="text-end">{{ number_format($totalTransaksiAsing) }}</th>
-                                        <th class="text-end">Rp {{ number_format($totalPanduAsing, 0, ',', '.') }}</th>
-                                        <th class="text-end">Rp {{ number_format($totalTundaAsing, 0, ',', '.') }}</th>
-                                        <th class="text-end"><strong>Rp {{ number_format($totalPendapatanAsing, 0, ',', '.') }}</strong></th>
-                                    </tr>
-                                    <tr class="table-secondary">
-                                        <th colspan="2" class="text-end">Total Keseluruhan:</th>
-                                        <th class="text-end">{{ number_format($totalTransaksiGlobal) }}</th>
-                                        <th class="text-end">Rp {{ number_format($totalPanduGlobal, 0, ',', '.') }}</th>
-                                        <th class="text-end">Rp {{ number_format($totalTundaGlobal, 0, ',', '.') }}</th>
-                                        <th class="text-end"><strong>Rp {{ number_format($totalPendapatanGlobal, 0, ',', '.') }}</strong></th>
-                                    </tr>
-                                </tfoot>
-                            </table>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-        @endif
 
         <!-- Pendapatan Pandu & Tunda per Dermaga Section -->
         @if($selectedPeriode != 'all' && $selectedBranch != 'all')
@@ -2527,12 +2417,32 @@
         <div class="row mb-4">
             <div class="col-12">
                 <div class="card stat-card">
-                    <div class="card-header d-flex justify-content-between align-items-center" style="background: linear-gradient(135deg, #14b8a6 0%, #0d9488 100%); color: white;">
-                        <h5 class="mb-0"><i class="bi bi-bar-chart-line-fill"></i> Ringkasan Pendapatan Pandu & Tunda per Dermaga</h5>
-                        <a href="{{ route('export.pendapatan.dermaga.summary', ['periode' => $selectedPeriode, 'cabang' => $selectedBranch]) }}"
-                           class="btn btn-light btn-sm">
-                            <i class="bi bi-file-earmark-excel"></i> Download Excel
+                    @if(!$showPendapatanDermagaSummary)
+                    <div class="card-body text-center py-4">
+                        <i class="bi bi-bar-chart-line text-success" style="font-size: 3rem;"></i>
+                        <h5 class="mt-3">Ringkasan Pendapatan Pandu & Tunda per Dermaga</h5>
+                        <p class="text-muted">
+                            Ditemukan <strong class="text-success">{{ number_format($pendapatanDermagaSummary->count()) }} kombinasi</strong>
+                            lokasi & rede type
+                        </p>
+                        <a href="{{ route('dashboard', array_merge(request()->query(), ['show_pendapatan_dermaga_summary' => 1])) }}#pendapatan-dermaga-summary-section"
+                           class="btn" style="background: linear-gradient(135deg, #14b8a6 0%, #0d9488 100%); color: white;">
+                            <i class="bi bi-eye"></i> Tampilkan Ringkasan Pendapatan per Dermaga
                         </a>
+                    </div>
+                    @else
+                    <div class="card-header d-flex justify-content-between align-items-center" style="background: linear-gradient(135deg, #14b8a6 0%, #0d9488 100%); color: white;" id="pendapatan-dermaga-summary-section">
+                        <h5 class="mb-0"><i class="bi bi-bar-chart-line-fill"></i> Ringkasan Pendapatan Pandu & Tunda per Dermaga</h5>
+                        <div>
+                            <a href="{{ route('export.pendapatan.dermaga.summary', ['periode' => $selectedPeriode, 'cabang' => $selectedBranch]) }}"
+                               class="btn btn-light btn-sm me-2">
+                                <i class="bi bi-file-earmark-excel"></i> Download Excel
+                            </a>
+                            <a href="{{ route('dashboard', array_merge(request()->query(), ['show_pendapatan_dermaga_summary' => 0])) }}"
+                               class="btn btn-light btn-sm">
+                                <i class="bi bi-x-circle"></i> Sembunyikan
+                            </a>
+                        </div>
                     </div>
                     <div class="card-body">
                         <p class="text-muted mb-3">
@@ -2590,11 +2500,123 @@
                             </table>
                         </div>
                     </div>
+                    @endif
                 </div>
             </div>
         </div>
         @endif
 
+
+        <!-- Ship Statistics by GT Range and Flag -->
+        @if(($selectedPeriode != 'all' || $selectedBranch != 'all') && $shipStatsByGT->count() > 0)
+        <div class="row mb-4">
+            <div class="col-12">
+                <div class="card stat-card">
+                    <div class="card-header" style="background: linear-gradient(135deg, #06b6d4 0%, #0891b2 100%); color: white;">
+                        <h5 class="mb-0"><i class="bi bi-ship"></i> Statistik Kapal Berdasarkan Range GT dan Bendera</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="table-responsive">
+                            <table class="table table-hover">
+                                <thead class="table-light">
+                                    <tr>
+                                        <th>Range GT</th>
+                                        <th>Jenis Kapal</th>
+                                        <th class="text-end">Total Transaksi</th>
+                                        <th class="text-end">Pendapatan Pandu</th>
+                                        <th class="text-end">Pendapatan Tunda</th>
+                                        <th class="text-end">Total Pendapatan</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    @php
+                                        $currentGT = '';
+                                        $totalPanduGlobal = 0;
+                                        $totalTundaGlobal = 0;
+                                        $totalTransaksiGlobal = 0;
+                                        $totalPendapatanGlobal = 0;
+                                        
+                                        // Calculate totals by flag
+                                        $totalPanduNasional = 0;
+                                        $totalTundaNasional = 0;
+                                        $totalTransaksiNasional = 0;
+                                        $totalPendapatanNasional = 0;
+                                        
+                                        $totalPanduAsing = 0;
+                                        $totalTundaAsing = 0;
+                                        $totalTransaksiAsing = 0;
+                                        $totalPendapatanAsing = 0;
+                                    @endphp
+                                    @foreach($shipStatsByGT as $stat)
+                                        @php
+                                            $totalPanduGlobal += $stat->total_pendapatan_pandu;
+                                            $totalTundaGlobal += $stat->total_pendapatan_tunda;
+                                            $totalTransaksiGlobal += $stat->total_transaksi;
+                                            $totalPendapatanGlobal += $stat->total_pendapatan;
+                                            
+                                            if ($stat->JENIS_KAPAL_DARI_BENDERA == 'KAPAL NASIONAL') {
+                                                $totalPanduNasional += $stat->total_pendapatan_pandu;
+                                                $totalTundaNasional += $stat->total_pendapatan_tunda;
+                                                $totalTransaksiNasional += $stat->total_transaksi;
+                                                $totalPendapatanNasional += $stat->total_pendapatan;
+                                            } else {
+                                                $totalPanduAsing += $stat->total_pendapatan_pandu;
+                                                $totalTundaAsing += $stat->total_pendapatan_tunda;
+                                                $totalTransaksiAsing += $stat->total_transaksi;
+                                                $totalPendapatanAsing += $stat->total_pendapatan;
+                                            }
+                                            
+                                            $rowspan = $shipStatsByGT->where('RANGE_GT', $stat->RANGE_GT)->count();
+                                        @endphp
+                                        <tr>
+                                            @if($currentGT != $stat->RANGE_GT)
+                                                @php $currentGT = $stat->RANGE_GT; @endphp
+                                                <td rowspan="{{ $rowspan }}" class="align-middle">
+                                                    <span class="badge bg-primary">{{ str_replace(' GT', '', $stat->RANGE_GT) }}</span>
+                                                </td>
+                                            @endif
+                                            <td>
+                                                <span class="badge {{ $stat->JENIS_KAPAL_DARI_BENDERA == 'KAPAL NASIONAL' ? 'bg-success' : 'bg-info' }}">
+                                                    {{ $stat->JENIS_KAPAL_DARI_BENDERA }}
+                                                </span>
+                                            </td>
+                                            <td class="text-end">{{ number_format($stat->total_transaksi) }}</td>
+                                            <td class="text-end">Rp {{ number_format($stat->total_pendapatan_pandu, 0, ',', '.') }}</td>
+                                            <td class="text-end">Rp {{ number_format($stat->total_pendapatan_tunda, 0, ',', '.') }}</td>
+                                            <td class="text-end"><strong>Rp {{ number_format($stat->total_pendapatan, 0, ',', '.') }}</strong></td>
+                                        </tr>
+                                    @endforeach
+                                </tbody>
+                                <tfoot>
+                                    <tr class="table-success">
+                                        <th colspan="2" class="text-end">Total Kapal Nasional:</th>
+                                        <th class="text-end">{{ number_format($totalTransaksiNasional) }}</th>
+                                        <th class="text-end">Rp {{ number_format($totalPanduNasional, 0, ',', '.') }}</th>
+                                        <th class="text-end">Rp {{ number_format($totalTundaNasional, 0, ',', '.') }}</th>
+                                        <th class="text-end"><strong>Rp {{ number_format($totalPendapatanNasional, 0, ',', '.') }}</strong></th>
+                                    </tr>
+                                    <tr class="table-info">
+                                        <th colspan="2" class="text-end">Total Kapal Asing:</th>
+                                        <th class="text-end">{{ number_format($totalTransaksiAsing) }}</th>
+                                        <th class="text-end">Rp {{ number_format($totalPanduAsing, 0, ',', '.') }}</th>
+                                        <th class="text-end">Rp {{ number_format($totalTundaAsing, 0, ',', '.') }}</th>
+                                        <th class="text-end"><strong>Rp {{ number_format($totalPendapatanAsing, 0, ',', '.') }}</strong></th>
+                                    </tr>
+                                    <tr class="table-secondary">
+                                        <th colspan="2" class="text-end">Total Keseluruhan:</th>
+                                        <th class="text-end">{{ number_format($totalTransaksiGlobal) }}</th>
+                                        <th class="text-end">Rp {{ number_format($totalPanduGlobal, 0, ',', '.') }}</th>
+                                        <th class="text-end">Rp {{ number_format($totalTundaGlobal, 0, ',', '.') }}</th>
+                                        <th class="text-end"><strong>Rp {{ number_format($totalPendapatanGlobal, 0, ',', '.') }}</strong></th>
+                                    </tr>
+                                </tfoot>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        @endif
 
         <!-- Ship Statistics Charts by GT Range -->
         @if(false && ($selectedPeriode != 'all' || $selectedBranch != 'all') && $shipStatsByGT->count() > 0)
@@ -2767,30 +2789,19 @@
         </div>
         @endif
 
-        <!-- CSV Upload Section -->
+        <!-- CSV Upload Section (upload & clear data dinonaktifkan) -->
         <div class="row mb-4">
             <div class="col-12">
                 <div class="card stat-card">
                     <div class="card-body">
                         <h5 class="card-title"><i class="bi bi-upload"></i> Upload File CSV</h5>
-                        <form action="{{ route('upload.csv') }}" method="POST" enctype="multipart/form-data">
-                            @csrf
-                            <div class="row align-items-end">
-                                <div class="col-md-8">
-                                    <input type="file" name="csv_file" class="form-control" accept=".csv,.txt" required>
-                                    <small class="text-muted">Format: CSV (maksimal 10MB) | <a href="/debug-periods" target="_blank">Debug Periode</a></small>
-                                </div>
-                                <div class="col-md-2">
-                                    <button type="submit" class="btn btn-primary w-100"><i class="bi bi-upload"></i> Upload</button>
-                                </div>
-                                <div class="col-md-2">
-                                    <a href="{{ route('clear.data') }}" class="btn btn-danger w-100" onclick="return confirm('Yakin ingin menghapus semua data?')">
-                                        <i class="bi bi-trash"></i> Clear Data
-                                    </a>
-                                </div>
-                            </div>
-                        </form>
-                        
+                        <div class="alert alert-secondary mb-3">
+                            <i class="bi bi-slash-circle"></i> Fitur upload file CSV sedang dinonaktifkan.
+                        </div>
+                        <div class="alert alert-secondary mb-3">
+                            <i class="bi bi-slash-circle"></i> Fitur Clear Data sedang dinonaktifkan.
+                        </div>
+
                         @if(session('success'))
                             <div class="alert alert-success mt-3">
                                 <i class="bi bi-check-circle-fill"></i> {{ session('success') }}

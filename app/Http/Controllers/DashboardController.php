@@ -313,6 +313,7 @@ class DashboardController extends Controller
             $showDeployVsRealisasi = $request->get('show_deploy_vs_realisasi', 0);
             $showPendapatanDermaga = $request->get('show_pendapatan_dermaga', 0);
             $showNonPelayananTunda = $request->get('show_non_pelayanan_tunda', 0);
+            $showPendapatanDermagaSummary = $request->get('show_pendapatan_dermaga_summary', 0);
             $filterStatusNota = $request->get('filter_status_nota', 'all');
             
             // Count queries for section visibility
@@ -868,7 +869,7 @@ class DashboardController extends Controller
                         'STATUS_NOTA'
                     )
                     ->orderBy('PPKB_CODE')
-                    ->paginate(15)
+                    ->paginate(15, ['*'], 'non_pelayanan_tunda_page')
                     ->appends(request()->query());
             }
         } else {
@@ -921,10 +922,11 @@ class DashboardController extends Controller
             $showNonPelayananTunda = false;
             $nonPelayananTundaCount = 0;
             $nonPelayananTundaData = null;
+            $showPendapatanDermagaSummary = false;
         }
 
         // Show main dashboard view with filters, but without data until filters are selected
-        return view('dashboard', compact('statistics', 'chartData', 'totalOverall', 'periods', 'selectedPeriode', 'regionalGroups', 'allBranches', 'selectedBranch', 'topPilot', 'shipStatsByGT', 'showDeparture', 'departureDelayCount', 'departureDelayData', 'showStatusNota', 'statusNotaCount', 'statusNotaData', 'filterStatusNota', 'showWaitingTime', 'waitingTimeCount', 'waitingTimeData', 'showPkkManual', 'pkkManualCount', 'pkkManualData', 'showBackdate', 'backdateCount', 'backdateData', 'totalPpkbCount', 'backdatePercentage', 'showRealisasiWeb', 'realisasiWebCount', 'realisasiWebData', 'realisasiPandu', 'realisasiTunda', 'totalTundaDistinct', 'showAnomali', 'anomaliCount', 'anomaliData', 'showDurasiPemanduan0', 'durasiPemanduan0Count', 'durasiPemanduan0Data', 'showMismatch', 'mismatchCount', 'mismatchData', 'mismatchDebugError', 'mismatchColumns', 'mismatchPkkInaportnetCol', 'showPanduSetNotRealization', 'panduSetNotRealizationCount', 'panduSetNotRealizationData', 'showSiklusPelayanan', 'siklusPelayananCount', 'siklusPelayananData', 'showDeployVsRealisasi', 'deployVsRealisasiCount', 'deployVsRealisasiData', 'showPendapatanDermaga', 'pendapatanDermagaCount', 'pendapatanDermagaData', 'pendapatanDermagaSummary', 'showNonPelayananTunda', 'nonPelayananTundaCount', 'nonPelayananTundaData'));
+        return view('dashboard', compact('statistics', 'chartData', 'totalOverall', 'periods', 'selectedPeriode', 'regionalGroups', 'allBranches', 'selectedBranch', 'topPilot', 'shipStatsByGT', 'showDeparture', 'departureDelayCount', 'departureDelayData', 'showStatusNota', 'statusNotaCount', 'statusNotaData', 'filterStatusNota', 'showWaitingTime', 'waitingTimeCount', 'waitingTimeData', 'showPkkManual', 'pkkManualCount', 'pkkManualData', 'showBackdate', 'backdateCount', 'backdateData', 'totalPpkbCount', 'backdatePercentage', 'showRealisasiWeb', 'realisasiWebCount', 'realisasiWebData', 'realisasiPandu', 'realisasiTunda', 'totalTundaDistinct', 'showAnomali', 'anomaliCount', 'anomaliData', 'showDurasiPemanduan0', 'durasiPemanduan0Count', 'durasiPemanduan0Data', 'showMismatch', 'mismatchCount', 'mismatchData', 'mismatchDebugError', 'mismatchColumns', 'mismatchPkkInaportnetCol', 'showPanduSetNotRealization', 'panduSetNotRealizationCount', 'panduSetNotRealizationData', 'showSiklusPelayanan', 'siklusPelayananCount', 'siklusPelayananData', 'showDeployVsRealisasi', 'deployVsRealisasiCount', 'deployVsRealisasiData', 'showPendapatanDermaga', 'pendapatanDermagaCount', 'pendapatanDermagaData', 'pendapatanDermagaSummary', 'showNonPelayananTunda', 'nonPelayananTundaCount', 'nonPelayananTundaData', 'showPendapatanDermagaSummary'));
     }
 
     /**
@@ -1061,14 +1063,14 @@ class DashboardController extends Controller
     /**
      * Non Pelayanan Tunda: kapal dengan LOA >= 70 yang tidak memiliki
      * realisasi tunda (MULAI_TUNDA kosong/null), dan pergerakannya bukan
-     * sepenuhnya laut/rede (minimal salah satu dari PANDU_DARI/PANDU_KE
+     * sepenuhnya laut/rede/labuh (minimal salah satu dari PANDU_DARI/PANDU_KE
      * adalah lokasi dermaga nyata), sehingga seharusnya ada pelayanan tunda.
      */
     private function nonPelayananTundaBaseQuery($periode, $branch)
     {
         return Lhgk::where('KP_LOA', '>=', 70)
             ->whereRaw("(MULAI_TUNDA IS NULL OR MULAI_TUNDA = '')")
-            ->whereRaw("NOT ( (PANDU_DARI LIKE '%LAUT%' OR PANDU_DARI LIKE '%REDE%') AND (PANDU_KE LIKE '%LAUT%' OR PANDU_KE LIKE '%REDE%') )")
+            ->whereRaw("NOT ( (PANDU_DARI LIKE '%LAUT%' OR PANDU_DARI LIKE '%REDE%' OR PANDU_DARI LIKE '%LABUH%') AND (PANDU_KE LIKE '%LAUT%' OR PANDU_KE LIKE '%REDE%' OR PANDU_KE LIKE '%LABUH%') )")
             ->where('PERIODE', $periode)
             ->where('NM_BRANCH', $branch);
     }
@@ -3374,6 +3376,8 @@ class DashboardController extends Controller
 
     public function uploadCsv(Request $request)
     {
+        return redirect()->back()->with('error', 'Fitur upload file CSV sedang dinonaktifkan.');
+
         // Increase execution time for very large files
         set_time_limit(0); // No limit
         ini_set('memory_limit', '1024M'); // 1GB
