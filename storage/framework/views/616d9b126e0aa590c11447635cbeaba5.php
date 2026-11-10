@@ -2183,6 +2183,124 @@
         </div>
         <?php endif; ?>
 
+        <!-- Non Pelayanan Tunda Section -->
+        <?php if($selectedPeriode != 'all' && $selectedBranch != 'all'): ?>
+        <div class="row mb-4">
+            <div class="col-12">
+                <div class="card stat-card">
+                    <?php if($nonPelayananTundaCount == 0): ?>
+                    <div class="card-body text-center py-4">
+                        <i class="bi bi-info-circle text-muted" style="font-size: 3rem;"></i>
+                        <h5 class="mt-3">Non Pelayanan Tunda</h5>
+                        <p class="text-muted">Tidak ada data kapal tanpa pelayanan tunda untuk filter ini.</p>
+                    </div>
+                    <?php elseif(!$showNonPelayananTunda): ?>
+                    <div class="card-body text-center py-4">
+                        <i class="bi bi-exclamation-triangle text-warning" style="font-size: 3rem;"></i>
+                        <h5 class="mt-3">Non Pelayanan Tunda</h5>
+                        <p class="text-muted">
+                            Ditemukan <strong class="text-warning"><?php echo e(number_format($nonPelayananTundaCount)); ?> kapal</strong>
+                            (LOA &ge; 70) tanpa realisasi tunda
+                        </p>
+                        <a href="<?php echo e(route('dashboard', array_merge(request()->query(), ['show_non_pelayanan_tunda' => 1]))); ?>#non-pelayanan-tunda-section"
+                           class="btn btn-warning text-white">
+                            <i class="bi bi-eye"></i> Tampilkan Data Non Pelayanan Tunda
+                        </a>
+                    </div>
+                    <?php else: ?>
+                    <div class="card-header" style="background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%); color: white;" id="non-pelayanan-tunda-section">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <h5 class="mb-0">
+                                <i class="bi bi-exclamation-triangle-fill"></i>
+                                Non Pelayanan Tunda
+                            </h5>
+                            <div>
+                                <a href="<?php echo e(route('export.non.pelayanan.tunda', ['periode' => $selectedPeriode, 'cabang' => $selectedBranch])); ?>"
+                                   class="btn btn-light btn-sm me-2">
+                                    <i class="bi bi-file-earmark-excel"></i> Download Excel
+                                </a>
+                                <a href="<?php echo e(route('dashboard', array_merge(request()->query(), ['show_non_pelayanan_tunda' => 0]))); ?>"
+                                   class="btn btn-light btn-sm">
+                                    <i class="bi bi-x-circle"></i> Sembunyikan
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="card-body">
+                        <div class="alert alert-warning mb-3">
+                            <i class="bi bi-info-circle-fill"></i>
+                            <strong><?php echo e(number_format($nonPelayananTundaCount)); ?> kapal</strong> dengan LOA &ge; 70 tidak memiliki realisasi tunda
+                            (<code>MULAI_TUNDA</code> kosong).
+                        </div>
+
+                        <?php if($nonPelayananTundaData && $nonPelayananTundaData->count() > 0): ?>
+                        <div class="table-responsive">
+                            <table class="table table-hover table-striped table-sm">
+                                <thead class="table-dark">
+                                    <tr>
+                                        <th style="width:48px">No</th>
+                                        <th>PPKB Code</th>
+                                        <th>No. UKK</th>
+                                        <th>No. Bukti Pandu</th>
+                                        <th>Nama Kapal</th>
+                                        <th>Jenis Kapal</th>
+                                        <th>LOA</th>
+                                        <th>Pandu Dari</th>
+                                        <th>Pandu Ke</th>
+                                        <th>Rede Type</th>
+                                        <th>Mulai Tunda</th>
+                                        <th>Status Nota</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <?php $__currentLoopData = $nonPelayananTundaData; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $index => $row): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
+                                    <tr>
+                                        <td><?php echo e($nonPelayananTundaData->firstItem() + $index); ?></td>
+                                        <td class="text-nowrap small"><?php echo e($row->PPKB_CODE ?? '-'); ?></td>
+                                        <td class="text-nowrap small"><span class="badge bg-secondary"><?php echo e($row->NO_UKK ?? '-'); ?></span></td>
+                                        <td class="text-nowrap small"><?php echo e($row->NO_BKT_PANDU ?? '-'); ?></td>
+                                        <td class="text-nowrap small"><strong><?php echo e($row->NM_KAPAL ?? '-'); ?></strong></td>
+                                        <td class="text-nowrap small"><?php echo e($row->JN_KAPAL ?? '-'); ?></td>
+                                        <td class="text-nowrap small"><?php echo e($row->KP_LOA ?? '-'); ?></td>
+                                        <td class="text-nowrap small"><?php echo e($row->PANDU_DARI ?? '-'); ?></td>
+                                        <td class="text-nowrap small"><?php echo e($row->PANDU_KE ?? '-'); ?></td>
+                                        <td class="text-nowrap small">
+                                            <span class="badge <?php echo e($row->REDE_TYPE == 'TUKS' ? 'bg-primary' : 'bg-secondary'); ?>"><?php echo e($row->REDE_TYPE ?? '-'); ?></span>
+                                        </td>
+                                        <td class="text-nowrap small"><?php echo e($row->MULAI_TUNDA ?? '-'); ?></td>
+                                        <td class="text-nowrap small">
+                                            <span class="badge <?php echo e($row->STATUS_NOTA == 'menunggu nota' ? 'bg-warning' : 'bg-info'); ?> text-dark"><?php echo e(strtoupper($row->STATUS_NOTA ?? '-')); ?></span>
+                                        </td>
+                                    </tr>
+                                    <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>
+                                </tbody>
+                            </table>
+                        </div>
+
+                        <!-- Pagination -->
+                        <?php if($nonPelayananTundaData->hasPages()): ?>
+                        <div class="d-flex justify-content-between align-items-center mt-3">
+                            <div class="text-muted">
+                                Menampilkan <?php echo e($nonPelayananTundaData->firstItem()); ?> - <?php echo e($nonPelayananTundaData->lastItem()); ?> dari <?php echo e($nonPelayananTundaData->total()); ?> data
+                            </div>
+                            <div>
+                                <?php echo e($nonPelayananTundaData->links('pagination::bootstrap-5')); ?>
+
+                            </div>
+                        </div>
+                        <?php endif; ?>
+                        <?php else: ?>
+                        <div class="alert alert-secondary">
+                            <i class="bi bi-info-circle"></i> Tidak ada data untuk ditampilkan
+                        </div>
+                        <?php endif; ?>
+                    </div>
+                    <?php endif; ?>
+                </div>
+            </div>
+        </div>
+        <?php endif; ?>
+
         <!-- Ship Statistics by GT Range and Flag -->
         <?php if(($selectedPeriode != 'all' || $selectedBranch != 'all') && $shipStatsByGT->count() > 0): ?>
         <div class="row mb-4">
@@ -2500,6 +2618,7 @@
             </div>
         </div>
         <?php endif; ?>
+
 
         <!-- Ship Statistics Charts by GT Range -->
         <?php if(false && ($selectedPeriode != 'all' || $selectedBranch != 'all') && $shipStatsByGT->count() > 0): ?>

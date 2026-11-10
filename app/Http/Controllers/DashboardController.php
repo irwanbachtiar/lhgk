@@ -312,6 +312,7 @@ class DashboardController extends Controller
             $showSiklusPelayanan = $request->get('show_siklus_pelayanan', 0);
             $showDeployVsRealisasi = $request->get('show_deploy_vs_realisasi', 0);
             $showPendapatanDermaga = $request->get('show_pendapatan_dermaga', 0);
+            $showNonPelayananTunda = $request->get('show_non_pelayanan_tunda', 0);
             $filterStatusNota = $request->get('filter_status_nota', 'all');
             
             // Count queries for section visibility
@@ -843,6 +844,33 @@ class DashboardController extends Controller
             // Ringkasan Pendapatan per Dermaga: total pendapatan pandu & tunda
             // dikelompokkan berdasarkan Nama Lokasi dan Rede Type.
             $pendapatanDermagaSummary = $this->pendapatanDermagaSummaryQuery($selectedPeriode, $selectedBranch)->get();
+
+            // Non Pelayanan Tunda: kapal besar (LOA >= 70) tanpa realisasi tunda
+            // (MULAI_TUNDA kosong), dengan pergerakan yang bukan sepenuhnya
+            // laut/rede (minimal salah satu dari PANDU_DARI/PANDU_KE adalah
+            // lokasi dermaga nyata), sehingga seharusnya ada pelayanan tunda.
+            $nonPelayananTundaCount = $this->nonPelayananTundaBaseQuery($selectedPeriode, $selectedBranch)->count();
+
+            $nonPelayananTundaData = null;
+            if ($showNonPelayananTunda && $nonPelayananTundaCount > 0) {
+                $nonPelayananTundaData = $this->nonPelayananTundaBaseQuery($selectedPeriode, $selectedBranch)
+                    ->select(
+                        'PPKB_CODE',
+                        'NO_UKK',
+                        'NO_BKT_PANDU',
+                        'NM_KAPAL',
+                        'JN_KAPAL',
+                        'KP_LOA',
+                        'PANDU_DARI',
+                        'PANDU_KE',
+                        'REDE_TYPE',
+                        'MULAI_TUNDA',
+                        'STATUS_NOTA'
+                    )
+                    ->orderBy('PPKB_CODE')
+                    ->paginate(15)
+                    ->appends(request()->query());
+            }
         } else {
             $showDeparture = false;
             $departureDelayCount = 0;
@@ -890,10 +918,13 @@ class DashboardController extends Controller
             $pendapatanDermagaCount = 0;
             $pendapatanDermagaData = null;
             $pendapatanDermagaSummary = collect();
+            $showNonPelayananTunda = false;
+            $nonPelayananTundaCount = 0;
+            $nonPelayananTundaData = null;
         }
 
         // Show main dashboard view with filters, but without data until filters are selected
-        return view('dashboard', compact('statistics', 'chartData', 'totalOverall', 'periods', 'selectedPeriode', 'regionalGroups', 'allBranches', 'selectedBranch', 'topPilot', 'shipStatsByGT', 'showDeparture', 'departureDelayCount', 'departureDelayData', 'showStatusNota', 'statusNotaCount', 'statusNotaData', 'filterStatusNota', 'showWaitingTime', 'waitingTimeCount', 'waitingTimeData', 'showPkkManual', 'pkkManualCount', 'pkkManualData', 'showBackdate', 'backdateCount', 'backdateData', 'totalPpkbCount', 'backdatePercentage', 'showRealisasiWeb', 'realisasiWebCount', 'realisasiWebData', 'realisasiPandu', 'realisasiTunda', 'totalTundaDistinct', 'showAnomali', 'anomaliCount', 'anomaliData', 'showDurasiPemanduan0', 'durasiPemanduan0Count', 'durasiPemanduan0Data', 'showMismatch', 'mismatchCount', 'mismatchData', 'mismatchDebugError', 'mismatchColumns', 'mismatchPkkInaportnetCol', 'showPanduSetNotRealization', 'panduSetNotRealizationCount', 'panduSetNotRealizationData', 'showSiklusPelayanan', 'siklusPelayananCount', 'siklusPelayananData', 'showDeployVsRealisasi', 'deployVsRealisasiCount', 'deployVsRealisasiData', 'showPendapatanDermaga', 'pendapatanDermagaCount', 'pendapatanDermagaData', 'pendapatanDermagaSummary'));
+        return view('dashboard', compact('statistics', 'chartData', 'totalOverall', 'periods', 'selectedPeriode', 'regionalGroups', 'allBranches', 'selectedBranch', 'topPilot', 'shipStatsByGT', 'showDeparture', 'departureDelayCount', 'departureDelayData', 'showStatusNota', 'statusNotaCount', 'statusNotaData', 'filterStatusNota', 'showWaitingTime', 'waitingTimeCount', 'waitingTimeData', 'showPkkManual', 'pkkManualCount', 'pkkManualData', 'showBackdate', 'backdateCount', 'backdateData', 'totalPpkbCount', 'backdatePercentage', 'showRealisasiWeb', 'realisasiWebCount', 'realisasiWebData', 'realisasiPandu', 'realisasiTunda', 'totalTundaDistinct', 'showAnomali', 'anomaliCount', 'anomaliData', 'showDurasiPemanduan0', 'durasiPemanduan0Count', 'durasiPemanduan0Data', 'showMismatch', 'mismatchCount', 'mismatchData', 'mismatchDebugError', 'mismatchColumns', 'mismatchPkkInaportnetCol', 'showPanduSetNotRealization', 'panduSetNotRealizationCount', 'panduSetNotRealizationData', 'showSiklusPelayanan', 'siklusPelayananCount', 'siklusPelayananData', 'showDeployVsRealisasi', 'deployVsRealisasiCount', 'deployVsRealisasiData', 'showPendapatanDermaga', 'pendapatanDermagaCount', 'pendapatanDermagaData', 'pendapatanDermagaSummary', 'showNonPelayananTunda', 'nonPelayananTundaCount', 'nonPelayananTundaData'));
     }
 
     /**
@@ -1025,6 +1056,21 @@ class DashboardController extends Controller
             ->groupBy('REDE_TYPE')
             ->orderBy('NAMA_LOKASI')
             ->orderBy('REDE_TYPE');
+    }
+
+    /**
+     * Non Pelayanan Tunda: kapal dengan LOA >= 70 yang tidak memiliki
+     * realisasi tunda (MULAI_TUNDA kosong/null), dan pergerakannya bukan
+     * sepenuhnya laut/rede (minimal salah satu dari PANDU_DARI/PANDU_KE
+     * adalah lokasi dermaga nyata), sehingga seharusnya ada pelayanan tunda.
+     */
+    private function nonPelayananTundaBaseQuery($periode, $branch)
+    {
+        return Lhgk::where('KP_LOA', '>=', 70)
+            ->whereRaw("(MULAI_TUNDA IS NULL OR MULAI_TUNDA = '')")
+            ->whereRaw("NOT ( (PANDU_DARI LIKE '%LAUT%' OR PANDU_DARI LIKE '%REDE%') AND (PANDU_KE LIKE '%LAUT%' OR PANDU_KE LIKE '%REDE%') )")
+            ->where('PERIODE', $periode)
+            ->where('NM_BRANCH', $branch);
     }
 
     private function getRegionalGroups()
@@ -2447,6 +2493,73 @@ class DashboardController extends Controller
                     $row->PENDAPATAN_TUNDA ?? '',
                     $row->ZONE ?? '',
                     $row->DELEGATION ?? '',
+                ]);
+            }
+            fclose($file);
+        };
+
+        return response()->stream($callback, 200, $headers);
+    }
+
+    public function exportNonPelayananTunda(Request $request)
+    {
+        $selectedPeriode = $request->get('periode');
+        $selectedBranch  = $request->get('cabang');
+
+        if (!$selectedPeriode || !$selectedBranch) {
+            return redirect()->back()->with('error', 'Pilih periode dan cabang terlebih dahulu');
+        }
+
+        try {
+            $data = $this->nonPelayananTundaBaseQuery($selectedPeriode, $selectedBranch)
+                ->select(
+                    'PPKB_CODE',
+                    'NO_UKK',
+                    'NO_BKT_PANDU',
+                    'NM_KAPAL',
+                    'JN_KAPAL',
+                    'KP_LOA',
+                    'PANDU_DARI',
+                    'PANDU_KE',
+                    'REDE_TYPE',
+                    'MULAI_TUNDA',
+                    'STATUS_NOTA'
+                )
+                ->orderBy('PPKB_CODE')
+                ->get();
+        } catch (\Exception $e) {
+            return redirect()->back()->with('error', 'Gagal mengambil data: ' . $e->getMessage());
+        }
+
+        $filename = 'Non_Pelayanan_Tunda_' . str_replace(' ', '_', $selectedBranch) . '_' . str_replace('-', '', $selectedPeriode) . '_' . date('YmdHis') . '.csv';
+
+        $headers = [
+            'Content-Type'        => 'text/csv; charset=UTF-8',
+            'Content-Disposition' => 'attachment; filename="' . $filename . '"',
+        ];
+
+        $callback = function () use ($data) {
+            $file = fopen('php://output', 'w');
+            fprintf($file, chr(0xEF) . chr(0xBB) . chr(0xBF));
+            fputcsv($file, [
+                'No', 'PPKB Code', 'No UKK', 'No Bukti Pandu', 'Nama Kapal', 'Jenis Kapal', 'LOA',
+                'Pandu Dari', 'Pandu Ke', 'Rede Type', 'Mulai Tunda', 'Status Nota'
+            ]);
+            $no = 1;
+            foreach ($data as $row) {
+                fputcsv($file, [
+                    $no++,
+                    $row->PPKB_CODE ?? '',
+                    $row->NO_UKK ?? '',
+                    $row->NO_BKT_PANDU ?? '',
+                    $row->NM_KAPAL ?? '',
+                    $row->JN_KAPAL ?? '',
+                    $row->KP_LOA ?? '',
+                    $row->PANDU_DARI ?? '',
+                    $row->PANDU_KE ?? '',
+                    $row->REDE_TYPE ?? '',
+                    $row->MULAI_TUNDA ?? '',
+                    $row->STATUS_NOTA ?? '',
                 ]);
             }
             fclose($file);

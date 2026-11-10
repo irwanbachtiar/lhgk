@@ -2162,6 +2162,123 @@
         </div>
         @endif
 
+        <!-- Non Pelayanan Tunda Section -->
+        @if($selectedPeriode != 'all' && $selectedBranch != 'all')
+        <div class="row mb-4">
+            <div class="col-12">
+                <div class="card stat-card">
+                    @if($nonPelayananTundaCount == 0)
+                    <div class="card-body text-center py-4">
+                        <i class="bi bi-info-circle text-muted" style="font-size: 3rem;"></i>
+                        <h5 class="mt-3">Non Pelayanan Tunda</h5>
+                        <p class="text-muted">Tidak ada data kapal tanpa pelayanan tunda untuk filter ini.</p>
+                    </div>
+                    @elseif(!$showNonPelayananTunda)
+                    <div class="card-body text-center py-4">
+                        <i class="bi bi-exclamation-triangle text-warning" style="font-size: 3rem;"></i>
+                        <h5 class="mt-3">Non Pelayanan Tunda</h5>
+                        <p class="text-muted">
+                            Ditemukan <strong class="text-warning">{{ number_format($nonPelayananTundaCount) }} kapal</strong>
+                            (LOA &ge; 70) tanpa realisasi tunda
+                        </p>
+                        <a href="{{ route('dashboard', array_merge(request()->query(), ['show_non_pelayanan_tunda' => 1])) }}#non-pelayanan-tunda-section"
+                           class="btn btn-warning text-white">
+                            <i class="bi bi-eye"></i> Tampilkan Data Non Pelayanan Tunda
+                        </a>
+                    </div>
+                    @else
+                    <div class="card-header" style="background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%); color: white;" id="non-pelayanan-tunda-section">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <h5 class="mb-0">
+                                <i class="bi bi-exclamation-triangle-fill"></i>
+                                Non Pelayanan Tunda
+                            </h5>
+                            <div>
+                                <a href="{{ route('export.non.pelayanan.tunda', ['periode' => $selectedPeriode, 'cabang' => $selectedBranch]) }}"
+                                   class="btn btn-light btn-sm me-2">
+                                    <i class="bi bi-file-earmark-excel"></i> Download Excel
+                                </a>
+                                <a href="{{ route('dashboard', array_merge(request()->query(), ['show_non_pelayanan_tunda' => 0])) }}"
+                                   class="btn btn-light btn-sm">
+                                    <i class="bi bi-x-circle"></i> Sembunyikan
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="card-body">
+                        <div class="alert alert-warning mb-3">
+                            <i class="bi bi-info-circle-fill"></i>
+                            <strong>{{ number_format($nonPelayananTundaCount) }} kapal</strong> dengan LOA &ge; 70 tidak memiliki realisasi tunda
+                            (<code>MULAI_TUNDA</code> kosong).
+                        </div>
+
+                        @if($nonPelayananTundaData && $nonPelayananTundaData->count() > 0)
+                        <div class="table-responsive">
+                            <table class="table table-hover table-striped table-sm">
+                                <thead class="table-dark">
+                                    <tr>
+                                        <th style="width:48px">No</th>
+                                        <th>PPKB Code</th>
+                                        <th>No. UKK</th>
+                                        <th>No. Bukti Pandu</th>
+                                        <th>Nama Kapal</th>
+                                        <th>Jenis Kapal</th>
+                                        <th>LOA</th>
+                                        <th>Pandu Dari</th>
+                                        <th>Pandu Ke</th>
+                                        <th>Rede Type</th>
+                                        <th>Mulai Tunda</th>
+                                        <th>Status Nota</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    @foreach($nonPelayananTundaData as $index => $row)
+                                    <tr>
+                                        <td>{{ $nonPelayananTundaData->firstItem() + $index }}</td>
+                                        <td class="text-nowrap small">{{ $row->PPKB_CODE ?? '-' }}</td>
+                                        <td class="text-nowrap small"><span class="badge bg-secondary">{{ $row->NO_UKK ?? '-' }}</span></td>
+                                        <td class="text-nowrap small">{{ $row->NO_BKT_PANDU ?? '-' }}</td>
+                                        <td class="text-nowrap small"><strong>{{ $row->NM_KAPAL ?? '-' }}</strong></td>
+                                        <td class="text-nowrap small">{{ $row->JN_KAPAL ?? '-' }}</td>
+                                        <td class="text-nowrap small">{{ $row->KP_LOA ?? '-' }}</td>
+                                        <td class="text-nowrap small">{{ $row->PANDU_DARI ?? '-' }}</td>
+                                        <td class="text-nowrap small">{{ $row->PANDU_KE ?? '-' }}</td>
+                                        <td class="text-nowrap small">
+                                            <span class="badge {{ $row->REDE_TYPE == 'TUKS' ? 'bg-primary' : 'bg-secondary' }}">{{ $row->REDE_TYPE ?? '-' }}</span>
+                                        </td>
+                                        <td class="text-nowrap small">{{ $row->MULAI_TUNDA ?? '-' }}</td>
+                                        <td class="text-nowrap small">
+                                            <span class="badge {{ $row->STATUS_NOTA == 'menunggu nota' ? 'bg-warning' : 'bg-info' }} text-dark">{{ strtoupper($row->STATUS_NOTA ?? '-') }}</span>
+                                        </td>
+                                    </tr>
+                                    @endforeach
+                                </tbody>
+                            </table>
+                        </div>
+
+                        <!-- Pagination -->
+                        @if($nonPelayananTundaData->hasPages())
+                        <div class="d-flex justify-content-between align-items-center mt-3">
+                            <div class="text-muted">
+                                Menampilkan {{ $nonPelayananTundaData->firstItem() }} - {{ $nonPelayananTundaData->lastItem() }} dari {{ $nonPelayananTundaData->total() }} data
+                            </div>
+                            <div>
+                                {{ $nonPelayananTundaData->links('pagination::bootstrap-5') }}
+                            </div>
+                        </div>
+                        @endif
+                        @else
+                        <div class="alert alert-secondary">
+                            <i class="bi bi-info-circle"></i> Tidak ada data untuk ditampilkan
+                        </div>
+                        @endif
+                    </div>
+                    @endif
+                </div>
+            </div>
+        </div>
+        @endif
+
         <!-- Ship Statistics by GT Range and Flag -->
         @if(($selectedPeriode != 'all' || $selectedBranch != 'all') && $shipStatsByGT->count() > 0)
         <div class="row mb-4">
@@ -2477,6 +2594,7 @@
             </div>
         </div>
         @endif
+
 
         <!-- Ship Statistics Charts by GT Range -->
         @if(false && ($selectedPeriode != 'all' || $selectedBranch != 'all') && $shipStatsByGT->count() > 0)

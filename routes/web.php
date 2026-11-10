@@ -32,6 +32,7 @@ Route::get('/export-siklus-pelayanan', [DashboardController::class, 'exportSiklu
 Route::get('/export-deploy-vs-realisasi', [DashboardController::class, 'exportDeployVsRealisasi'])->name('export.deploy.vs.realisasi');
 Route::get('/export-pendapatan-dermaga', [DashboardController::class, 'exportPendapatanDermaga'])->name('export.pendapatan.dermaga');
 Route::get('/export-pendapatan-dermaga-summary', [DashboardController::class, 'exportPendapatanDermagaSummary'])->name('export.pendapatan.dermaga.summary');
+Route::get('/export-non-pelayanan-tunda', [DashboardController::class, 'exportNonPelayananTunda'])->name('export.non.pelayanan.tunda');
 Route::get('/export-backdate', [DashboardController::class, 'exportBackdate'])->name('export.backdate');
 Route::get('/export-realisasi-web', [DashboardController::class, 'exportRealisasiWeb'])->name('export.realisasi.web');
 
