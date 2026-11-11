@@ -15,10 +15,33 @@ class GpsController extends Controller
 
         $regionalGroups = $this->getRegionalGroups();
 
+        $periodeExpr = $this->periodeFromInvoiceDateExpr();
+
+        try {
+            $branchesWithPeriode = DB::table('tabel_gps')
+                ->whereNotNull('INVOICE_DATE')
+                ->where('INVOICE_DATE', '!=', '')
+                ->distinct()
+                ->pluck('NM_BRANCH')
+                ->filter()
+                ->all();
+        } catch (\Exception $e) {
+            $branchesWithPeriode = [];
+        }
+
+        $regionalGroups = collect($regionalGroups)
+            ->map(function ($branches) use ($branchesWithPeriode) {
+                return array_values(array_intersect($branches, $branchesWithPeriode));
+            })
+            ->filter(function ($branches) {
+                return count($branches) > 0;
+            })
+            ->all();
+
         try {
             $periodsQuery = DB::table('tabel_gps')
-                ->whereNotNull('PERIODE')
-                ->where('PERIODE', '!=', '')
+                ->whereNotNull('INVOICE_DATE')
+                ->where('INVOICE_DATE', '!=', '')
                 ->whereNotNull('ONBOARD')
                 ->where('ONBOARD', '!=', '');
 
@@ -27,9 +50,10 @@ class GpsController extends Controller
             }
 
             $periods = $periodsQuery
-                ->groupBy('PERIODE')
-                ->orderByRaw("STR_TO_DATE(CONCAT('01-', PERIODE), '%d-%m-%Y') DESC")
-                ->pluck('PERIODE');
+                ->selectRaw("$periodeExpr as periode_bulan")
+                ->groupByRaw($periodeExpr)
+                ->orderByRaw("MIN(STR_TO_DATE(INVOICE_DATE, '%d-%m-%Y %H:%i')) DESC")
+                ->pluck('periode_bulan');
         } catch (\Exception $e) {
             $periods = collect();
         }
@@ -43,12 +67,12 @@ class GpsController extends Controller
                     ->select('PPKB_CODE', 'NM_BRANCH', 'NM_KAPAL', 'PANDU_DARI', 'PANDU_KE', 'MULAI_PELAKSANAAN', 'ONBOARD', 'REALISAS_PILOT_VIA')
                     ->whereNotNull('ONBOARD')
                     ->where('ONBOARD', '!=', '')
-                    ->where('PERIODE', $selectedPeriode)
+                    ->whereRaw("$periodeExpr = ?", [$selectedPeriode])
                     ->where('NM_BRANCH', $selectedBranch)
                     ->get();
 
                 $points = $rows->map(function ($row) {
-                    $coords = preg_split('/[\s,]+/', trim($row->ONBOARD));
+                    $coords = preg_split('/[\s,]+/', trim($this->normalizeOnboard($row->ONBOARD)));
                     if (count($coords) < 2 || !is_numeric($coords[0]) || !is_numeric($coords[1])) {
                         return null;
                     }
@@ -79,7 +103,7 @@ class GpsController extends Controller
         if ($selectedPeriode != 'all' && $selectedBranch != 'all') {
             try {
                 $gridCount = DB::table('tabel_gps')
-                    ->where('PERIODE', $selectedPeriode)
+                    ->whereRaw("$periodeExpr = ?", [$selectedPeriode])
                     ->where('NM_BRANCH', $selectedBranch)
                     ->count();
 
@@ -91,11 +115,16 @@ class GpsController extends Controller
                             'SELESAI_PELAKSANAAN', 'GERAKAN', 'REALISAS_PILOT_VIA',
                             'COMMANDON', 'COMMANDOFF', 'DEPARTURE', 'ONBOARD', 'PILOTOFF'
                         )
-                        ->where('PERIODE', $selectedPeriode)
+                        ->whereRaw("$periodeExpr = ?", [$selectedPeriode])
                         ->where('NM_BRANCH', $selectedBranch)
                         ->orderBy('PPKB_CODE')
                         ->paginate(50)
                         ->withQueryString();
+
+                    $gridData->getCollection()->transform(function ($row) {
+                        $row->ONBOARD = $this->normalizeOnboard($row->ONBOARD);
+                        return $row;
+                    });
                 }
             } catch (\Exception $e) {
                 $gridCount = 0;
@@ -122,7 +151,7 @@ class GpsController extends Controller
                 'SELESAI_PELAKSANAAN', 'GERAKAN', 'REALISAS_PILOT_VIA',
                 'COMMANDON', 'COMMANDOFF', 'DEPARTURE', 'ONBOARD', 'PILOTOFF'
             )
-            ->where('PERIODE', $selectedPeriode)
+            ->whereRaw($this->periodeFromInvoiceDateExpr() . ' = ?', [$selectedPeriode])
             ->where('NM_BRANCH', $selectedBranch)
             ->orderBy('PPKB_CODE')
             ->get();
@@ -171,7 +200,7 @@ class GpsController extends Controller
                     $row->COMMANDON ?? '-',
                     $row->COMMANDOFF ?? '-',
                     $row->DEPARTURE ?? '-',
-                    $row->ONBOARD ?? '-',
+                    $this->normalizeOnboard($row->ONBOARD) ?: '-',
                     $row->PILOTOFF ?? '-',
                 ]);
             }
@@ -180,6 +209,39 @@ class GpsController extends Controller
         };
 
         return response()->stream($callback, 200, $headers);
+    }
+
+    /**
+     * Periode untuk filter diambil dari INVOICE_DATE (format "dd-mm-yyyy HH:ii"),
+     * diambil bulan dan tahunnya saja, agar konsisten dengan format periode
+     * yang dipakai ("mm-yyyy").
+     */
+    private function periodeFromInvoiceDateExpr()
+    {
+        return "DATE_FORMAT(STR_TO_DATE(INVOICE_DATE, '%d-%m-%Y %H:%i'), '%m-%Y')";
+    }
+
+    /**
+     * Beberapa sumber data (export Excel dengan format angka custom "#")
+     * menghasilkan nilai desimal tanpa angka 0 di depan, misal ".000078"
+     * bukan "0.000078". Normalisasi di sini agar tampilan grid, export,
+     * dan parsing koordinat tetap konsisten.
+     */
+    private function normalizeOnboard($value)
+    {
+        if (!$value) {
+            return $value;
+        }
+
+        $tokens = preg_split('/([\s,]+)/', trim($value), -1, PREG_SPLIT_DELIM_CAPTURE);
+
+        foreach ($tokens as &$token) {
+            if (preg_match('/^(-?)\.(\d+)$/', $token, $m)) {
+                $token = $m[1] . '0.' . $m[2];
+            }
+        }
+
+        return implode('', $tokens);
     }
 
     private function getRegionalGroups()

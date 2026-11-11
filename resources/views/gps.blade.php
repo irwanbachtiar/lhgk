@@ -81,7 +81,7 @@
                     </select>
                 </div>
                 <div class="col-md-4">
-                    <label class="form-label"><i class="bi bi-calendar-range"></i> Periode (dari Mulai Pelaksanaan):</label>
+                    <label class="form-label"><i class="bi bi-calendar-range"></i> Periode:</label>
                     <div class="d-flex">
                         <select name="periode" class="form-select">
                             <option value="all" {{ $selectedPeriode == 'all' ? 'selected' : '' }}>Semua Periode</option>
