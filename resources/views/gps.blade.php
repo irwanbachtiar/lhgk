@@ -51,8 +51,14 @@
         <div class="container-fluid">
             <span class="navbar-brand mb-0 h1"><i class="bi bi-geo-fill"></i> GPS Posisi Kapal</span>
             <div>
-                <a href="{{ route('dashboard') }}" class="btn btn-light btn-sm">
+                <a href="{{ route('dashboard') }}" class="btn btn-light btn-sm me-2">
                     <i class="bi bi-graph-up-arrow"></i> Dashboard LHGK
+                </a>
+                <a href="{{ route('contribution') }}" class="btn btn-light btn-sm me-2">
+                    <i class="bi bi-ship"></i> Ship Contribution
+                </a>
+                <a href="{{ route('summary.tunda') }}" class="btn btn-light btn-sm">
+                    <i class="bi bi-life-preserver"></i> Summary Tunda
                 </a>
             </div>
         </div>

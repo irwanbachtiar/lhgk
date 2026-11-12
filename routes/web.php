@@ -14,6 +14,8 @@ use App\Http\Controllers\AnperController;
 use App\Http\Controllers\SapController;
 use App\Http\Controllers\VisitorController;
 use App\Http\Controllers\GpsController;
+use App\Http\Controllers\ContributionController;
+use App\Http\Controllers\SummaryTundaController;
 use App\Models\Lhgk;
 
 Route::get('/', [DashboardController::class, 'index'])->name('dashboard');
@@ -47,6 +49,14 @@ Route::get('/export-pemanduan-lokasi-summary', [NotaController::class, 'exportPe
 Route::get('/export-tunda-lokasi-summary', [NotaController::class, 'exportTundaLokasiSummary'])->name('export.tunda.lokasi.summary');
 Route::get('/gps', [GpsController::class, 'index'])->name('gps');
 Route::get('/export-gps', [GpsController::class, 'exportGrid'])->name('export.gps');
+
+// Ship Contribution Analytics
+Route::get('/contribution', [ContributionController::class, 'index'])->name('contribution');
+Route::get('/export-contribution', [ContributionController::class, 'export'])->name('export.contribution');
+
+// Summary Tunda
+Route::get('/summary-tunda', [SummaryTundaController::class, 'index'])->name('summary.tunda');
+Route::get('/export-summary-tunda', [SummaryTundaController::class, 'export'])->name('export.summary.tunda');
 // Pendapatan SAP
 Route::get('/pendapatan-sap', [NotaController::class, 'pendapatanSap'])->name('pendapatan.sap');
 

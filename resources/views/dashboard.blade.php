@@ -268,8 +268,14 @@
                 <a href="{{ route('analisis.kelelahan') }}" class="btn btn-light btn-sm me-2">
                     <i class="bi bi-activity"></i> Analisis Kelelahan
                 </a>
-                <a href="{{ route('gps') }}" class="btn btn-light btn-sm">
+                <a href="{{ route('gps') }}" class="btn btn-light btn-sm me-2">
                     <i class="bi bi-geo-fill"></i> GPS
+                </a>
+                <a href="{{ route('contribution') }}" class="btn btn-light btn-sm me-2">
+                    <i class="bi bi-ship"></i> Ship Contribution
+                </a>
+                <a href="{{ route('summary.tunda') }}" class="btn btn-light btn-sm">
+                    <i class="bi bi-life-preserver"></i> Summary Tunda
                 </a>
             </div>
         </div>
